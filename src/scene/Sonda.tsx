@@ -21,6 +21,11 @@ export function Sonda() {
   const acc = useRef(0)
   const n = useRef(0)
   const ultimo = useRef(performance.now())
+  /* Finche' non si e' scritto un valore vero, quello a schermo sono gli
+     zeri del montaggio -- e "0 draw" letto a riposo sembra un guasto.
+     Costa gia' un'ora di diagnosi una volta: la prima misura utile va
+     pubblicata appena c'e', senza aspettare la cadenza. */
+  const maiScritto = useRef(true)
 
   const scrivi = (fps: number | null) => {
     const el = document.getElementById('sonda')
@@ -45,7 +50,8 @@ export function Sonda() {
     acc.current += ora - ultimo.current
     ultimo.current = ora
     n.current++
-    if (acc.current < 250) return
+    if (acc.current < 250 && !(maiScritto.current && n.current >= 2)) return
+    maiScritto.current = false
     const medio = acc.current / n.current
     /* In modalita' "demand" da fermi i fotogrammi sono radi: un fps
        calcolato su quelli direbbe "1" e sembrerebbe un guasto. Sopra i

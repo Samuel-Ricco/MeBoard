@@ -1,12 +1,7 @@
 /* LA CHECKLIST DI COSA TRADISCE UNA WEBVIEW.
    Sono poche regole, ma vanno messe tutte e vanno messe subito: rincorrerle
-   dopo significa scoprirle una alla volta su un telefono vero. */
-
-:root {
-  --fondo: #0e0b16;
-  --testo: #efe8ff;
-  --ciano: #49f2e0;
-}
+   dopo significa scoprirle una alla volta su un telefono vero.
+   La palette e la tipografia stanno in ui/tokens.css. */
 
 * { box-sizing: border-box; }
 
@@ -22,8 +17,8 @@ html, body, #app {
 
 body {
   background: var(--fondo);
-  color: var(--testo);
-  font-family: system-ui, sans-serif;
+  color: var(--crema);
+  font-family: var(--testo);
 
   /* Nessun ritardo e nessun rettangolo grigio al tocco: due dettagli
      minuscoli che da soli fanno "sembrare un sito". */
@@ -31,57 +26,19 @@ body {
   -webkit-tap-highlight-color: transparent;
 
   /* Il testo non si seleziona per sbaglio trascinando, come in un'app
-     nativa. Va riattivato dove il testo si deve poter copiare. */
+     nativa. Va riattivato dove il testo si deve poter copiare: i campi di
+     testo se lo riprendono in ui/app.css. */
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* Le safe area si leggono da qui, mai numeri fissi: cambiano per modello. */
-.sicura {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-
-/* La scena sta sotto, l'interfaccia sopra. `touch-action: none` sul canvas
-   e' obbligatorio: senza, il browser interpreta il trascinamento come
-   scroll e annulla i pointer event a meta' gesto. */
+/* `touch-action: none` sul canvas e' obbligatorio: senza, il browser
+   interpreta il trascinamento come scroll e annulla i pointer event a
+   meta' gesto -- sul telefono la scena smette di seguire il dito. */
 canvas { touch-action: none; display: block; }
 
-.hud {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;          /* l'HUD lascia passare i gesti alla scena */
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.hud > * { pointer-events: auto; }
+button { font: inherit; color: inherit; }
 
-.barra {
-  padding: 12px 16px;
-  font-size: 13px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ciano);
-}
-.nota {
-  padding: 12px 16px;
-  font-size: 12px;
-  opacity: .55;
-  line-height: 1.5;
-}
-
-/* Il numero della sonda: piccolo, sempre a schermo, e in sviluppo si
-   guarda mentre si tocca. E' l'unico modo per accorgersi di un problema
-   di memoria video PRIMA che diventi uno scatto. */
-.sonda {
-  display: block;
-  margin-top: 6px;
-  font-variant-numeric: tabular-nums;
-  text-transform: none;
-  letter-spacing: 0;
-  opacity: .6;
-  color: var(--testo);
-}
+/* Il fuoco resta visibile, ma col colore del sistema invece che con
+   l'anello azzurro del browser. */
+:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }

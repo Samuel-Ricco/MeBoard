@@ -14,5 +14,13 @@ export default defineConfig({
     target: 'es2022',
     sourcemap: true,
   },
-  server: { host: true },   // per aprire il dev server dal telefono in rete locale
+  server: {
+    host: true,             // per aprire il dev server dal telefono in rete locale
+    /* IL WATCHER SU WINDOWS SI PERDE LE SCRITTURE.
+       Sintomo: il file su disco e' aggiornato, il modulo servito no, e il
+       componente semplicemente non si monta -- senza nessun errore. E'
+       costato piu' di un'ora di diagnosi. Il polling e' meno elegante ma
+       non sbaglia, e su un progetto di questa taglia non si sente. */
+    watch: { usePolling: true, interval: 250 },
+  },
 })

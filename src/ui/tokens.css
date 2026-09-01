@@ -1,0 +1,139 @@
+/* IL SISTEMA VISIVO.
+ *
+ * Riferimento: cioccolato fondente piu' un accento elettrico, tipografia
+ * condensata pesante, numeri enormi, contenitori con BORDO invece che
+ * riempiti, controlli a pillola, etichette minuscole. L'accento del
+ * riferimento e' viola; qui e' lime.
+ *
+ * Il lime e' acido e va usato come si usa un evidenziatore: poco e dove
+ * conta. Su fondo scuro caldo ha contrasto altissimo, quindi grandi
+ * superfici lime stancano l'occhio -- resta per il tab attivo, i numeri
+ * che contano e un bordo alla volta.
+ */
+
+@import '@fontsource/anton/400.css';
+@import '@fontsource-variable/archivo';
+
+:root {
+  /* fondo: cioccolato fondente, caldo -- e' quello che fa cantare il lime */
+  --fondo: #170E13;
+  --superficie: #221520;
+  --superficie-alta: #2D1C29;
+
+  --lime: #CCFF4D;
+  --lime-cupo: #9FCC30;
+  --crema: #F4EFE6;
+
+  --tenue: rgba(244, 239, 230, .55);
+  --fioco: rgba(244, 239, 230, .26);
+  --bordo: rgba(244, 239, 230, .13);
+  --bordo-lime: rgba(204, 255, 77, .38);
+
+  /* Spigoli arrotondati ma non morbidi: il riferimento sta a meta' strada
+     fra la carta e la pillola. */
+  --r-carta: 18px;
+  --r-piccolo: 12px;
+  --r-pillola: 999px;
+
+  --display: 'Anton', 'Archivo Variable', system-ui, sans-serif;
+  --testo: 'Archivo Variable', system-ui, -apple-system, sans-serif;
+
+  /* Un solo passo di transizione, breve: l'app deve sembrare svelta. */
+  --scatto: 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+/* ---- tipografia ---- */
+
+.display {
+  font-family: var(--display);
+  font-weight: 400;
+  line-height: .88;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+}
+
+/* I numeri grandi sono il gesto piu' riconoscibile del riferimento:
+   enormi, condensati, color crema, appoggiati a un'etichetta minuscola. */
+.numerone {
+  font-family: var(--display);
+  font-size: clamp(44px, 15vw, 76px);
+  line-height: .84;
+  color: var(--crema);
+  letter-spacing: -.02em;
+}
+
+.etichetta {
+  font-family: var(--testo);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  color: var(--tenue);
+}
+
+.minuscolo {
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fioco);
+  font-weight: 600;
+}
+
+/* ---- contenitori ---- */
+
+/* Il tratto distintivo: si delimita con un BORDO, non con un riempimento.
+   Cosi' il fondo resta uno solo e la profondita' la fanno le linee. */
+.carta {
+  background: var(--superficie);
+  border: 1.5px solid var(--bordo);
+  border-radius: var(--r-carta);
+}
+
+.carta-lime {
+  border-color: var(--bordo-lime);
+}
+
+/* ---- controlli ---- */
+
+.pillola {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--r-pillola);
+  border: 1.5px solid var(--bordo);
+  background: transparent;
+  color: var(--crema);
+  font-family: var(--testo);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--scatto), border-color var(--scatto), color var(--scatto);
+}
+.pillola:active { transform: translateY(1px); }
+
+.pillola-piena {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: #12160A;
+}
+
+.pillola-fantasma:hover { border-color: var(--bordo-lime); }
+
+/* ---- il ghirigoro ----
+   Il riferimento appoggia ovunque uno zigzag disegnato a mano. Serve a
+   togliere rigidita' a una griglia altrimenti tutta ad angoli retti. */
+.ghirigoro { display: block; color: var(--lime); opacity: .9; }
+
+/* Un controllo spento deve SEMBRARE spento: senza questo il lime resta
+   acceso e invita a premere una cosa che non fa niente. */
+.pillola:disabled {
+  opacity: .42;
+  cursor: default;
+}
+.pillola-piena:disabled {
+  background: transparent;
+  border-color: var(--bordo);
+  color: var(--tenue);
+  opacity: 1;
+}

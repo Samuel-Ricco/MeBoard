@@ -6,10 +6,51 @@ e' il prodotto, quindi le scatole devono essere belle **e** scorrere lisce.
 
 ```
 src/scene/    la scena three.js (budget, scaffale, inquadratura, sonda)
-src/dati/     dati (per ora finti, poi le API)
-src/ui/       interfaccia React (catalogo, schede, filtri) — da fare
+src/dati/     catalogo finto e stato locale (niente database)
+src/ui/       sistema visivo, barra dei tab e le quattro schermate
 www/          output della build, e' quello che Capacitor impacchetta
 ```
+
+## Le quattro sezioni
+
+In `new_dado-e-trap` erano *collezione, catalogo, partite, profilo*, e la "libreria" era
+lo scaffale 3D dentro la collezione. Qui lo scaffale diventa **una sezione sua e
+modificabile**, e il profilo per ora non c'e'.
+
+| tab | cos'e' |
+|---|---|
+| **Libreria** | lo scaffale 3D. Si tocca una scatola per sceglierla, poi la si sposta o la si toglie; se ne aggiungono dalla collezione |
+| **Collezione** | i giochi che possiedi. Da qui si decide cosa sale sul ripiano |
+| **Catalogo** | tutti i giochi conosciuti, da cui si dichiara "questo ce l'ho" |
+| **Partite** | il registro delle serate |
+
+Lo scaffale e' un **sottoinsieme della collezione**: togliere un gioco dalla collezione lo
+toglie anche dal ripiano.
+
+La scelta della scatola si fa col **raycast su InstancedMesh**: r3f restituisce
+`instanceId`, che e' anche la posizione sul ripiano. Vive in `App`, non dentro la libreria,
+perche' la condividono il pannello dei comandi e la scena 3D -- due rami diversi.
+
+## Il sistema visivo
+
+Riferimento: uno shot Dribbble di app finanziaria (Purrweb) -- **cioccolato fondente piu'
+un accento elettrico**, tipografia condensata pesante, numeri enormi, contenitori
+delimitati dal **bordo** e non dal riempimento, controlli a pillola, etichette minuscole,
+zigzag disegnati a mano a rompere la griglia. L'accento del riferimento e' viola; qui e'
+**lime**.
+
+Token in `src/ui/tokens.css`. Fondo `#170E13`, lime `#CCFF4D`, crema `#F4EFE6`.
+Display **Anton**, testo **Archivo** -- entrambi da `@fontsource`, quindi **impacchettati
+nel bundle**: niente Google Fonts, niente sfarfallio all'avvio, niente app rotta offline.
+
+Regole che tengono in piedi il tutto:
+
+- **il lime e' un evidenziatore**: tab acceso, numeri che contano, un bordo alla volta.
+  Grandi superfici lime stancano l'occhio;
+- **un solo segnale per stato**: il bordo lime sulla riga *piu'* il bottone lime erano due
+  volte la stessa informazione, e toglievano forza a entrambi. Parla il bottone;
+- **il tab acceso e' l'unico riempito ed e' l'unico con l'etichetta**: gli altri restano
+  sole icone. Dice dove sei senza mettere quattro parole in fila.
 
 ## Stack, e perche'
 
@@ -110,21 +151,40 @@ rimbalza, `overscroll-behavior: none`, `touch-action: manipulation`,
 alla navigazione (il tradimento numero uno), splash nascosto dopo il primo paint, **font
 impacchettati in locale**, e `@capacitor/keyboard`.
 
-## Trappole dell'ambiente
+## Trappole gia' pagate
 
-- **Vite puo' servire una trasformazione vecchia.** E' successo: il file su disco importava
-  un modulo, quello servito no, e il componente semplicemente non si montava — senza errori.
-  Le modifiche fatte con `sed` sfuggono al watcher. In caso di stranezze, `curl` sul modulo
-  servito e confronto col disco, poi **riavvio del server**.
+- **Il watcher di Vite su Windows si perde le scritture.** Il file su disco e' aggiornato,
+  il modulo servito no, e il componente non si monta — senza nessun errore. Risolto alla
+  radice con `server.watch.usePolling` in `vite.config.ts`. Se ricapita: `curl` sul modulo
+  servito e confronto col disco.
+- **Due copie di React in pagina.** Sintomo: `useStato fuori dal ProvvedoreStato` su un
+  albero palesemente corretto. Causa: gli hash delle dipendenze ottimizzate non
+  coincidevano (`react.js?v=A` contro `react-dom_client.js?v=B`) perche' `vite --force`
+  rioptimizza a ogni avvio mentre il browser teneva i vecchi URL. Due React, due contesti,
+  provider invisibile. **Non usare `--force`**; semmai `rm -rf node_modules/.vite` e
+  riavvio.
+- **Contesti di impilamento.** Un foglio modale nato dentro `.schermo` (che ha gia' un suo
+  `z-index`) non compete piu' con la barra dei tab, per quanto alto lo si faccia: la barra
+  gli passa sopra e copre il bottone di conferma. Va in un **portale sul body**.
+- **La sonda a riposo mostrava gli zeri del montaggio.** "0 draw" letto da fermi sembra un
+  guasto ed e' costato un'ora di diagnosi su un'app che funzionava. Ora la prima misura
+  vera si pubblica appena c'e'.
+- **`toISOString()` risponde in UTC.** Per la data di oggi in Italia, fra mezzanotte e le
+  due, darebbe il giorno prima — e una partita si segna proprio a quell'ora.
 - Con la pagina non visibile `requestAnimationFrame` e' sospeso, e in `demand` i fotogrammi
-  sono radi comunque: un fps letto li' non significa niente.
+  sono radi comunque: un fps letto li' non significa niente. Per la stessa ragione gli
+  strumenti di input del pannello di anteprima vanno in timeout mentre aspettano un
+  fotogramma: l'app si guida dal DOM.
 
 ## Da fare
 
-1. La pipeline dell'atlante (copertine e coste) con offset UV per istanza.
+1. La pipeline dell'atlante (copertine e coste) con offset UV per istanza. Le scatole sono
+   ancora tinte piatte.
 2. Le miniature **generate a monte**, non sul telefono: ridimensionare in locale vuol dire
    aver gia' pagato download e decodifica. Supabase puo' servirle gia' piccole, oppure si
    genera la miniatura al caricamento del gioco.
-3. Il perimetro delle funzioni: da decidere se resta quello di `dado-e-trap` (catalogo,
-   partite, recensioni, profilo, desideri, auth) o cambia.
+3. Quel che manca rispetto a `dado-e-trap`: profilo, recensioni, desideri, gruppi. Fuori
+   perimetro per ora anche database e accessi.
 4. Capacitor: `cap add android`, e la coda della checklist WebView.
+5. Piu' ripiani invece di una fila sola: oltre una quarantina di scatole la fila diventa
+   troppo lunga e la camera troppo lontana.
