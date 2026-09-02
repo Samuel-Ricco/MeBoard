@@ -7,6 +7,10 @@ import { CELLE } from '../scene/mobile'
  * Tutto vive in memoria e viene specchiato in localStorage. Quando
  * arrivera' un backend cambia solo questo file: le schermate parlano con
  * le azioni, non con la persistenza.
+ *
+ * Restano fuori, perche' un backend lo vogliono per forza: amici, codice
+ * amico, e le recensioni degli altri. Quelle proprie invece sono dati
+ * personali e stanno benissimo qui.
  */
 
 export type Partita = {
@@ -18,10 +22,30 @@ export type Partita = {
   durata?: number         // minuti
 }
 
+export type Recensione = {
+  voto: number            // 1..10, come su BGG
+  testo: string
+  quando: string          // ISO, solo giorno
+}
+
+export type Etichetta = { id: string; nome: string }
+
+export type Profilo = {
+  nick: string
+  /** il colore del meeple: e' tutta l'identita' che serve senza un account */
+  tinta: string
+}
+
 type Stato = {
   collezione: string[]    // id dei giochi posseduti
-  scaffale: string[]      // id sullo scaffale 3D, NELL'ORDINE in cui stanno
+  scaffale: string[]      // id nel mobile, NELL'ORDINE delle caselle
+  desideri: string[]      // id che vorresti ma non hai
   partite: Partita[]
+  recensioni: Record<string, Recensione>
+  etichette: Etichetta[]
+  etichetteDi: Record<string, string[]>   // giocoId -> id delle etichette
+  giocatori: string[]     // chi si siede al tavolo, per non riscriverlo ogni volta
+  profilo: Profilo
 }
 
 const CHIAVE = 'meboard.stato.v1'
@@ -33,29 +57,65 @@ const INIZIALE: Stato = {
      e' subito disponibile invece di nascere disabilitato */
   scaffale: ['scythe', 'wingspan', 'root', 'azul', 'brass', 'everdell', 'ticket',
              'cascadia', 'carcassonne', 'ark'],
+  desideri: ['spirit', 'dune'],
   partite: [
     { id: 'p1', giocoId: 'wingspan',  data: '2026-08-29', giocatori: ['Samuel', 'Giulia'], vincitore: 'Giulia', durata: 55 },
     { id: 'p2', giocoId: 'brass',     data: '2026-08-24', giocatori: ['Samuel', 'Marco', 'Elia'], vincitore: 'Samuel', durata: 135 },
     { id: 'p3', giocoId: 'azul',      data: '2026-08-21', giocatori: ['Samuel', 'Giulia'], vincitore: 'Samuel', durata: 38 },
     { id: 'p4', giocoId: 'root',      data: '2026-08-15', giocatori: ['Samuel', 'Marco', 'Elia', 'Giulia'], vincitore: 'Elia', durata: 95 },
   ],
+  recensioni: {
+    brass: { voto: 9, testo: 'Il migliore per chi ha voglia di pensare. Pesante ma mai noioso.', quando: '2026-08-25' },
+    azul:  { voto: 7, testo: 'Elegante e velocissimo. Funziona con chiunque.', quando: '2026-08-22' },
+  },
+  etichette: [
+    { id: 'e1', nome: 'in due' },
+    { id: 'e2', nome: 'strategici' },
+    { id: 'e3', nome: 'da tavolata' },
+  ],
+  etichetteDi: {
+    brass: ['e2'], root: ['e2'], scythe: ['e2'], ark: ['e2'],
+    patchwork: ['e1'], hive: ['e1'], azul: ['e1'],
+    ticket: ['e3'], carcassonne: ['e3'], kingdomino: ['e3'],
+  },
+  giocatori: ['Samuel', 'Giulia', 'Marco', 'Elia'],
+  profilo: { nick: 'Samuel', tinta: '#CCFF4D' },
 }
 
+/* Si legge campo per campo con un ripiego per ciascuno, invece di fidarsi
+   dell'oggetto salvato: cosi' una versione vecchia in localStorage --
+   senza recensioni, senza etichette -- non lascia l'app in bianco ma si
+   riempie coi valori nuovi. */
 function leggi(): Stato {
   try {
     const grezzo = localStorage.getItem(CHIAVE)
     if (!grezzo) return INIZIALE
     const s = JSON.parse(grezzo) as Partial<Stato>
+    const arr = <T,>(v: unknown, r: T[]) => (Array.isArray(v) ? (v as T[]) : r)
+    const ogg = <T,>(v: unknown, r: T) =>
+      (v && typeof v === 'object' && !Array.isArray(v) ? (v as T) : r)
     return {
-      collezione: Array.isArray(s.collezione) ? s.collezione : INIZIALE.collezione,
-      scaffale: Array.isArray(s.scaffale) ? s.scaffale : INIZIALE.scaffale,
-      partite: Array.isArray(s.partite) ? s.partite : INIZIALE.partite,
+      collezione: arr(s.collezione, INIZIALE.collezione),
+      scaffale: arr(s.scaffale, INIZIALE.scaffale),
+      desideri: arr(s.desideri, INIZIALE.desideri),
+      partite: arr(s.partite, INIZIALE.partite),
+      recensioni: ogg(s.recensioni, INIZIALE.recensioni),
+      etichette: arr(s.etichette, INIZIALE.etichette),
+      etichetteDi: ogg(s.etichetteDi, INIZIALE.etichetteDi),
+      giocatori: arr(s.giocatori, INIZIALE.giocatori),
+      profilo: { ...INIZIALE.profilo, ...ogg(s.profilo, {}) },
     }
   } catch {
     /* finestra privata, spazio esaurito, dati corrotti: si riparte dal
        predefinito invece di lasciare l'app in bianco */
     return INIZIALE
   }
+}
+
+const oggi = () => {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
 type Azioni = {
@@ -66,12 +126,24 @@ type Azioni = {
   pieno: boolean
   giochiScaffale: Gioco[]
   giochiCollezione: Gioco[]
+  giochiDesiderati: Gioco[]
   aggiungiAScaffale: (id: string) => void
   togliDaScaffale: (id: string) => void
   scambiaSuScaffale: (da: number, a: number) => void
   cambiaPossesso: (id: string, posseduto: boolean) => void
+  cambiaDesiderio: (id: string, voluto: boolean) => void
+  salvaRecensione: (giocoId: string, voto: number, testo: string) => void
+  eliminaRecensione: (giocoId: string) => void
+  creaEtichetta: (nome: string) => void
+  eliminaEtichetta: (id: string) => void
+  cambiaEtichettaGioco: (giocoId: string, etichettaId: string, dentro: boolean) => void
+  etichetteDelGioco: (giocoId: string) => Etichetta[]
+  aggiungiGiocatore: (nome: string) => void
+  togliGiocatore: (nome: string) => void
+  salvaProfilo: (p: Partial<Profilo>) => void
   registraPartita: (p: Omit<Partita, 'id'>) => void
   eliminaPartita: (id: string) => void
+  partiteDelGioco: (giocoId: string) => Partita[]
 }
 
 const Ctx = createContext<Azioni | null>(null)
@@ -116,11 +188,92 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
       const collezione = posseduto
         ? (s.collezione.includes(id) ? s.collezione : [...s.collezione, id])
         : s.collezione.filter((x) => x !== id)
-      /* togliere un gioco dalla collezione lo toglie anche dallo scaffale:
-         uno scaffale con sopra roba che non hai piu' non ha senso */
+      /* togliere un gioco dalla collezione lo toglie anche dal mobile:
+         un ripiano con sopra roba che non hai piu' non ha senso */
       const scaffale = posseduto ? s.scaffale : s.scaffale.filter((x) => x !== id)
-      return { ...s, collezione, scaffale }
+      /* e se lo compri smette di essere un desiderio: e' lo stesso gesto
+         visto da due parti */
+      const desideri = posseduto ? s.desideri.filter((x) => x !== id) : s.desideri
+      return { ...s, collezione, scaffale, desideri }
     })
+  }, [])
+
+  const cambiaDesiderio = useCallback((id: string, voluto: boolean) => {
+    setStato((s) => ({
+      ...s,
+      desideri: voluto
+        ? (s.desideri.includes(id) ? s.desideri : [...s.desideri, id])
+        : s.desideri.filter((x) => x !== id),
+    }))
+  }, [])
+
+  const salvaRecensione = useCallback((giocoId: string, voto: number, testo: string) => {
+    setStato((s) => ({
+      ...s,
+      recensioni: { ...s.recensioni, [giocoId]: { voto, testo: testo.trim(), quando: oggi() } },
+    }))
+  }, [])
+
+  const eliminaRecensione = useCallback((giocoId: string) => {
+    setStato((s) => {
+      const r = { ...s.recensioni }
+      delete r[giocoId]
+      return { ...s, recensioni: r }
+    })
+  }, [])
+
+  const creaEtichetta = useCallback((nome: string) => {
+    const pulito = nome.trim()
+    if (!pulito) return
+    setStato((s) => s.etichette.some((e) => e.nome.toLowerCase() === pulito.toLowerCase())
+      ? s
+      : { ...s, etichette: [...s.etichette, { id: 'e' + Date.now(), nome: pulito }] })
+  }, [])
+
+  const eliminaEtichetta = useCallback((id: string) => {
+    setStato((s) => {
+      /* Sparita l'etichetta, vanno tolti anche i riferimenti: se no
+         restano puntatori a un'etichetta che non esiste e i filtri
+         cominciano a non trovare niente senza spiegare perche'. */
+      const etichetteDi: Record<string, string[]> = {}
+      Object.entries(s.etichetteDi).forEach(([g, v]) => {
+        const resto = v.filter((x) => x !== id)
+        if (resto.length) etichetteDi[g] = resto
+      })
+      return { ...s, etichette: s.etichette.filter((e) => e.id !== id), etichetteDi }
+    })
+  }, [])
+
+  const cambiaEtichettaGioco = useCallback((giocoId: string, etichettaId: string, dentro: boolean) => {
+    setStato((s) => {
+      const ora = s.etichetteDi[giocoId] ?? []
+      const dopo = dentro
+        ? (ora.includes(etichettaId) ? ora : [...ora, etichettaId])
+        : ora.filter((x) => x !== etichettaId)
+      const etichetteDi = { ...s.etichetteDi }
+      if (dopo.length) etichetteDi[giocoId] = dopo
+      else delete etichetteDi[giocoId]
+      return { ...s, etichetteDi }
+    })
+  }, [])
+
+  const aggiungiGiocatore = useCallback((nome: string) => {
+    const pulito = nome.trim()
+    if (!pulito) return
+    setStato((s) => s.giocatori.some((g) => g.toLowerCase() === pulito.toLowerCase())
+      ? s
+      : { ...s, giocatori: [...s.giocatori, pulito] })
+  }, [])
+
+  const togliGiocatore = useCallback((nome: string) => {
+    /* Le partite gia' segnate NON si toccano: erano vere quando sono
+       state scritte, e riscrivere il passato per far quadrare un elenco
+       e' il modo migliore per perdere dati. */
+    setStato((s) => ({ ...s, giocatori: s.giocatori.filter((g) => g !== nome) }))
+  }, [])
+
+  const salvaProfilo = useCallback((p: Partial<Profilo>) => {
+    setStato((s) => ({ ...s, profilo: { ...s.profilo, ...p } }))
   }, [])
 
   const registraPartita = useCallback((p: Omit<Partita, 'id'>) => {
@@ -135,13 +288,26 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     stato,
     celle: CELLE,
     pieno: stato.scaffale.length >= CELLE,
-    /* l'ordine dello scaffale e' quello dell'elenco, non quello del catalogo */
+    /* l'ordine del mobile e' quello dell'elenco, non quello del catalogo */
     giochiScaffale: stato.scaffale.map(perId).filter((g): g is Gioco => !!g),
     giochiCollezione: CATALOGO.filter((g) => stato.collezione.includes(g.id)),
+    giochiDesiderati: CATALOGO.filter((g) => stato.desideri.includes(g.id)),
+    etichetteDelGioco: (giocoId) => {
+      const ids = stato.etichetteDi[giocoId] ?? []
+      return stato.etichette.filter((e) => ids.includes(e.id))
+    },
+    partiteDelGioco: (giocoId) => stato.partite.filter((p) => p.giocoId === giocoId),
     aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
-    cambiaPossesso, registraPartita, eliminaPartita,
+    cambiaPossesso, cambiaDesiderio,
+    salvaRecensione, eliminaRecensione,
+    creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
+    aggiungiGiocatore, togliGiocatore, salvaProfilo,
+    registraPartita, eliminaPartita,
   }), [stato, aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
-       cambiaPossesso, registraPartita, eliminaPartita])
+       cambiaPossesso, cambiaDesiderio, salvaRecensione, eliminaRecensione,
+       creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
+       aggiungiGiocatore, togliGiocatore, salvaProfilo,
+       registraPartita, eliminaPartita])
 
   return <Ctx.Provider value={valore}>{children}</Ctx.Provider>
 }

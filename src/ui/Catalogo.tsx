@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
-import { CATALOGO } from '../dati/giochi'
+import { CATALOGO, type Gioco } from '../dati/giochi'
 import { useStato } from '../dati/stato'
-import { Ghirigoro, IcoCatalogo, IcoSpunta, IcoPiu } from './icone'
+import { SchedaGioco } from './SchedaGioco'
+import { Ghirigoro, IcoCatalogo, IcoSpunta, IcoPiu, IcoStella } from './icone'
 
-type Filtro = 'tutti' | 'brevi' | 'lunghi' | 'duetto' | 'gruppo' | 'mancanti'
+type Filtro = 'tutti' | 'mancanti' | 'desideri' | 'brevi' | 'lunghi' | 'duetto' | 'gruppo'
 
 const FILTRI: Array<{ id: Filtro; nome: string }> = [
   { id: 'tutti',    nome: 'Tutti' },
   { id: 'mancanti', nome: 'Non ho' },
+  { id: 'desideri', nome: 'Li voglio' },
   { id: 'brevi',    nome: 'Sotto i 45 min' },
   { id: 'lunghi',   nome: 'Oltre i 90 min' },
   { id: 'duetto',   nome: 'In due' },
@@ -15,12 +17,13 @@ const FILTRI: Array<{ id: Filtro; nome: string }> = [
 ]
 
 /* IL CATALOGO: tutti i giochi conosciuti, posseduti o no.
-   E' il posto da cui si dichiara "questo ce l'ho", e da li' finisce in
-   collezione e diventa candidato per il ripiano. */
+   E' il posto da cui si dichiara "questo ce l'ho" oppure "questo lo
+   voglio", e da li' finisce in collezione o nei desideri. */
 export function Catalogo() {
-  const { stato, cambiaPossesso } = useStato()
+  const { stato, cambiaPossesso, cambiaDesiderio } = useStato()
   const [cerca, setCerca] = useState('')
   const [filtro, setFiltro] = useState<Filtro>('tutti')
+  const [aperto, setAperto] = useState<Gioco | null>(null)
 
   const visibili = useMemo(() => {
     const q = cerca.trim().toLowerCase()
@@ -28,6 +31,7 @@ export function Catalogo() {
       if (q && !g.nome.toLowerCase().includes(q) && !g.editore.toLowerCase().includes(q)) return false
       switch (filtro) {
         case 'mancanti': return !stato.collezione.includes(g.id)
+        case 'desideri': return stato.desideri.includes(g.id)
         case 'brevi':    return g.durata <= 45
         case 'lunghi':   return g.durata >= 90
         case 'duetto':   return g.giocatori[0] <= 2 && g.giocatori[1] >= 2
@@ -35,7 +39,7 @@ export function Catalogo() {
         default:         return true
       }
     }).sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
-  }, [cerca, filtro, stato.collezione])
+  }, [cerca, filtro, stato.collezione, stato.desideri])
 
   return (
     <div className="schermo">
@@ -47,6 +51,17 @@ export function Catalogo() {
         </div>
         <Ghirigoro w={96} h={20} />
       </header>
+
+      <div className="statistiche">
+        <div className="statistica">
+          <div className="valore">{stato.collezione.length}</div>
+          <div className="nome">ce li ho</div>
+        </div>
+        <div className="statistica statistica-lime">
+          <div className="valore">{stato.desideri.length}</div>
+          <div className="nome">li voglio</div>
+        </div>
+      </div>
 
       <label className="cerca">
         <IcoCatalogo size={17} />
@@ -79,23 +94,33 @@ export function Catalogo() {
         <div className="elenco">
           {visibili.map((g) => {
             const posseduto = stato.collezione.includes(g.id)
-            /* Lo stato lo dice il bottone: raddoppiarlo col bordo lime
-               riempirebbe la schermata di accento e toglierebbe forza
-               proprio a quello che conta. */
+            const voluto = stato.desideri.includes(g.id)
             return (
               <div className="riga" key={g.id}>
-                <span className="dorso" style={{ background: g.tinta }} />
-                <div className="riga-corpo">
-                  <div className="riga-nome">{g.nome}</div>
-                  <div className="riga-sotto">
-                    {g.anno} · {g.giocatori[0]}–{g.giocatori[1]} gioc. · {g.durata} min · peso {g.peso}/5
-                  </div>
-                </div>
+                <button className="riga-apri" onClick={() => setAperto(g)}>
+                  <span className="dorso" style={{ background: g.tinta }} />
+                  <span className="riga-corpo">
+                    <span className="riga-nome">{g.nome}</span>
+                    <span className="riga-sotto">
+                      {g.anno} · {g.giocatori[0]}–{g.giocatori[1]} gioc. · {g.durata} min · peso {g.peso}/5
+                    </span>
+                  </span>
+                </button>
                 <div className="riga-azioni">
+                  {/* La stella compare solo su cio' che non hai: sui giochi
+                      in collezione sarebbe un comando senza senso. */}
+                  {!posseduto && (
+                    <button
+                      className={'bottoncino' + (voluto ? ' bottoncino-acceso' : '')}
+                      aria-label={voluto ? 'Togli dai desideri' : 'Mettilo nei desideri'}
+                      onClick={() => cambiaDesiderio(g.id, !voluto)}
+                    >
+                      <IcoStella size={17} />
+                    </button>
+                  )}
                   <button
                     className={'bottoncino' + (posseduto ? ' bottoncino-acceso' : '')}
                     aria-label={posseduto ? "Ce l'ho" : 'Aggiungi alla collezione'}
-                    title={posseduto ? "Ce l'ho" : 'Aggiungi alla collezione'}
                     onClick={() => cambiaPossesso(g.id, !posseduto)}
                   >
                     {posseduto ? <IcoSpunta size={17} /> : <IcoPiu size={17} />}
@@ -106,6 +131,8 @@ export function Catalogo() {
           })}
         </div>
       )}
+
+      {aperto && <SchedaGioco gioco={aperto} chiudi={() => setAperto(null)} />}
     </div>
   )
 }

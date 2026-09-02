@@ -62,6 +62,35 @@ export const IcoGiu = ({ size = 20 }: P) => (
   <svg {...base(size)}><path d="M12 5v14M6 13l6 6 6-6" /></svg>
 )
 
+/** Desiderio: una stella, non un cuore -- il cuore vuol dire "mi piace",
+ *  e qui si tratta di roba che non hai ancora. */
+export const IcoStella = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <path d="m12 4 2.5 5.1 5.6.8-4 3.9 1 5.6L12 16.8 6.9 19.4l1-5.6-4-3.9 5.6-.8z" />
+  </svg>
+)
+
+export const IcoProfilo = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <circle cx="12" cy="8.5" r="3.6" />
+    <path d="M5 20c.9-3.4 3.6-5.2 7-5.2s6.1 1.8 7 5.2" />
+  </svg>
+)
+
+export const IcoEtichetta = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <path d="M4 11.2V5a1 1 0 0 1 1-1h6.2a1 1 0 0 1 .7.3l7.6 7.6a1 1 0 0 1 0 1.4l-6.2 6.2a1 1 0 0 1-1.4 0L4.3 11.9a1 1 0 0 1-.3-.7Z" />
+    <circle cx="8.4" cy="8.4" r="1.2" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+export const IcoMatita = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z" />
+    <path d="m14.5 6.5 3 3" />
+  </svg>
+)
+
 export const IcoSinistra = ({ size = 20 }: P) => (
   <svg {...base(size)}><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
 )

@@ -24,6 +24,51 @@ modificabile**, e il profilo per ora non c'e'.
 | **Catalogo** | tutti i giochi conosciuti, da cui si dichiara "questo ce l'ho" |
 | **Partite** | il registro delle serate |
 
+Il **profilo** non e' un quinto tab: in basso ci stanno i posti dove si passa il tempo, e
+le impostazioni non sono uno di quelli. Sta dietro al meeple in alto a destra.
+
+## Le funzioni prese da `new_dado-e-trap`
+
+| | dove sta |
+|---|---|
+| **scheda del gioco** | toccando una riga in collezione, catalogo o partite, o il nome nel pannello della libreria |
+| **recensioni** con voto 1-10 | dentro la scheda |
+| **desideri** | stella nel catalogo, piu' il filtro "li voglio" |
+| **etichette** (i "gruppi" dell'altra app) | si creano nel profilo, si applicano nella scheda, filtrano la collezione |
+| **giocatori** | si scrivono una volta nel profilo e poi si scelgono segnando una partita |
+| **tavolozza** | profilo: chiaro, scuro, o come il telefono |
+
+Restano **fuori di proposito**: amici e codice amico (vogliono un backend, e senza sarebbero
+bottoni che non portano da nessuna parte), le recensioni degli altri, la stanza arredabile,
+i suoni e la doppia lingua IT/EN. L'i18n non e' difficile, e' solo lunga: va fatta quando le
+stringhe smettono di cambiare tutti i giorni.
+
+Due scelte di sostanza, non di forma:
+
+- **i giocatori si scelgono, non si riscrivono.** A testo libero "Giulia", "giulia" e
+  "Giuli" diventano tre persone e le statistiche smettono di tornare. E il vincitore si
+  sceglie solo fra chi era al tavolo.
+- **le contraddizioni non si lasciano possibili**: un gioco che possiedi non puo' stare nei
+  desideri, e comprarne uno lo toglie da li' da solo. Se no l'app si smentisce da sola in
+  due schermate diverse.
+
+## Le due tavolozze
+
+Chiaro e scuro non sono due disegni: sono **gli stessi ruoli con altri valori**, dichiarati
+per intero in `ui/tokens.css`. La tavolozza chiara li riassegna tutti, nessuno escluso — se
+ne restasse indietro uno si vedrebbe un'ombra scura su un fondo di carta.
+
+- Il **lime scende di un gradino** sul chiaro: su carta il `#CCFF4D` si stacca appena dal
+  fondo e le pillole perdono il contorno. Sotto resta sempre scritto scuro: il lime non e'
+  mai un fondo per testo chiaro.
+- Il **rosso di cio' che distrugge non segue la tavolozza**. Non e' decorazione, e' un
+  segnale: un rosso "coordinato" smette di dire quello che deve dire.
+- Anche il **mobile 3D si tinge dalla tavolozza**: la scena legge `--mobile` e
+  `--mobile-schiena` invece di avere colori suoi, e sul chiaro il Kallax diventa rovere
+  sbiancato senza che nessuno lo dica due volte.
+- La scelta **auto** e' il predefinito: su un telefono il tema di sistema cambia da solo la
+  sera, e un'app che resta scura a mezzogiorno sembra sempre sbagliata.
+
 Lo scaffale e' un **sottoinsieme della collezione**: togliere un gioco dalla collezione lo
 toglie anche dal ripiano.
 
@@ -185,6 +230,19 @@ alla navigazione (il tradimento numero uno), splash nascosto dopo il primo paint
 impacchettati in locale**, e `@capacitor/keyboard`.
 
 ## Trappole gia' pagate
+
+- **La tavolozza va scritta prima del primo pixel.** Se lo facesse React, l'app partirebbe
+  col tema predefinito e cambierebbe colore un attimo dopo — un lampo che si vede benissimo
+  passando a chiaro. Per questo c'e' uno scriptino in linea nel `<head>` di `index.html`:
+  quello decide il primo fotogramma, il modulo `ui/tema.tsx` tiene il resto. Sono due
+  copie della stessa logica, ed e' voluto.
+- **Un hook con stato locale non e' una sorgente sola.** La tavolozza la cambia il profilo
+  ma la deve sapere anche la scena 3D: con `useState` dentro l'hook ognuno aveva la sua
+  copia e il Kallax restava cioccolato dentro un'app diventata di carta. Sta in un
+  contesto.
+- **`<span>` e' inline.** Trasformando le righe in bottoni, nome e sottotitolo sono passati
+  da `<div>` a `<span>` e sono finiti sulla stessa riga. I `display: block` che i `<div>`
+  regalavano vanno riscritti a mano.
 
 - **Il watcher di Vite su Windows si perde le scritture.** Il file su disco e' aggiornato,
   il modulo servito no, e il componente non si monta — senza nessun errore. Risolto alla

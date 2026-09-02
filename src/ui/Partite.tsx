@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { perId } from '../dati/giochi'
+import { perId, type Gioco } from '../dati/giochi'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
+import { SchedaGioco } from './SchedaGioco'
 import { Ghirigoro, IcoPiu } from './icone'
 
 const giorno = (iso: string) =>
@@ -20,11 +21,13 @@ function oggi() {
 export function Partite() {
   const { stato, giochiCollezione, registraPartita, eliminaPartita } = useStato()
   const [aperto, setAperto] = useState(false)
+  const [scheda, setScheda] = useState<Gioco | null>(null)
 
   const [giocoId, setGiocoId] = useState('')
   const [data, setData] = useState(oggi)
-  const [giocatori, setGiocatori] = useState('')
+  const [alTavolo, setAlTavolo] = useState<string[]>([])
   const [vincitore, setVincitore] = useState('')
+  const [durata, setDurata] = useState('')
 
   const oreTotali = useMemo(
     () => Math.round(stato.partite.reduce((s, p) => s + (p.durata ?? 0), 0) / 60),
@@ -39,16 +42,31 @@ export function Partite() {
     return vinto ? perId(vinto)?.nome ?? '—' : '—'
   }, [stato.partite])
 
+  const azzera = () => {
+    setGiocoId(''); setAlTavolo([]); setVincitore(''); setDurata(''); setData(oggi())
+  }
+
+  const cambiaAlTavolo = (nome: string) => {
+    setAlTavolo((v) => {
+      const dopo = v.includes(nome) ? v.filter((x) => x !== nome) : [...v, nome]
+      /* Chi si alza dal tavolo non puo' restare il vincitore: sarebbe una
+         partita vinta da qualcuno che non c'era. */
+      if (!dopo.includes(vincitore)) setVincitore('')
+      return dopo
+    })
+  }
+
   const salva = () => {
     if (!giocoId) return
-    const elenco = giocatori.split(',').map((s) => s.trim()).filter(Boolean)
+    const min = parseInt(durata, 10)
     registraPartita({
       giocoId,
       data,
-      giocatori: elenco,
-      vincitore: vincitore.trim() || undefined,
+      giocatori: alTavolo,
+      vincitore: vincitore || undefined,
+      durata: Number.isFinite(min) && min > 0 ? min : undefined,
     })
-    setGiocoId(''); setGiocatori(''); setVincitore('')
+    azzera()
     setAperto(false)
   }
 
@@ -91,15 +109,17 @@ export function Partite() {
             const g = perId(p.giocoId)
             return (
               <div className="riga" key={p.id}>
-                <span className="dorso" style={{ background: g?.tinta ?? '#555' }} />
-                <div className="riga-corpo">
-                  <div className="riga-nome">{g?.nome ?? 'Gioco sconosciuto'}</div>
-                  <div className="riga-sotto">
-                    {giorno(p.data)} · {p.giocatori.length || '?'} al tavolo
-                    {p.vincitore ? ' · vince ' + p.vincitore : ''}
-                    {p.durata ? ' · ' + p.durata + ' min' : ''}
-                  </div>
-                </div>
+                <button className="riga-apri" onClick={() => g && setScheda(g)} disabled={!g}>
+                  <span className="dorso" style={{ background: g?.tinta ?? 'var(--fioco)' }} />
+                  <span className="riga-corpo">
+                    <span className="riga-nome">{g?.nome ?? 'Gioco sconosciuto'}</span>
+                    <span className="riga-sotto">
+                      {giorno(p.data)} · {p.giocatori.length || '?'} al tavolo
+                      {p.vincitore ? ' · vince ' + p.vincitore : ''}
+                      {p.durata ? ' · ' + p.durata + ' min' : ''}
+                    </span>
+                  </span>
+                </button>
                 <div className="riga-azioni">
                   <button
                     className="bottoncino"
@@ -116,16 +136,16 @@ export function Partite() {
       )}
 
       {aperto && (
-        <Foglio titolo="Segna una partita" chiudi={() => setAperto(false)}>
-          <div className="elenco">
-            <label className="cerca" style={{ margin: 0 }}>
+        <Foglio titolo="Segna una partita" chiudi={() => { azzera(); setAperto(false) }}>
+          <div className="scheda">
+            <label className="cerca" style={{ margin: '0 0 14px' }}>
               <select
                 value={giocoId}
                 onChange={(e) => setGiocoId(e.target.value)}
                 aria-label="Gioco"
                 style={{
                   flex: 1, border: 0, outline: 0, background: 'transparent',
-                  color: giocoId ? 'var(--crema)' : 'var(--fioco)',
+                  color: giocoId ? 'var(--inchiostro)' : 'var(--fioco)',
                   fontFamily: 'var(--testo)', fontSize: 15,
                 }}
               >
@@ -136,36 +156,63 @@ export function Partite() {
               </select>
             </label>
 
-            <label className="cerca" style={{ margin: 0 }}>
+            <div className="aggiungi" style={{ marginTop: 0 }}>
               <input
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                aria-label="Data"
+                className="campo" type="date" value={data}
+                onChange={(e) => setData(e.target.value)} aria-label="Data"
               />
-            </label>
+              <input
+                className="campo" type="number" inputMode="numeric" min={1} max={600}
+                value={durata} onChange={(e) => setDurata(e.target.value)}
+                placeholder="minuti" aria-label="Durata in minuti"
+                style={{ maxWidth: 110 }}
+              />
+            </div>
 
-            <label className="cerca" style={{ margin: 0 }}>
-              <input
-                value={giocatori}
-                onChange={(e) => setGiocatori(e.target.value)}
-                placeholder="Chi c&apos;era, separati da virgola"
-                aria-label="Giocatori"
-              />
-            </label>
+            {/* I giocatori SI SCELGONO, non si riscrivono ogni volta.
+                Il testo libero produceva "Giulia", "giulia" e "Giuli" come
+                tre persone diverse, e le statistiche non tornavano piu'. */}
+            <section className="scheda-sezione">
+              <h3 className="scheda-titolo">Chi c&apos;era</h3>
+              {stato.giocatori.length === 0 ? (
+                <p className="scheda-nota">
+                  Nessun giocatore ancora: aggiungili dal profilo, in alto a destra.
+                </p>
+              ) : (
+                <div className="scheda-comandi">
+                  {stato.giocatori.map((g) => (
+                    <button
+                      key={g}
+                      className={'pillola' + (alTavolo.includes(g) ? ' pillola-piena' : ' pillola-fantasma')}
+                      onClick={() => cambiaAlTavolo(g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
 
-            <label className="cerca" style={{ margin: 0 }}>
-              <input
-                value={vincitore}
-                onChange={(e) => setVincitore(e.target.value)}
-                placeholder="Chi ha vinto"
-                aria-label="Vincitore"
-              />
-            </label>
+            {alTavolo.length > 0 && (
+              <section className="scheda-sezione">
+                <h3 className="scheda-titolo">Chi ha vinto</h3>
+                <div className="scheda-comandi">
+                  {alTavolo.map((g) => (
+                    <button
+                      key={g}
+                      className={'pillola' + (vincitore === g ? ' pillola-piena' : ' pillola-fantasma')}
+                      onClick={() => setVincitore(vincitore === g ? '' : g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <button
               className="pillola pillola-piena"
-              style={{ justifyContent: 'center', height: 46 }}
+              style={{ justifyContent: 'center', height: 46, width: '100%', marginTop: 20 }}
               onClick={salva}
               disabled={!giocoId}
             >
@@ -174,6 +221,8 @@ export function Partite() {
           </div>
         </Foglio>
       )}
+
+      {scheda && <SchedaGioco gioco={scheda} chiudi={() => setScheda(null)} />}
     </div>
   )
 }

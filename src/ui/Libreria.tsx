@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import type { Gioco } from '../dati/giochi'
 import { useStato } from '../dati/stato'
+import { SchedaGioco } from './SchedaGioco'
 import { COLONNE, RIGHE, casella } from '../scene/mobile'
 import { Foglio } from './Foglio'
 import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra } from './icone'
@@ -21,6 +23,7 @@ export function Libreria({ selezionato, seleziona }: {
   const { giochiScaffale, giochiCollezione, stato, celle, pieno,
           aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale } = useStato()
   const [foglioAperto, setFoglioAperto] = useState(false)
+  const [scheda, setScheda] = useState<Gioco | null>(null)
 
   const posto = giochiScaffale.findIndex((g) => g.id === selezionato)
   const scelto = posto >= 0 ? giochiScaffale[posto] : null
@@ -53,7 +56,11 @@ export function Libreria({ selezionato, seleziona }: {
         {scelto && dove ? (
           <>
             <div className="pannello-titolo">
-              <span className="pannello-nome">{scelto.nome}</span>
+              {/* Il nome apre la scheda: un bersaglio che c'e' gia', invece
+                  di un sesto bottone in una fila gia' piena. */}
+              <button className="pannello-nome" onClick={() => setScheda(scelto)}>
+                {scelto.nome}
+              </button>
               <span className="pannello-posto">
                 riga {dove.riga + 1} · col {dove.colonna + 1}
               </span>
@@ -107,6 +114,8 @@ export function Libreria({ selezionato, seleziona }: {
           </>
         )}
       </div>
+
+      {scheda && <SchedaGioco gioco={scheda} chiudi={() => setScheda(null)} />}
 
       {foglioAperto && (
         <Foglio titolo="Metti nel mobile" chiudi={() => setFoglioAperto(false)}>

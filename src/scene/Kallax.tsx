@@ -5,6 +5,7 @@ import {
   CM, CASELLA, MONTANTE, FONDO, RIGHE, COLONNE, PASSO,
   LARGHEZZA, ALTEZZA, RIENTRO, casella,
 } from './mobile'
+import { coloreDiTema } from '../ui/tema'
 
 export { CM, LARGHEZZA, ALTEZZA, FONDO, CELLE } from './mobile'
 
@@ -18,27 +19,35 @@ export type Scatola = {
   tinta: string
 }
 
-const TINTA_MOBILE = '#3A2A32'
-const TINTA_SCHIENA = '#241820'
-const LIME = '#CCFF4D'
+/* I colori del mobile NON stanno qui: stanno nella tavolozza, come tutto
+   il resto. La scena li legge dalle variabili CSS, cosi' passando a chiaro
+   il Kallax diventa rovere sbiancato senza che nessuno lo dica due volte.
+   `tema` non si usa nel corpo: serve a far rieseguire l'effetto quando la
+   tavolozza cambia. */
+const tinte = () => ({
+  mobile: coloreDiTema('--mobile', '#3A2A32'),
+  schiena: coloreDiTema('--mobile-schiena', '#241820'),
+  scelta: coloreDiTema('--lime', '#CCFF4D'),
+})
 
 /* IL MOBILE: dieci parallelepipedi, una sola draw call.
    Montanti verticali, ripiani orizzontali e la schiena, tutti dallo stesso
    cubo unitario con scale diverse. */
-function Mobile() {
+function Mobile({ tema }: { tema: string }) {
   const ref = useRef<THREE.InstancedMesh>(null!)
   const invalidate = useThree((s) => s.invalidate)
   const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
   const mat = useMemo(() => new THREE.MeshLambertMaterial(), [])
 
   const pezzi = useMemo(() => {
+    const t = tinte()
     const v: Array<{ p: [number, number, number]; s: [number, number, number]; c: string }> = []
     // montanti verticali, compresi i due esterni
     for (let i = 0; i <= COLONNE; i++) {
       v.push({
         p: [-LARGHEZZA / 2 + MONTANTE / 2 + i * PASSO, ALTEZZA / 2, 0],
         s: [MONTANTE, ALTEZZA, FONDO],
-        c: TINTA_MOBILE,
+        c: t.mobile,
       })
     }
     // ripiani orizzontali, compresi cielo e base
@@ -46,7 +55,7 @@ function Mobile() {
       v.push({
         p: [0, MONTANTE / 2 + i * PASSO, 0],
         s: [LARGHEZZA, MONTANTE, FONDO],
-        c: TINTA_MOBILE,
+        c: t.mobile,
       })
     }
     /* La schiena e' piu' scura del mobile: senza, le caselle vuote leggono
@@ -54,10 +63,10 @@ function Mobile() {
     v.push({
       p: [0, ALTEZZA / 2, -FONDO / 2 + 0.6],
       s: [LARGHEZZA, ALTEZZA, 1.2],
-      c: TINTA_SCHIENA,
+      c: t.schiena,
     })
     return v
-  }, [])
+  }, [tema])
 
   useLayoutEffect(() => {
     const mesh = ref.current
@@ -95,10 +104,11 @@ function Mobile() {
  * l'instancing non regala e' una texture per scatola, ed e' li' che
  * entrera' l'atlante con l'offset UV per istanza.
  */
-function Scatole({ scatole, selezionato, onSeleziona }: {
+function Scatole({ scatole, selezionato, onSeleziona, tema }: {
   scatole: Scatola[]
   selezionato?: string | null
   onSeleziona?: (id: string | null) => void
+  tema: string
 }) {
   const ref = useRef<THREE.InstancedMesh>(null!)
   const invalidate = useThree((s) => s.invalidate)
@@ -115,6 +125,7 @@ function Scatole({ scatole, selezionato, onSeleziona }: {
     const pos = new THREE.Vector3()
     const sca = new THREE.Vector3()
     const col = new THREE.Color()
+    const scelta = tinte().scelta
 
     scatole.forEach((g, i) => {
       const { x, pavimento } = casella(i)
@@ -135,7 +146,7 @@ function Scatole({ scatole, selezionato, onSeleziona }: {
       mesh.setMatrixAt(i, m)
       /* La scatola scelta si accende di lime: e' l'unico modo per legare
          la riga dell'elenco all'oggetto nel mobile. */
-      mesh.setColorAt(i, col.set(g.id === selezionato ? LIME : g.tinta))
+      mesh.setColorAt(i, col.set(g.id === selezionato ? scelta : g.tinta))
     })
 
     mesh.instanceMatrix.needsUpdate = true
@@ -144,7 +155,7 @@ function Scatole({ scatole, selezionato, onSeleziona }: {
     /* In "demand" nessuno ridisegna da solo: dopo aver cambiato le matrici
        il fotogramma va chiesto a mano. */
     invalidate()
-  }, [scatole, selezionato, invalidate])
+  }, [scatole, selezionato, tema, invalidate])
 
   const tocca = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
@@ -168,10 +179,11 @@ export function Kallax(props: {
   scatole: Scatola[]
   selezionato?: string | null
   onSeleziona?: (id: string | null) => void
+  tema: string
 }) {
   return (
     <>
-      <Mobile />
+      <Mobile tema={props.tema} />
       <Scatole {...props} />
     </>
   )

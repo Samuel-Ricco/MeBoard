@@ -9,10 +9,12 @@ const L = LARGHEZZA * CM
 const A = ALTEZZA * CM
 const P = FONDO * CM
 
-export function Scena({ scatole, selezionato, onSeleziona, sopra = 0, sotto = 0 }: {
+export function Scena({ scatole, selezionato, onSeleziona, tema, sopra = 0, sotto = 0 }: {
   scatole: Scatola[]
   selezionato: string | null
   onSeleziona: (id: string | null) => void
+  /** la tavolozza in uso: il mobile si tinge da quella */
+  tema: string
   /** pixel CSS coperti dall'interfaccia, sopra e sotto la scena */
   sopra?: number
   sotto?: number
@@ -52,7 +54,7 @@ export function Scena({ scatole, selezionato, onSeleziona, sopra = 0, sotto = 0 
       <ambientLight intensity={1.05} />
       <directionalLight position={[-3, 5, 7]} intensity={1.25} />
 
-      <Kallax scatole={scatole} selezionato={selezionato} onSeleziona={onSeleziona} />
+      <Kallax scatole={scatole} selezionato={selezionato} onSeleziona={onSeleziona} tema={tema} />
       <Inquadratura larghezza={L} altezza={A} profondita={P} sopra={sopra} sotto={sotto} />
       {import.meta.env.DEV && <Sonda />}
 

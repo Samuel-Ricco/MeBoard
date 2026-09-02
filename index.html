@@ -5,8 +5,23 @@
   <!-- viewport-fit=cover serve alle safe area: senza, su iPhone il notch
        taglia i contenuti invece di essere aggirato -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="color-scheme" content="dark" />
+  <meta name="color-scheme" content="light dark" />
   <title>MeBoard</title>
+  <!-- LA TAVOLOZZA SI DECIDE PRIMA DEL PRIMO PIXEL.
+       Se questo lo facesse React, l'app partirebbe con la tavolozza
+       predefinita e cambierebbe colore un attimo dopo: un lampo che si
+       vede benissimo, soprattutto passando da scuro a chiaro. Percio' sta
+       qui, in linea e senza attendere nulla. -->
+  <script>
+    try {
+      var v = localStorage.getItem('meboard.tavolozza') || 'auto';
+      var scuro = v === 'scuro' ||
+        (v === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-tema', scuro ? 'scuro' : 'chiaro');
+    } catch (e) {
+      document.documentElement.setAttribute('data-tema', 'scuro');
+    }
+  </script>
 </head>
 <body>
   <div id="app"></div>

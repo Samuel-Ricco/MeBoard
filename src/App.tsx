@@ -6,14 +6,18 @@ import { Libreria } from './ui/Libreria'
 import { Collezione } from './ui/Collezione'
 import { Catalogo } from './ui/Catalogo'
 import { Partite } from './ui/Partite'
+import { Profilo } from './ui/Profilo'
+import { ProvvedoreTema, useTavolozza } from './ui/tema'
 
 function Guscio() {
-  const { giochiScaffale } = useStato()
+  const { giochiScaffale, stato } = useStato()
+  const { attiva } = useTavolozza()
   const [tab, setTab] = useState<Tab>('libreria')
-  /* La scelta vive qui e non dentro la libreria: la tiene sia il pannello
-     dei comandi sia lo scaffale 3D, che stanno in due rami diversi
+  /* La scelta vive qui e non dentro la libreria: la tengono sia il pannello
+     dei comandi sia il mobile 3D, che stanno in due rami diversi
      dell'albero. */
   const [selezionato, setSelezionato] = useState<string | null>(null)
+  const [profiloAperto, setProfiloAperto] = useState(false)
 
   return (
     <>
@@ -21,16 +25,17 @@ function Guscio() {
           distrugge. Ricreare il contesto WebGL vorrebbe dire ricaricare
           tutte le texture a ogni passaggio. */}
       <div className="fondale">
-        {/* Quanto l'interfaccia copre della scena, in pixel CSS: testata in
-            alto, pannello dei comandi piu' barra dei tab in basso. Servono
-            all'inquadratura, che senno' nasconde la riga di sotto dietro ai
-            comandi -- e una scatola nascosta non si puo' toccare.
-            Rispecchiano ui/app.css: se cambiano quelle misure, vanno
-            cambiate qui. */}
+        {/* `sopra`/`sotto`: quanto l'interfaccia copre della scena, in pixel
+            CSS -- testata in alto, pannello dei comandi piu' barra dei tab in
+            basso. Servono all'inquadratura, che senno' nasconde la riga di
+            sotto dietro ai comandi, e una scatola nascosta non si puo'
+            toccare. Rispecchiano ui/app.css: se cambiano quelle misure,
+            vanno cambiate qui. */}
         <Scena
           scatole={giochiScaffale}
           selezionato={selezionato}
           onSeleziona={setSelezionato}
+          tema={attiva}
           sopra={tab === 'libreria' ? 150 : 0}
           sotto={tab === 'libreria' ? 210 : 0}
         />
@@ -41,7 +46,19 @@ function Guscio() {
       {tab === 'catalogo'   && <Catalogo />}
       {tab === 'partite'    && <Partite />}
 
+      {/* Il profilo non e' un quinto tab: in basso ci stanno i posti dove si
+          passa il tempo, e le impostazioni non sono uno di quelli. */}
+      <button
+        className="meeple"
+        aria-label={'Il profilo di ' + (stato.profilo.nick || 'chi sei')}
+        onClick={() => setProfiloAperto(true)}
+      >
+        <span style={{ background: stato.profilo.tinta }} />
+      </button>
+
       <TabBar attivo={tab} cambia={setTab} />
+
+      {profiloAperto && <Profilo chiudi={() => setProfiloAperto(false)} />}
 
       {/* La sonda scrive qui dentro, senza passare da React. */}
       <span id="sonda" className="sonda" />
@@ -51,8 +68,10 @@ function Guscio() {
 
 export default function App() {
   return (
-    <ProvvedoreStato>
-      <Guscio />
-    </ProvvedoreStato>
+    <ProvvedoreTema>
+      <ProvvedoreStato>
+        <Guscio />
+      </ProvvedoreStato>
+    </ProvvedoreTema>
   )
 }

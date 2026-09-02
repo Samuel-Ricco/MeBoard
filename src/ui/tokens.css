@@ -6,14 +6,20 @@
  * riferimento e' viola; qui e' lime.
  *
  * Il lime e' acido e va usato come si usa un evidenziatore: poco e dove
- * conta. Su fondo scuro caldo ha contrasto altissimo, quindi grandi
- * superfici lime stancano l'occhio -- resta per il tab attivo, i numeri
- * che contano e un bordo alla volta.
+ * conta. Grandi superfici lime stancano l'occhio -- resta per il tab
+ * attivo, i numeri che contano e un bordo alla volta.
+ *
+ * DUE TAVOLOZZE, UNA STRUTTURA SOLA.
+ * Chiaro e scuro non sono due disegni: sono gli stessi ruoli con altri
+ * valori. Si dichiara qui l'elenco completo dei ruoli, e la tavolozza
+ * chiara li RIASSEGNA tutti -- nessuno escluso, se no prima o poi resta
+ * indietro un colore e si vede un'ombra scura su un fondo di carta.
  */
 
 @import '@fontsource/anton/400.css';
 @import '@fontsource-variable/archivo';
 
+/* ---- scuro: la tavolozza di partenza ---- */
 :root {
   /* fondo: cioccolato fondente, caldo -- e' quello che fa cantare il lime */
   --fondo: #170E13;
@@ -21,16 +27,24 @@
   --superficie-alta: #2D1C29;
 
   --lime: #CCFF4D;
-  --lime-cupo: #9FCC30;
-  --crema: #F4EFE6;
+  --su-lime: #12160A;          /* cosa si scrive SOPRA il lime */
+  --inchiostro: #F4EFE6;       /* il testo pieno */
 
   --tenue: rgba(244, 239, 230, .55);
   --fioco: rgba(244, 239, 230, .26);
   --bordo: rgba(244, 239, 230, .13);
   --bordo-lime: rgba(204, 255, 77, .38);
 
-  /* Spigoli arrotondati ma non morbidi: il riferimento sta a meta' strada
-     fra la carta e la pillola. */
+  /* Il mobile 3D si tinge dalla tavolozza come tutto il resto: la scena
+     legge queste due variabili invece di avere i suoi colori. */
+  --mobile: #3A2A32;
+  --mobile-schiena: #241820;
+
+  /* IL ROSSO DI CIO' CHE DISTRUGGE NON SEGUE LA TAVOLOZZA.
+     Non e' decorazione, e' un segnale: un rosso "coordinato" smette di
+     dire quello che deve dire. */
+  --allarme: #E4674A;
+
   --r-carta: 18px;
   --r-piccolo: 12px;
   --r-pillola: 999px;
@@ -40,6 +54,37 @@
 
   /* Un solo passo di transizione, breve: l'app deve sembrare svelta. */
   --scatto: 140ms cubic-bezier(.2, .8, .3, 1);
+
+  color-scheme: dark;
+}
+
+/* ---- chiaro: carta calda, inchiostro quasi nero, stesso lime ----
+ *
+ * Il lime scende di un gradino: su carta un #CCFF4D si stacca appena dal
+ * fondo e le pillole perdono il contorno. Sotto resta scritto scuro, come
+ * nel tema scuro -- il lime non e' mai un fondo per testo chiaro.
+ */
+:root[data-tema="chiaro"] {
+  --fondo: #F1EDE3;
+  --superficie: #FBF8F2;
+  --superficie-alta: #FFFFFF;
+
+  --lime: #BCE637;
+  --su-lime: #16190B;
+  --inchiostro: #1A1216;
+
+  --tenue: rgba(26, 18, 22, .62);
+  --fioco: rgba(26, 18, 22, .34);
+  --bordo: rgba(26, 18, 22, .15);
+  --bordo-lime: rgba(140, 180, 30, .55);
+
+  /* Kallax chiaro, come quelli veri in rovere sbiancato. */
+  --mobile: #E2DACB;
+  --mobile-schiena: #CFC5B2;
+
+  --allarme: #C4462A;
+
+  color-scheme: light;
 }
 
 /* ---- tipografia ---- */
@@ -53,12 +98,12 @@
 }
 
 /* I numeri grandi sono il gesto piu' riconoscibile del riferimento:
-   enormi, condensati, color crema, appoggiati a un'etichetta minuscola. */
+   enormi, condensati, appoggiati a un'etichetta minuscola. */
 .numerone {
   font-family: var(--display);
   font-size: clamp(44px, 15vw, 76px);
   line-height: .84;
-  color: var(--crema);
+  color: var(--inchiostro);
   letter-spacing: -.02em;
 }
 
@@ -88,9 +133,7 @@
   border-radius: var(--r-carta);
 }
 
-.carta-lime {
-  border-color: var(--bordo-lime);
-}
+.carta-lime { border-color: var(--bordo-lime); }
 
 /* ---- controlli ---- */
 
@@ -103,7 +146,7 @@
   border-radius: var(--r-pillola);
   border: 1.5px solid var(--bordo);
   background: transparent;
-  color: var(--crema);
+  color: var(--inchiostro);
   font-family: var(--testo);
   font-size: 13px;
   font-weight: 600;
@@ -115,25 +158,22 @@
 .pillola-piena {
   background: var(--lime);
   border-color: var(--lime);
-  color: #12160A;
+  color: var(--su-lime);
 }
 
 .pillola-fantasma:hover { border-color: var(--bordo-lime); }
 
-/* ---- il ghirigoro ----
-   Il riferimento appoggia ovunque uno zigzag disegnato a mano. Serve a
-   togliere rigidita' a una griglia altrimenti tutta ad angoli retti. */
-.ghirigoro { display: block; color: var(--lime); opacity: .9; }
-
 /* Un controllo spento deve SEMBRARE spento: senza questo il lime resta
    acceso e invita a premere una cosa che non fa niente. */
-.pillola:disabled {
-  opacity: .42;
-  cursor: default;
-}
+.pillola:disabled { opacity: .42; cursor: default; }
 .pillola-piena:disabled {
   background: transparent;
   border-color: var(--bordo);
   color: var(--tenue);
   opacity: 1;
 }
+
+/* ---- il ghirigoro ----
+   Il riferimento appoggia ovunque uno zigzag disegnato a mano. Serve a
+   togliere rigidita' a una griglia altrimenti tutta ad angoli retti. */
+.ghirigoro { display: block; color: var(--lime); opacity: .9; }

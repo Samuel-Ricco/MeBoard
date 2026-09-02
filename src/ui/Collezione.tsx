@@ -1,23 +1,32 @@
 import { useMemo, useState } from 'react'
+import type { Gioco } from '../dati/giochi'
 import { useStato } from '../dati/stato'
+import { SchedaGioco } from './SchedaGioco'
 import { Ghirigoro, IcoPiu, IcoMeno, IcoCatalogo } from './icone'
 
-/* LA COLLEZIONE: i giochi che possiedi, scaffale o no.
-   Da qui si decide cosa sale sul ripiano e cosa ne scende. */
+/* LA COLLEZIONE: i giochi che possiedi, nel mobile o no.
+   Da qui si decide cosa ci sale e cosa ne scende, e si filtra per
+   etichetta. Toccare una riga apre la scheda. */
 export function Collezione() {
-  const { giochiCollezione, stato, aggiungiAScaffale, togliDaScaffale, cambiaPossesso } = useStato()
+  const { giochiCollezione, stato, aggiungiAScaffale, togliDaScaffale, pieno,
+          etichetteDelGioco } = useStato()
   const [cerca, setCerca] = useState('')
+  const [etichetta, setEtichetta] = useState<string | null>(null)
+  const [aperto, setAperto] = useState<Gioco | null>(null)
 
   const visibili = useMemo(() => {
     const q = cerca.trim().toLowerCase()
-    const v = q
-      ? giochiCollezione.filter((g) =>
-          g.nome.toLowerCase().includes(q) || g.editore.toLowerCase().includes(q))
-      : giochiCollezione
-    return [...v].sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
-  }, [giochiCollezione, cerca])
+    return giochiCollezione
+      .filter((g) => {
+        if (q && !g.nome.toLowerCase().includes(q) && !g.editore.toLowerCase().includes(q)) return false
+        if (etichetta && !(stato.etichetteDi[g.id] ?? []).includes(etichetta)) return false
+        return true
+      })
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
+  }, [giochiCollezione, cerca, etichetta, stato.etichetteDi])
 
   const sulRipiano = giochiCollezione.filter((g) => stato.scaffale.includes(g.id)).length
+  const recensiti = giochiCollezione.filter((g) => stato.recensioni[g.id]).length
 
   return (
     <div className="schermo">
@@ -33,19 +42,15 @@ export function Collezione() {
       <div className="statistiche">
         <div className="statistica statistica-lime">
           <div className="valore">{sulRipiano}</div>
-          <div className="nome">sul ripiano</div>
+          <div className="nome">nel mobile</div>
         </div>
         <div className="statistica">
           <div className="valore">{giochiCollezione.length - sulRipiano}</div>
           <div className="nome">in scatola</div>
         </div>
         <div className="statistica">
-          <div className="valore">
-            {giochiCollezione.length
-              ? Math.round(giochiCollezione.reduce((s, g) => s + g.durata, 0) / giochiCollezione.length)
-              : 0}
-          </div>
-          <div className="nome">min medi</div>
+          <div className="valore">{recensiti}</div>
+          <div className="nome">recensiti</div>
         </div>
       </div>
 
@@ -59,43 +64,59 @@ export function Collezione() {
         />
       </label>
 
+      {stato.etichette.length > 0 && (
+        <div className="filtri">
+          <button
+            className={'pillola' + (etichetta === null ? ' pillola-piena' : ' pillola-fantasma')}
+            onClick={() => setEtichetta(null)}
+          >
+            Tutti
+          </button>
+          {stato.etichette.map((e) => (
+            <button
+              key={e.id}
+              className={'pillola' + (etichetta === e.id ? ' pillola-piena' : ' pillola-fantasma')}
+              onClick={() => setEtichetta(etichetta === e.id ? null : e.id)}
+            >
+              {e.nome}
+            </button>
+          ))}
+        </div>
+      )}
+
       {visibili.length === 0 ? (
         <div className="vuoto">
           <Ghirigoro w={84} h={18} />
-          <p>Nessun gioco corrisponde. Prova dal catalogo.</p>
+          <p>Nessun gioco con questi criteri. Prova dal catalogo.</p>
         </div>
       ) : (
         <div className="elenco">
           {visibili.map((g) => {
             const suRipiano = stato.scaffale.includes(g.id)
-            /* Lo stato lo dice il bottone: raddoppiarlo col bordo lime
-               riempirebbe la schermata di accento e toglierebbe forza
-               proprio a quello che conta. */
+            const rec = stato.recensioni[g.id]
+            const sue = etichetteDelGioco(g.id)
             return (
               <div className="riga" key={g.id}>
-                <span className="dorso" style={{ background: g.tinta }} />
-                <div className="riga-corpo">
-                  <div className="riga-nome">{g.nome}</div>
-                  <div className="riga-sotto">
-                    {g.giocatori[0]}–{g.giocatori[1]} giocatori · {g.durata} min · {g.editore}
-                  </div>
-                </div>
+                <button className="riga-apri" onClick={() => setAperto(g)}>
+                  <span className="dorso" style={{ background: g.tinta }} />
+                  <span className="riga-corpo">
+                    <span className="riga-nome">{g.nome}</span>
+                    <span className="riga-sotto">
+                      {sue.length
+                        ? sue.map((e) => e.nome).join(' · ')
+                        : `${g.giocatori[0]}–${g.giocatori[1]} giocatori · ${g.durata} min`}
+                    </span>
+                  </span>
+                  {rec && <span className="riga-voto">{rec.voto || '–'}</span>}
+                </button>
                 <div className="riga-azioni">
                   <button
                     className={'bottoncino' + (suRipiano ? ' bottoncino-acceso' : '')}
-                    aria-label={suRipiano ? 'Togli dal ripiano' : 'Metti sul ripiano'}
-                    title={suRipiano ? 'Togli dal ripiano' : 'Metti sul ripiano'}
+                    aria-label={suRipiano ? 'Togli dal mobile' : 'Metti nel mobile'}
+                    disabled={!suRipiano && pieno}
                     onClick={() => suRipiano ? togliDaScaffale(g.id) : aggiungiAScaffale(g.id)}
                   >
                     {suRipiano ? <IcoMeno size={17} /> : <IcoPiu size={17} />}
-                  </button>
-                  <button
-                    className="bottoncino"
-                    aria-label={'Togli ' + g.nome + ' dalla collezione'}
-                    title="Non lo possiedo piu'"
-                    onClick={() => cambiaPossesso(g.id, false)}
-                  >
-                    <span style={{ fontSize: 17, lineHeight: 1 }}>×</span>
                   </button>
                 </div>
               </div>
@@ -103,6 +124,8 @@ export function Collezione() {
           })}
         </div>
       )}
+
+      {aperto && <SchedaGioco gioco={aperto} chiudi={() => setAperto(null)} />}
     </div>
   )
 }

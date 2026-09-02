@@ -17,7 +17,7 @@ html, body, #app {
 
 body {
   background: var(--fondo);
-  color: var(--crema);
+  color: var(--inchiostro);
   font-family: var(--testo);
 
   /* Nessun ritardo e nessun rettangolo grigio al tocco: due dettagli
