@@ -3,6 +3,7 @@ import { SEMI } from './semi'
 import { perIdi } from './catalogo'
 import type { Gioco } from './gioco'
 import { CELLE } from '../scene/mobile'
+import { ASPETTO_INIZIALE, dentro, LEGNI, MURI, PAVIMENTI, LUCI, type Aspetto } from '../scene/finiture'
 
 /* LO STATO DELL'APP.
  *
@@ -49,6 +50,8 @@ type Stato = {
   etichetteDi: Record<number, string[]>
   giocatori: string[]
   profilo: Profilo
+  /** com'e' fatta e come si dispone la libreria */
+  aspetto: Aspetto
 }
 
 /* La versione sale perche' gli id sono cambiati: erano slug inventati
@@ -75,6 +78,7 @@ const INIZIALE: Stato = {
   etichetteDi: {},
   giocatori: ['Samuel', 'Giulia', 'Marco', 'Elia'],
   profilo: { nick: 'Samuel', tinta: '#CCFF4D' },
+  aspetto: ASPETTO_INIZIALE,
 }
 
 /* JSON non conosce le chiavi numeriche: `{266192: ...}` torna indietro
@@ -106,6 +110,19 @@ function leggi(): Stato {
       etichetteDi: chiaviNumeriche<string[]>(s.etichetteDi),
       giocatori: arr(s.giocatori, INIZIALE.giocatori),
       profilo: { ...INIZIALE.profilo, ...(s.profilo ?? {}) },
+      /* Le finiture si ripassano dalle liste: un colore arrivato da uno
+         stato vecchio, o scritto a mano, non deve poter dipingere. */
+      aspetto: (() => {
+        const a = { ...ASPETTO_INIZIALE, ...((s.aspetto ?? {}) as Partial<Aspetto>) }
+        return {
+          ...a,
+          legno: dentro(LEGNI, a.legno, null),
+          muro: dentro(MURI, a.muro, null),
+          pavimento: dentro(PAVIMENTI, a.pavimento, null),
+          luce: dentro(LUCI, a.luce, ASPETTO_INIZIALE.luce) ?? ASPETTO_INIZIALE.luce,
+          forza: Math.min(2, Math.max(0, Number(a.forza) || 1)),
+        }
+      })(),
     }
   } catch {
     return INIZIALE
@@ -141,9 +158,39 @@ type Azioni = {
   aggiungiGiocatore: (nome: string) => void
   togliGiocatore: (nome: string) => void
   salvaProfilo: (p: Partial<Profilo>) => void
+  cambiaAspetto: (p: Partial<Aspetto>) => void
   registraPartita: (p: Omit<Partita, 'id'>) => void
   eliminaPartita: (id: string) => void
   partiteDelGioco: (giocoId: number) => Partita[]
+}
+
+/* COME SI DISPONGONO LE SCATOLE NELLE CASELLE.
+ *
+ * "Come li metto io" e' l'ordine dell'elenco e non si tocca. Gli altri
+ * sono criteri: finche' sono attivi, spostare a mano non ha senso e il
+ * pannello lo dice invece di lasciare frecce che non fanno niente.
+ *
+ * Un gioco senza il dato su cui si ordina va IN FONDO, non davanti: un
+ * gioco mai giocato non e' "giocato tantissimo tempo fa", e un gioco
+ * senza rank non e' il migliore di tutti. */
+function disponi(giochi: Gioco[], ordine: Aspetto['ordine'], s: Stato): Gioco[] {
+  if (ordine === 'mano') return giochi
+  const v = giochi.slice()
+  const inFondo = (x: number | null | undefined) => (x === null || x === undefined ? Infinity : x)
+
+  if (ordine === 'nome') return v.sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
+  if (ordine === 'rank') return v.sort((a, b) => inFondo(a.posizione) - inFondo(b.posizione))
+  if (ordine === 'voto') {
+    return v.sort((a, b) =>
+      (s.recensioni[b.id]?.voto ?? -1) - (s.recensioni[a.id]?.voto ?? -1))
+  }
+  // giocati di recente: l'ultima partita di ciascuno
+  const ultima = new Map<number, string>()
+  s.partite.forEach((p) => {
+    const c = ultima.get(p.giocoId)
+    if (!c || p.data > c) ultima.set(p.giocoId, p.data)
+  })
+  return v.sort((a, b) => (ultima.get(b.id) ?? '').localeCompare(ultima.get(a.id) ?? ''))
 }
 
 const Ctx = createContext<Azioni | null>(null)
@@ -300,6 +347,10 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     setStato((s) => ({ ...s, profilo: { ...s.profilo, ...p } }))
   }, [])
 
+  const cambiaAspetto = useCallback((p: Partial<Aspetto>) => {
+    setStato((s) => ({ ...s, aspetto: { ...s.aspetto, ...p } }))
+  }, [])
+
   const registraPartita = useCallback((p: Omit<Partita, 'id'>) => {
     setStato((s) => ({ ...s, partite: [{ ...p, id: `p${Date.now()}` }, ...s.partite] }))
   }, [])
@@ -313,8 +364,9 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     celle: CELLE,
     pieno: stato.scaffale.length >= CELLE,
     giochi,
-    /* l'ordine del mobile e' quello dell'elenco, non quello del catalogo */
-    giochiScaffale: risolvi(stato.scaffale),
+    /* L'ordine del mobile e' quello dell'elenco -- cioe' come le hai
+       messe tu -- a meno che non si sia scelto un criterio. */
+    giochiScaffale: disponi(risolvi(stato.scaffale), stato.aspetto.ordine, stato),
     giochiCollezione: risolvi(stato.collezione)
       .sort((a, b) => a.nome.localeCompare(b.nome, 'it')),
     giochiDesiderati: risolvi(stato.desideri),
@@ -327,12 +379,12 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     cambiaPossesso, cambiaDesiderio,
     salvaRecensione, eliminaRecensione,
     creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
-    aggiungiGiocatore, togliGiocatore, salvaProfilo,
+    aggiungiGiocatore, togliGiocatore, salvaProfilo, cambiaAspetto,
     registraPartita, eliminaPartita,
   }), [stato, giochi, risolvi, aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
        cambiaPossesso, cambiaDesiderio, salvaRecensione, eliminaRecensione,
        creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
-       aggiungiGiocatore, togliGiocatore, salvaProfilo,
+       aggiungiGiocatore, togliGiocatore, salvaProfilo, cambiaAspetto,
        registraPartita, eliminaPartita])
 
   return <Ctx.Provider value={valore}>{children}</Ctx.Provider>

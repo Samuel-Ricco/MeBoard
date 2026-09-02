@@ -47,6 +47,7 @@ function Guscio() {
           selezionato={selezionato}
           onSeleziona={setSelezionato}
           tema={attiva}
+          aspetto={stato.aspetto}
           sopra={tab === 'libreria' ? 150 : 0}
           sotto={tab === 'libreria' ? 210 : 0}
         />

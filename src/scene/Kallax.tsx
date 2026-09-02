@@ -7,6 +7,7 @@ import {
 } from './mobile'
 import { coloreDiTema } from '../ui/tema'
 import { costruisciAtlante, LATO_PAGINA, type Atlante } from './atlante'
+import type { Aspetto } from './finiture'
 import { COPERTINA_PX } from './budget'
 
 export { CM, LARGHEZZA, ALTEZZA, FONDO, CELLE } from './mobile'
@@ -35,10 +36,18 @@ const tinte = () => ({
   scelta: coloreDiTema('--lime', '#CCFF4D'),
 })
 
+/** Scurisce una tinta: la schiena di un mobile non e' del colore delle
+ *  ante, e senza differenza le caselle vuote non leggono come vani. */
+function scurisci(hex: string, quanto: number) {
+  const c = new THREE.Color(hex)
+  c.multiplyScalar(quanto)
+  return '#' + c.getHexString()
+}
+
 /* IL MOBILE: dieci parallelepipedi, una sola draw call.
    Montanti verticali, ripiani orizzontali e la schiena, tutti dallo stesso
    cubo unitario con scale diverse. */
-function Mobile({ tema }: { tema: string }) {
+function Mobile({ tema, aspetto }: { tema: string; aspetto: Aspetto }) {
   const ref = useRef<THREE.InstancedMesh>(null!)
   const invalidate = useThree((s) => s.invalidate)
   const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
@@ -46,13 +55,16 @@ function Mobile({ tema }: { tema: string }) {
 
   const pezzi = useMemo(() => {
     const t = tinte()
+    /* Il legno scelto vince sulla tavolozza; se non se n'e' scelto uno,
+       il mobile continua a tingersi dal tema come tutto il resto. */
+    const legno = aspetto.legno ?? t.mobile
     const v: Array<{ p: [number, number, number]; s: [number, number, number]; c: string }> = []
     // montanti verticali, compresi i due esterni
     for (let i = 0; i <= COLONNE; i++) {
       v.push({
         p: [-LARGHEZZA / 2 + MONTANTE / 2 + i * PASSO, ALTEZZA / 2, 0],
         s: [MONTANTE, ALTEZZA, FONDO],
-        c: t.mobile,
+        c: legno,
       })
     }
     // ripiani orizzontali, compresi cielo e base
@@ -60,7 +72,7 @@ function Mobile({ tema }: { tema: string }) {
       v.push({
         p: [0, MONTANTE / 2 + i * PASSO, 0],
         s: [LARGHEZZA, MONTANTE, FONDO],
-        c: t.mobile,
+        c: legno,
       })
     }
     /* La schiena e' piu' scura del mobile: senza, le caselle vuote leggono
@@ -68,10 +80,32 @@ function Mobile({ tema }: { tema: string }) {
     v.push({
       p: [0, ALTEZZA / 2, -FONDO / 2 + 0.6],
       s: [LARGHEZZA, ALTEZZA, 1.2],
-      c: t.schiena,
+      c: aspetto.legno ? scurisci(aspetto.legno, .55) : t.schiena,
     })
+
+    /* LA STANZA, SE LA VUOI.
+     *
+     * Pavimento e muro sono due parallelepipedi in piu' nella STESSA
+     * InstancedMesh del mobile: restano una draw call, non due. Nulli
+     * vuol dire "niente stanza", e il mobile galleggia sul fondo
+     * dell'app -- che e' il predefinito, e non e' un ripiego: uno
+     * scaffale senza contorno e' piu' pulito su uno schermo piccolo. */
+    if (aspetto.pavimento) {
+      v.push({
+        p: [0, -2, FONDO / 2 - 140],
+        s: [520, 4, 320],
+        c: aspetto.pavimento,
+      })
+    }
+    if (aspetto.muro) {
+      v.push({
+        p: [0, 190, -FONDO / 2 - 3],
+        s: [520, 420, 6],
+        c: aspetto.muro,
+      })
+    }
     return v
-  }, [tema])
+  }, [tema, aspetto.legno, aspetto.muro, aspetto.pavimento])
 
   useLayoutEffect(() => {
     const mesh = ref.current
@@ -302,10 +336,11 @@ export function Kallax(props: {
   selezionato?: number | null
   onSeleziona?: (id: number | null) => void
   tema: string
+  aspetto: Aspetto
 }) {
   return (
     <>
-      <Mobile tema={props.tema} />
+      <Mobile tema={props.tema} aspetto={props.aspetto} />
       <Scatole {...props} />
     </>
   )

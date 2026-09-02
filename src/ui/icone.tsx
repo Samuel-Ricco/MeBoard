@@ -91,6 +91,14 @@ export const IcoMatita = ({ size = 20 }: P) => (
   </svg>
 )
 
+/** Personalizzazione: tre cursori, come un pannello di regolazioni. */
+export const IcoAspetto = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h8M16 17h4" />
+    <circle cx="16" cy="7" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="14" cy="17" r="2" />
+  </svg>
+)
+
 export const IcoSinistra = ({ size = 20 }: P) => (
   <svg {...base(size)}><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
 )

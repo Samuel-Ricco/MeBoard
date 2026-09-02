@@ -4,8 +4,9 @@ import { useStato } from '../dati/stato'
 import { SchedaGioco } from './SchedaGioco'
 import { COLONNE, RIGHE, casella } from '../scene/mobile'
 import { Foglio } from './Foglio'
+import { Aspetto } from './Aspetto'
 import { Copertina } from './Copertina'
-import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra } from './icone'
+import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra, IcoAspetto } from './icone'
 
 /* LA LIBRERIA.
  *
@@ -23,8 +24,13 @@ export function Libreria({ selezionato, seleziona }: {
 }) {
   const { giochiScaffale, giochiCollezione, stato, celle, pieno,
           aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale } = useStato()
+  /* Con un criterio di ordinamento attivo le caselle si riempiono da
+     sole: spostare a mano contraddirebbe il criterio al fotogramma dopo,
+     quindi le frecce si spengono invece di fare finta. */
+  const aMano = stato.aspetto.ordine === 'mano'
   const [foglioAperto, setFoglioAperto] = useState(false)
   const [scheda, setScheda] = useState<Gioco | null>(null)
+  const [aspettoAperto, setAspettoAperto] = useState(false)
 
   const posto = giochiScaffale.findIndex((g) => g.id === selezionato)
   const scelto = posto >= 0 ? giochiScaffale[posto] : null
@@ -37,6 +43,7 @@ export function Libreria({ selezionato, seleziona }: {
   /* Una casella e' raggiungibile solo se esiste E se e' occupata: scambiare
      con il vuoto vorrebbe dire lasciare un buco in mezzo alla griglia. */
   const puo = (delta: number) => {
+    if (!aMano) return false
     const a = posto + delta
     return posto >= 0 && a >= 0 && a < giochiScaffale.length
   }
@@ -45,7 +52,7 @@ export function Libreria({ selezionato, seleziona }: {
   return (
     <div className="schermo schermo-vetro">
       <header className="intestazione">
-        <div className="occhiello">la tua libreria</div>
+        <div className="occhiello">{stato.aspetto.nome || 'la tua libreria'}</div>
         <div className="intestazione-riga">
           <span className="numerone">{giochiScaffale.length}</span>
           <span className="coda">giochi su {celle} caselle</span>
@@ -111,12 +118,22 @@ export function Libreria({ selezionato, seleziona }: {
                   : aggiungibili.length ? 'Aggiungi un gioco'
                   : 'Sono tutti nel mobile'}
               </button>
+              <button
+                className="pillola pillola-fantasma"
+                onClick={() => setAspettoAperto(true)}
+                aria-label="Personalizza la libreria"
+                title="Legno, muro, luce, ordine"
+              >
+                <IcoAspetto size={16} />
+              </button>
             </div>
           </>
         )}
       </div>
 
       {scheda && <SchedaGioco gioco={scheda} chiudi={() => setScheda(null)} />}
+
+      {aspettoAperto && <Aspetto chiudi={() => setAspettoAperto(false)} />}
 
       {foglioAperto && (
         <Foglio titolo="Metti nel mobile" chiudi={() => setFoglioAperto(false)}>

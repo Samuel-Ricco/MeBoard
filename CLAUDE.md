@@ -289,6 +289,34 @@ Due trappole nel parser, entrambe gia' pagate:
 - **`'\d'` in una stringa TypeScript diventa `d`**. L'espressione cercava lettere invece di
   cifre e tornava zero risultati, senza un errore. Si usa `String.raw`.
 
+## Personalizzare la libreria
+
+Tavolozze in `scene/finiture.ts`, prese da `new_dado-e-trap` con le loro ragioni: i **muri**
+hanno un colore vero (le prime tinte erano tutte a mezzo passo dal bianco e sotto una luce
+diffusa si leggevano uguali), e i **faretti** non seguono la tavolozza degli intonaci --
+una lampadina non e' un muro. Le liste sono **chiuse**: un selettore libero, nell'altra
+app, dava scaffali al neon fucsia.
+
+Si sceglie: nome, legno, muro, pavimento, colore e forza della luce, e come si dispongono
+le scatole.
+
+- **Pavimento e muro sono due parallelepipedi nella stessa `InstancedMesh` del mobile**:
+  restano una draw call, non due. Nulli vuol dire niente stanza, e il mobile galleggia sul
+  fondo dell'app -- che e' il predefinito e non un ripiego.
+- **I faretti non aggiungono una luce.** Restano due: il colore scelto tinge la
+  direzionale che c'e' gia'. Una terza costerebbe un moltiplicatore su ogni frammento, ed
+  e' il conto che nella versione precedente valeva il 28% del tempo GPU.
+- **Il colore sta sul faretto, non sull'ambiente.** Tingendo anche l'ambiente un'ambra a
+  piena forza sommergeva tutto, copertine comprese -- e vedere le copertine e' il punto
+  dello scaffale.
+- **Con un criterio di ordinamento attivo le frecce si spengono**: spostare a mano
+  contraddirebbe il criterio al fotogramma dopo. Un gioco senza il dato su cui si ordina va
+  in fondo, non davanti: un gioco mai giocato non e' "giocato tantissimo tempo fa".
+
+Restano fuori: **piu' librerie** (e' la domanda delle dodici caselle, punto 4 qui sotto, e
+va decisa non improvvisata), gli **arredi** (libri, dadi, piante: sono oggetti da
+modellare, non un'impostazione) e i **suoni**.
+
 ## L'atlante delle copertine
 
 `scene/atlante.ts`. Ogni copertina si riduce a **512 durante la decodifica**

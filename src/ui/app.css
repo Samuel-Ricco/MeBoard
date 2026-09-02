@@ -602,3 +602,39 @@ button.pannello-nome {
   object-fit: contain;
   display: block;
 }
+
+/* ---------- le finiture ---------- */
+
+.finiture { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.finitura {
+  width: 40px; height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  /* Il contorno serve sui colori chiari, che senno' spariscono nel fondo
+     chiaro e sembrano assenti. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+  transition: border-color var(--scatto), transform var(--scatto);
+}
+.finitura:active { transform: translateY(1px); }
+.finitura-scelta { border-color: var(--inchiostro); }
+
+/* "Come il tema" e "Niente" non sono colori: si scrivono. */
+.finitura-nessuna {
+  width: auto;
+  padding: 0 13px;
+  background: transparent;
+  border: 1.5px solid var(--bordo);
+  box-shadow: none;
+  color: var(--tenue);
+  font-family: var(--testo);
+  font-size: 12px;
+  font-weight: 600;
+}
+.finitura-nessuna.finitura-scelta {
+  border-color: var(--lime);
+  color: var(--inchiostro);
+}
+.finitura-nome { white-space: nowrap; }
