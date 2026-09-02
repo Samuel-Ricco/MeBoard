@@ -40,7 +40,13 @@ create policy "profili: solo il mio" on public.profili
 -- IMPOSSIBILE invece che sconsigliato -- e comprare un gioco e' un
 -- update dello stato, non due scritture da tenere in sincrono.
 -- ------------------------------------------------------------
-create type stato_gioco as enum ('posseduto', 'desiderato');
+/* `create type` non conosce `if not exists`: alla seconda esecuzione la
+   migrazione esploderebbe, e una migrazione deve poter essere rieseguita
+   senza danni. */
+do $$ begin
+  create type stato_gioco as enum ('posseduto', 'desiderato');
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists public.giochi_utente (
   utente   uuid not null references auth.users on delete cascade,

@@ -72,11 +72,17 @@ comment on column public.giochi.dettagli_il is
   'Quando /thing e'' stato chiesto per questo gioco. Null = mai.';
 
 -- La ricerca per nome e' il gesto piu' frequente del catalogo, su
--- centottantamila righe: senza indice diventa una scansione completa a
--- ogni lettera digitata. `gin_trgm_ops` regge anche le parti di parola,
--- che e' come si cerca davvero un titolo.
-create extension if not exists pg_trgm;
-create index if not exists giochi_nome_idx on public.giochi using gin (nome gin_trgm_ops);
+-- centottantamila righe. Questo indice serve i confronti esatti e i
+-- prefissi.
+--
+-- Per cercare DENTRO il titolo servirebbe pg_trgm, e non lo prendiamo
+-- ora: su Supabase le estensioni stanno nello schema `extensions`, e
+-- `gin_trgm_ops` si risolve solo se quello e' nel search_path con cui
+-- gira la migrazione. E' una dipendenza che puo' far fallire il deploy
+-- per una ricerca che ancora non esiste. Su 180.000 righe una scansione
+-- costa decine di millisecondi; quando servira' davvero, l'indice
+-- trigram arrivera' con la sua migrazione.
+create index if not exists giochi_nome_idx on public.giochi (lower(nome));
 
 -- Sfogliare vuol dire "i migliori per categoria": l'ordine per rank e'
 -- l'ordinamento predefinito di ognuna di quelle liste.
