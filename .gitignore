@@ -5,6 +5,14 @@ android/
 ios/
 .env
 .env.local
+.env.*.local
 *.keystore
 keystore.properties
 .DS_Store
+
+# i segreti non entrano mai nel repo: il token BGG sta nei segreti
+# della edge function, le chiavi del client in .env.local
+*.token
+.bgg-token
+bggTOKEN.txt
+supabase/.temp/
