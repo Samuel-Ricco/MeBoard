@@ -126,12 +126,11 @@ function useAtlante(scatole: Scatola[]) {
       scatole.map((s) => ({ copertinaUrl: s.copertinaUrl, tinta: s.tinta })),
       taglia.signal,
     ).then((a) => {
+      // un atlante arrivato dopo che l'elenco e' cambiato non serve piu'
       if (taglia.signal.aborted) { a.texture.dispose(); return }
-      /* Prima si libera quello che c'era, poi si mette il nuovo: il
-         garbage collector di JavaScript non sa niente della memoria
-         video, e una texture abbandonata resta li' finche' non si chiude
-         la pagina. */
-      inUso.current?.texture.dispose()
+      /* Qui NON si libera niente: la vecchia texture e' ancora attaccata
+         al materiale, e liberarla adesso la farebbe ricaricare al primo
+         fotogramma. Se ne occupa l'effetto che monta la nuova. */
       inUso.current = a
       setAtlante(a)
     })
@@ -206,6 +205,16 @@ ${shader.vertexShader}`
   /* L'atlante entra in scena quando e' pronto: prima le scatole sono
      tinte piatte, poi diventano copertine. Nessuna schermata di attesa,
      nessun salto. */
+  /* LA VECCHIA SI LIBERA DOPO AVER MONTATO LA NUOVA, NON PRIMA.
+   *
+   * Liberandola prima resta comunque attaccata al materiale finche' React
+   * non riesegue questo effetto, e un fotogramma disegnato nel frattempo
+   * la fa RICARICARE alla GPU: torna in memoria da sola, senza piu'
+   * nessuno che la possa liberare. Misurato: il contatore delle texture
+   * saliva di uno a ogni ricostruzione anche con la liberazione al posto
+   * giusto nel codice ma nel momento sbagliato. */
+  const montata = useRef<THREE.Texture | null>(null)
+
   useEffect(() => {
     if (atlante) {
       geo.setAttribute('offsetUv', new THREE.InstancedBufferAttribute(atlante.offset, 2))
@@ -217,6 +226,11 @@ ${shader.vertexShader}`
     /* Cambiare la presenza di `map` cambia i #define dello shader: senza
        questo il programma resta quello vecchio e la texture non si vede. */
     mat.needsUpdate = true
+
+    const prima = montata.current
+    montata.current = atlante?.texture ?? null
+    if (prima && prima !== montata.current) prima.dispose()
+
     invalidate()
   }, [atlante, geo, mat, invalidate])
 

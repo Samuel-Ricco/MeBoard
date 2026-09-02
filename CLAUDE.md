@@ -270,6 +270,25 @@ impacchettati in locale**, e `@capacitor/keyboard`.
   strumenti di input del pannello di anteprima vanno in timeout mentre aspettano un
   fotogramma: l'app si guida dal DOM.
 
+## Le misure della scatola
+
+BGG le pubblica, ma **non nel gioco**: stanno dentro le EDIZIONI
+(`/thing?versions=1`), una per ristampa, e **in pollici**. Si tiene l'ultima -- anno piu'
+alto, a parita' l'ultima elencata -- perche' e' la scatola che si compra oggi.
+
+Erano stimate, e la stima sbagliava di brutto: Gloomhaven veniva 29,5 quadrato ed e'
+**41,3 x 29,8 x 20,2**. E' proprio il gioco famoso per non stare in un Kallax. La scheda
+dice da quale edizione viene la misura -- un numero senza provenienza, quando sembra
+sbagliato, non si puo' nemmeno controllare -- e avvisa quando la scatola non entra nella
+casella da 33.
+
+Due trappole nel parser, entrambe gia' pagate:
+
+- **anche le edizioni sono `<item>`**, annidate dentro `<versions>`: spezzare su `<item ` le
+  prende per giochi. Serve il ritaglio di primo livello con `(?!version)`;
+- **`'\d'` in una stringa TypeScript diventa `d`**. L'espressione cercava lettere invece di
+  cifre e tornava zero risultati, senza un errore. Si usa `String.raw`.
+
 ## L'atlante delle copertine
 
 `scene/atlante.ts`. Ogni copertina si riduce a **512 durante la decodifica**
@@ -288,9 +307,12 @@ Due dettagli che costano cari se sbagliati:
 
 - **il colore per istanza MOLTIPLICA la texture**, quindi con l'atlante addosso deve essere
   bianco. Resta la tinta finche' le immagini non ci sono, e il lime sulla scatola scelta;
-- **la texture vecchia va liberata nell'istante della sostituzione**, non alla pulizia
-  dell'effetto: quella arriva un giro dopo e lascia sempre un atlante indietro. Misurato:
-  `2 tex` invece di `1` dopo una sola aggiunta.
+- **la texture vecchia si libera DOPO aver montato la nuova, mai prima.** Liberandola
+  prima resta comunque attaccata al materiale finche' React non riesegue l'effetto, e un
+  fotogramma disegnato nel frattempo la fa RICARICARE alla GPU: torna in memoria da sola e
+  nessuno puo' piu' liberarla. Misurato due volte -- il contatore saliva di uno a ogni
+  ricostruzione anche con la liberazione al posto giusto nel codice ma nel momento
+  sbagliato. Con l'ordine corretto resta a `1 tex` su sei ricostruzioni.
 
 ## Da fare
 

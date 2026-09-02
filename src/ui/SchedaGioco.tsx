@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { type Gioco, scatolaDi } from '../dati/gioco'
+import { CASELLA } from '../scene/mobile'
 import { assicuraDettagli } from '../dati/catalogo'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
@@ -31,6 +32,37 @@ function Voto({ valore, cambia }: { valore: number; cambia: (n: number) => void 
       </div>
       <span className="voto-numero">{valore || '–'}</span>
     </div>
+  )
+}
+
+/* LE MISURE, CON LA LORO PROVENIENZA.
+ *
+ * Un numero senza provenienza, quando sembra sbagliato, non si puo'
+ * nemmeno controllare: percio' si dice da quale edizione viene, o si
+ * dichiara che e' una stima.
+ *
+ * E si dice se entra nel mobile. Non e' un dettaglio da collezionista:
+ * un Kallax ha caselle da 33 cm, e Gloomhaven ne misura 41. Chi lo
+ * mette sul ripiano lo vede rimpicciolito e ha diritto di sapere
+ * perche'. */
+function Misure({ gioco }: { gioco: Gioco }) {
+  const s = scatolaDi(gioco)
+  const entra = s.larghezza <= CASELLA && s.altezza <= CASELLA
+  return (
+    <p className="scheda-misure">
+      Scatola {s.larghezza}×{s.altezza}×{s.spessore} cm
+      {s.stimata
+        ? ' · stimata, BGG non la pubblica'
+        : gioco.edizione ? ' · ' + gioco.edizione : ''}
+      {!entra && (
+        <>
+          {' · '}
+          <span style={{ color: 'var(--allarme)' }}>
+            non entra in un Kallax
+          </span>
+        </>
+      )}
+    </p>
   )
 }
 
@@ -226,9 +258,7 @@ export function SchedaGioco({ gioco: iniziale, chiudi }: { gioco: Gioco; chiudi:
           )}
         </section>
 
-        <p className="scheda-misure">
-          Scatola stimata {scatolaDi(gioco).larghezza}×{scatolaDi(gioco).altezza}×{scatolaDi(gioco).spessore} cm
-        </p>
+        <Misure gioco={gioco} />
       </div>
     </Foglio>
   )

@@ -41,6 +41,8 @@ type Riga = {
   peso: string | number | null; posizione: number | null
   voto_medio: string | number | null
   copertina_url: string | null; miniatura_url: string | null
+  larghezza_cm: string | number | null; altezza_cm: string | number | null
+  spessore_cm: string | number | null; edizione: string | null
 }
 
 const num = (v: string | number | null) =>
@@ -60,10 +62,15 @@ const daRiga = (r: Riga): Gioco => ({
   votoMedio: num(r.voto_medio),
   copertinaUrl: r.copertina_url,
   miniaturaUrl: r.miniatura_url,
+  larghezzaCm: num(r.larghezza_cm),
+  altezzaCm: num(r.altezza_cm),
+  spessoreCm: num(r.spessore_cm),
+  edizione: r.edizione,
 })
 
 const CAMPI = 'id,nome,anno,editore,giocatori_min,giocatori_max,' +
-  'durata_min,durata_max,peso,posizione,voto_medio,copertina_url,miniatura_url'
+  'durata_min,durata_max,peso,posizione,voto_medio,copertina_url,miniatura_url,' +
+  'larghezza_cm,altezza_cm,spessore_cm,edizione'
 
 /** Il ripiego locale, quando non c'e' collegamento. */
 function daiSemi(cerca: string, limite: number) {
@@ -136,7 +143,7 @@ export async function assicuraDettagli(giochi: Gioco[]): Promise<Gioco[]> {
     const { data: { session } } = await supabase.auth.getSession()
     const chiave = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
     // il limite di venti e' di BGG, non nostro
-    const r = await fetch(funzione('dettagli') + '?ids=' + mancanti.slice(0, 20).join(','), {
+    const r = await fetch(funzione('dettagli') + '?ids=' + mancanti.slice(0, 10).join(','), {
       headers: {
         apikey: chiave,
         Authorization: 'Bearer ' + (session?.access_token || chiave),

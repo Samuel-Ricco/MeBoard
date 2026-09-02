@@ -24,38 +24,63 @@ export type Gioco = {
   votoMedio: number | null
   copertinaUrl: string | null
   miniaturaUrl: string | null
+  /* Le misure VERE della scatola, in centimetri, dall'ultima edizione su
+     BGG. Null quando BGG non le ha: e' un'assenza, non uno zero. */
+  larghezzaCm: number | null
+  altezzaCm: number | null
+  spessoreCm: number | null
+  /** da quale ristampa vengono: senza, un numero strano non si controlla */
+  edizione: string | null
 }
 
 /* ---------- da gioco a scatola ---------- */
 
-/* LE MISURE DELLA SCATOLA SONO UNA STIMA, E VA DETTO.
+/* LE MISURE SONO QUELLE VERE, QUANDO CI SONO.
  *
- * BGG non pubblica le dimensioni in `/thing`: stanno nei dati delle
- * singole EDIZIONI (`versions=1`), che sono tanti, incoerenti e spesso
- * mancanti. Finche' non le andremo a prendere davvero, si stimano da
- * quello che sappiamo -- e si stimano in modo DETERMINISTICO, cosi' una
- * scatola non cambia misura fra un avvio e l'altro.
+ * BGG le pubblica, ma non nel gioco: stanno dentro le EDIZIONI, in
+ * pollici, e la function tiene quella piu' recente -- la scatola che si
+ * compra oggi. Erano stimate e la stima sbagliava di brutto: Gloomhaven
+ * veniva 29,5 quadrato, ed e' 41,3 x 29,8 x 20,2. E' proprio il gioco
+ * famoso per NON stare in un Kallax.
  *
- * La regola di fondo e' quella vera del settore: la scatola quadrata da
- * ~29,5 cm esiste perche' deve entrare in un Kallax. Da li' si scende per
- * i giochi brevi e leggeri, e si sale di SPESSORE per quelli pesanti,
- * che e' come funziona davvero: un gioco impegnativo ha piu' materiale
- * dentro, non una faccia piu' grande.
+ * Il ripiego resta per i giochi di cui BGG non sa le misure, e va detto
+ * che e' un ripiego: `stimata` serve a poterlo scrivere nella scheda
+ * invece di spacciare una stima per un dato.
  */
-export function scatolaDi(g: Gioco): { larghezza: number; altezza: number; spessore: number } {
-  const peso = g.peso ?? 2
-  const durata = g.durataMax ?? g.durataMin ?? 45
+export type Scatola = {
+  larghezza: number
+  altezza: number
+  spessore: number
+  stimata: boolean
+}
 
+export function scatolaDi(g: Gioco): Scatola {
+  if (g.larghezzaCm && g.altezzaCm) {
+    return {
+      larghezza: g.larghezzaCm,
+      altezza: g.altezzaCm,
+      /* Lo spessore manca piu' spesso degli altri due: BGG lo lascia a
+         zero in parecchie edizioni. Li' si stima solo quello. */
+      spessore: g.spessoreCm ?? spessoreStimato(g),
+      stimata: false,
+    }
+  }
+
+  const durata = g.durataMax ?? g.durataMin ?? 45
+  const peso = g.peso ?? 2
   // i filler stanno in scatole piccole, il resto nel quadrato standard
   const piccolo = durata <= 25 && peso <= 1.6
   const lato = piccolo ? 19 : 29.5
+  return { larghezza: lato, altezza: lato, spessore: spessoreStimato(g), stimata: true }
+}
 
-  /* Lo spessore segue il peso: da 4 cm di un gioco di carte ai 15 di uno
-     scatolone. Arrotondato al mezzo centimetro perche' una precisione
-     maggiore sarebbe finta. */
-  const spessore = Math.round(Math.min(15, Math.max(3.5, 2 + peso * 2.2)) * 2) / 2
-
-  return { larghezza: lato, altezza: lato, spessore }
+/* Lo spessore segue il peso: da 4 cm di un gioco di carte ai 15 di uno
+   scatolone. Un gioco impegnativo ha piu' materiale dentro, non una
+   faccia piu' grande. Arrotondato al mezzo centimetro perche' una
+   precisione maggiore sarebbe finta. */
+function spessoreStimato(g: Gioco) {
+  const peso = g.peso ?? 2
+  return Math.round(Math.min(15, Math.max(3.5, 2 + peso * 2.2)) * 2) / 2
 }
 
 /* IL COLORE DELLA SCATOLA, FINCHE' NON C'E' LA COPERTINA.

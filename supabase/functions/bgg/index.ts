@@ -107,31 +107,115 @@ type Scheda = {
   peso: number | null
   copertina_url: string | null
   miniatura_url: string | null
+  larghezza_cm: number | null
+  altezza_cm: number | null
+  spessore_cm: number | null
+  edizione: string | null
+}
+
+/* LE MISURE STANNO NELLE EDIZIONI, E SONO IN POLLICI.
+ *
+ * BGG non pubblica le dimensioni del gioco ma di ogni sua ristampa. Si
+ * tiene l'ULTIMA -- anno piu' alto, a parita' l'ultima elencata --
+ * perche' e' la scatola che si compra oggi: le ristampe cambiano formato
+ * piu' spesso di quanto si creda.
+ *
+ * I limiti non sono pignoleria: su BGG capitano edizioni con misure a
+ * zero o palesemente sbagliate, e una scatola da due metri sfonderebbe
+ * il mobile senza che nessuno se ne accorga fino a vederla. */
+const POLLICE = 2.54
+
+function leggiMisure(xml: string) {
+  type Ed = { w: number; l: number; d: number; anno: number; i: number; nome: string }
+  const edizioni: Ed[] = []
+  const re = /<item[^>]*type="boardgameversion"[^>]*>([\s\S]*?)<\/item>/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(xml))) {
+    const b = m[1]
+    const n = (t: string) => Number(attr(b, t)) || 0
+    const w = n('width'), l = n('length'), d = n('depth')
+    // fuori da questi limiti il dato e' sporco, non una scatola strana
+    if (w < 1 || l < 1 || w > 30 || l > 30) continue
+    const nome = b.match(/<name[^>]*value="([^"]*)"/)
+    edizioni.push({
+      w, l,
+      d: d > 0 && d < 20 ? d : 0,
+      anno: n('yearpublished'),
+      i: edizioni.length,
+      nome: nome ? decodifica(nome[1]) : '',
+    })
+  }
+  if (!edizioni.length) return null
+
+  let ultima = edizioni[0]
+  edizioni.forEach((e) => {
+    if (e.anno > ultima.anno || (e.anno === ultima.anno && e.i > ultima.i)) ultima = e
+  })
+
+  const cm = (n: number) => Math.round(n * POLLICE * 10) / 10
+  return {
+    /* la faccia e' il lato lungo per il corto: la scatola sul ripiano si
+       guarda come si guarda in negozio */
+    larghezza_cm: cm(Math.max(ultima.w, ultima.l)),
+    altezza_cm: cm(Math.min(ultima.w, ultima.l)),
+    spessore_cm: ultima.d ? cm(ultima.d) : null,
+    edizione: ultima.nome || null,
+  }
 }
 
 function leggiSchede(xml: string): Scheda[] {
   const schede: Scheda[] = []
-  for (const pezzo of xml.split('<item ').slice(1)) {
-    const id = numero((pezzo.match(/^[^>]*\sid="(\d+)"/) || [])[1] ?? null)
-    if (id === null) continue
 
-    // il nome primario, non il primo alias in lingua straniera
-    const primario = pezzo.match(/<name[^>]*type="primary"[^>]*value="([^"]*)"/)
+  /* NON si puo' spezzare su `<item `: con `versions=1` anche le EDIZIONI
+     sono `<item>`, annidate dentro `<versions>`, e ognuna verrebbe presa
+     per un gioco a se'. Si ritagliano solo gli item di primo livello --
+     `boardgame`, `boardgameexpansion`, `boardgameaccessory` -- fermandosi
+     al successivo o alla fine.
+
+     Il `(?!version)` e' obbligatorio: senza, `boardgame[a-z]*` prende
+     anche `boardgameversion` e spezza il ritaglio proprio dove serve
+     intero, cioe' attorno alle misure. */
+  /* String.raw e non le virgolette normali: in una stringa TypeScript
+     `\d` diventa `d`, e l'espressione finirebbe a cercare delle lettere
+     invece delle cifre. Senza errori, e con zero risultati. */
+  const GIOCO = String.raw`<item[^>]*type="boardgame(?!version)[a-z]*"`
+  const re = new RegExp(
+    GIOCO + String.raw`[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>\s*(?=` +
+    GIOCO + String.raw`|<\/items>)`,
+    'g',
+  )
+
+  let m: RegExpExecArray | null
+  while ((m = re.exec(xml))) {
+    const id = Number(m[1])
+    const pezzo = m[2]
+    if (!Number.isFinite(id)) continue
+
+    /* Il nome primario, non il primo alias straniero. E si cerca PRIMA
+       di `<versions>`: anche le edizioni hanno un nome primario, e
+       prenderebbero il posto di quello del gioco. */
+    const soloGioco = pezzo.split('<versions>')[0]
+    const primario = soloGioco.match(/<name[^>]*type="primary"[^>]*value="([^"]*)"/)
     // il primo editore elencato: gli altri sono edizioni e ristampe
-    const editore = pezzo.match(/<link[^>]*type="boardgamepublisher"[^>]*value="([^"]*)"/)
+    const editore = soloGioco.match(/<link[^>]*type="boardgamepublisher"[^>]*value="([^"]*)"/)
+    const misure = leggiMisure(pezzo)
 
     schede.push({
       id,
       nome: primario ? decodifica(primario[1]) : null,
-      anno: numero(attr(pezzo, 'yearpublished')),
+      anno: numero(attr(soloGioco, 'yearpublished')),
       editore: editore ? decodifica(editore[1]) : null,
-      giocatori_min: numero(attr(pezzo, 'minplayers')),
-      giocatori_max: numero(attr(pezzo, 'maxplayers')),
-      durata_min: numero(attr(pezzo, 'minplaytime')),
-      durata_max: numero(attr(pezzo, 'maxplaytime')),
-      peso: numero(attr(pezzo, 'averageweight')),   // vuole &stats=1
-      copertina_url: testo(pezzo, 'image'),
-      miniatura_url: testo(pezzo, 'thumbnail'),
+      giocatori_min: numero(attr(soloGioco, 'minplayers')),
+      giocatori_max: numero(attr(soloGioco, 'maxplayers')),
+      durata_min: numero(attr(soloGioco, 'minplaytime')),
+      durata_max: numero(attr(soloGioco, 'maxplaytime')),
+      peso: numero(attr(soloGioco, 'averageweight')),   // vuole &stats=1
+      copertina_url: testo(soloGioco, 'image'),
+      miniatura_url: testo(soloGioco, 'thumbnail'),
+      larghezza_cm: misure?.larghezza_cm ?? null,
+      altezza_cm: misure?.altezza_cm ?? null,
+      spessore_cm: misure?.spessore_cm ?? null,
+      edizione: misure?.edizione ?? null,
     })
   }
   return schede
@@ -186,10 +270,11 @@ Deno.serve(async (req) => {
       const ids = (url.searchParams.get('ids') || '')
         .split(',').map((s) => s.trim()).filter((s) => /^\d+$/.test(s))
       if (!ids.length) return json(400, { errore: 'manca ids' }, cors)
-      // il limite e' di BGG, non nostro
-      if (ids.length > 20) return json(400, { errore: 'al massimo 20 id' }, cors)
+      /* Dieci e non venti: con `versions=1` la risposta porta ogni
+         ristampa di ogni gioco, e a venti diventa enorme. */
+      if (ids.length > 10) return json(400, { errore: 'al massimo 10 id' }, cors)
 
-      const xml = await api('/thing?stats=1&id=' + ids.join(','))
+      const xml = await api('/thing?stats=1&versions=1&id=' + ids.join(','))
       const schede = leggiSchede(xml)
 
       /* Si scrive anche se il client non lo chiede: un gioco chiesto una
@@ -210,7 +295,14 @@ Deno.serve(async (req) => {
             peso: s.peso,
             copertina_url: s.copertina_url,
             miniatura_url: s.miniatura_url,
+            larghezza_cm: s.larghezza_cm,
+            altezza_cm: s.altezza_cm,
+            spessore_cm: s.spessore_cm,
+            edizione: s.edizione,
             dettagli_il: new Date().toISOString(),
+            /* Segnato anche quando BGG non le ha: senza, si tornerebbe a
+               chiederle per sempre a ogni apertura della scheda. */
+            misure_il: new Date().toISOString(),
             aggiornato: new Date().toISOString(),
           })),
           { onConflict: 'id' },
