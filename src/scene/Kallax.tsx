@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -6,6 +6,8 @@ import {
   LARGHEZZA, ALTEZZA, RIENTRO, casella,
 } from './mobile'
 import { coloreDiTema } from '../ui/tema'
+import { costruisciAtlante, LATO_PAGINA, type Atlante } from './atlante'
+import { COPERTINA_PX } from './budget'
 
 export { CM, LARGHEZZA, ALTEZZA, FONDO, CELLE } from './mobile'
 
@@ -18,6 +20,8 @@ export type Scatola = {
   altezza: number
   spessore: number
   tinta: string
+  /** l'indirizzo su BGG; null se di questo gioco non si sa ancora nulla */
+  copertinaUrl: string | null
 }
 
 /* I colori del mobile NON stanno qui: stanno nella tavolozza, come tutto
@@ -94,6 +98,61 @@ function Mobile({ tema }: { tema: string }) {
   return <instancedMesh ref={ref} args={[geo, mat, pezzi.length]} count={pezzi.length} />
 }
 
+/* COSTRUISCE L'ATLANTE QUANDO CAMBIA IL RIPIANO.
+ *
+ * Si rifa' solo se cambia l'ELENCO delle copertine, non a ogni render:
+ * scaricare dodici immagini perche' e' cambiata la selezione sarebbe
+ * assurdo. La firma e' la lista degli indirizzi, in ordine.
+ *
+ * L'AbortSignal non e' pignoleria: togliendo una scatola mentre i
+ * download sono in volo, senza di quello le immagini vecchie finirebbero
+ * disegnate nelle tessere nuove -- una copertina sulla scatola sbagliata,
+ * e nessun errore a dirlo. */
+function useAtlante(scatole: Scatola[]) {
+  const [atlante, setAtlante] = useState<Atlante | null>(null)
+  /* Chi e' in uso ADESSO. Serve un riferimento e non lo stato: la
+     liberazione deve avvenire nell'istante esatto della sostituzione, non
+     alla pulizia dell'effetto -- e quella arriva un giro dopo. Con la
+     versione sfasata restava sempre un atlante indietro: ventun megabyte
+     di memoria video che non tornavano mai. */
+  const inUso = useRef<Atlante | null>(null)
+  const firma = scatole.map((s) => s.copertinaUrl ?? '-').join('|')
+
+  useEffect(() => {
+    if (!scatole.length) return
+    const taglia = new AbortController()
+
+    costruisciAtlante(
+      scatole.map((s) => ({ copertinaUrl: s.copertinaUrl, tinta: s.tinta })),
+      taglia.signal,
+    ).then((a) => {
+      if (taglia.signal.aborted) { a.texture.dispose(); return }
+      /* Prima si libera quello che c'era, poi si mette il nuovo: il
+         garbage collector di JavaScript non sa niente della memoria
+         video, e una texture abbandonata resta li' finche' non si chiude
+         la pagina. */
+      inUso.current?.texture.dispose()
+      inUso.current = a
+      setAtlante(a)
+    })
+
+    /* L'AbortSignal non e' pignoleria: togliendo una scatola mentre i
+       download sono in volo, senza di quello le immagini vecchie
+       finirebbero disegnate nelle tessere nuove -- una copertina sulla
+       scatola sbagliata, e nessun errore a dirlo. */
+    return () => taglia.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firma])
+
+  // e alla chiusura non resta niente in memoria
+  useEffect(() => () => {
+    inUso.current?.texture.dispose()
+    inUso.current = null
+  }, [])
+
+  return atlante
+}
+
 /* LE SCATOLE, DI FACCIA, UNA PER CASELLA.
  *
  * Di faccia vuol dire che il cubo unitario si scala (larghezza, altezza,
@@ -114,9 +173,52 @@ function Scatole({ scatole, selezionato, onSeleziona, tema }: {
   const ref = useRef<THREE.InstancedMesh>(null!)
   const invalidate = useThree((s) => s.invalidate)
   const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
-  /* Lambert e non Standard: il PBR su GPU mobile costa e, con la luce cotta
-     nella copertina, non si distingue. */
-  const mat = useMemo(() => new THREE.MeshLambertMaterial(), [])
+  const atlante = useAtlante(scatole)
+
+  /* UNA TEXTURE SOLA, DODICI IMMAGINI DIVERSE.
+   *
+   * E' il pezzo che l'instancing non regala: il materiale e' uno, quindi
+   * la texture e' una. Ogni istanza porta un attributo con l'angolo della
+   * sua tessera nell'atlante, e lo shader lo somma alle UV. Cosi' dodici
+   * copertine diverse restano UNA draw call.
+   *
+   * Si tocca `vMapUv` -- la varying che three riempie per il canale
+   * `map` -- subito dopo che e' stata calcolata. */
+  const mat = useMemo(() => {
+    /* Lambert e non Standard: il PBR su GPU mobile costa e, con la luce
+       gia' dentro la copertina, non si distingue. */
+    const m = new THREE.MeshLambertMaterial()
+    m.onBeforeCompile = (shader) => {
+      shader.vertexShader = `attribute vec2 offsetUv;
+${shader.vertexShader}`
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <uv_vertex>',
+        `#include <uv_vertex>
+        #ifdef USE_MAP
+          vMapUv = vMapUv * SCALA_TESSERA + offsetUv;
+        #endif`,
+      )
+      shader.defines = { ...shader.defines, SCALA_TESSERA: (COPERTINA_PX / LATO_PAGINA).toFixed(6) }
+    }
+    return m
+  }, [])
+
+  /* L'atlante entra in scena quando e' pronto: prima le scatole sono
+     tinte piatte, poi diventano copertine. Nessuna schermata di attesa,
+     nessun salto. */
+  useEffect(() => {
+    if (atlante) {
+      geo.setAttribute('offsetUv', new THREE.InstancedBufferAttribute(atlante.offset, 2))
+      mat.map = atlante.texture
+    } else {
+      geo.deleteAttribute('offsetUv')
+      mat.map = null
+    }
+    /* Cambiare la presenza di `map` cambia i #define dello shader: senza
+       questo il programma resta quello vecchio e la texture non si vede. */
+    mat.needsUpdate = true
+    invalidate()
+  }, [atlante, geo, mat, invalidate])
 
   useLayoutEffect(() => {
     const mesh = ref.current
@@ -145,9 +247,14 @@ function Scatole({ scatole, selezionato, onSeleziona, tema }: {
       )
       m.compose(pos, rot, sca)
       mesh.setMatrixAt(i, m)
-      /* La scatola scelta si accende di lime: e' l'unico modo per legare
-         la riga dell'elenco all'oggetto nel mobile. */
-      mesh.setColorAt(i, col.set(g.id === selezionato ? scelta : g.tinta))
+      /* Il colore per istanza MOLTIPLICA la texture. Con l'atlante addosso
+         deve quindi essere bianco, se no ogni copertina uscirebbe tinta
+         del colore di ripiego. Resta la tinta finche' le immagini non ci
+         sono, e resta il lime sulla scatola scelta -- una copertina
+         virata di lime si riconosce a colpo d'occhio, ed e' l'unico modo
+         per legare la riga dell'elenco all'oggetto nel mobile. */
+      const tinta = g.id === selezionato ? scelta : (atlante ? '#ffffff' : g.tinta)
+      mesh.setColorAt(i, col.set(tinta))
     })
 
     mesh.instanceMatrix.needsUpdate = true
@@ -156,7 +263,7 @@ function Scatole({ scatole, selezionato, onSeleziona, tema }: {
     /* In "demand" nessuno ridisegna da solo: dopo aver cambiato le matrici
        il fotogramma va chiesto a mano. */
     invalidate()
-  }, [scatole, selezionato, tema, invalidate])
+  }, [scatole, selezionato, tema, atlante, invalidate])
 
   const tocca = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()

@@ -270,6 +270,28 @@ impacchettati in locale**, e `@capacitor/keyboard`.
   strumenti di input del pannello di anteprima vanno in timeout mentre aspettano un
   fotogramma: l'app si guida dal DOM.
 
+## L'atlante delle copertine
+
+`scene/atlante.ts`. Ogni copertina si riduce a **512 durante la decodifica**
+(`createImageBitmap` con `resizeWidth`), quindi l'immagine grande non arriva mai in memoria
+video. Tutte finiscono in **una pagina 2048x2048** — ~21 MB comprese le mipmap, per tutto
+il mobile, non per copertina. Nella versione precedente erano 6-12 MB **l'una**.
+
+2048 e non 4096: le caselle sono dodici, in una pagina 4x4 ce ne stanno sedici, e 2048 e' il
+lato che *qualunque* GPU garantisce.
+
+Ogni istanza porta il suo angolo di tessera in un `InstancedBufferAttribute`, sommato a
+`vMapUv` con `onBeforeCompile`. E' l'unico modo di avere dodici immagini diverse su un solo
+mesh: **una texture, una draw call**.
+
+Due dettagli che costano cari se sbagliati:
+
+- **il colore per istanza MOLTIPLICA la texture**, quindi con l'atlante addosso deve essere
+  bianco. Resta la tinta finche' le immagini non ci sono, e il lime sulla scatola scelta;
+- **la texture vecchia va liberata nell'istante della sostituzione**, non alla pulizia
+  dell'effetto: quella arriva un giro dopo e lascia sempre un atlante indietro. Misurato:
+  `2 tex` invece di `1` dopo una sola aggiunta.
+
 ## Da fare
 
 In ordine di quanto sbloccano, non di quanto costano.

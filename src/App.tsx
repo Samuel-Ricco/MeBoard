@@ -25,7 +25,8 @@ function Guscio() {
      le copertine vere. */
   const scatole = useMemo(
     () => giochiScaffale.map((g) => ({
-      id: g.id, nome: g.nome, tinta: tintaDi(g.id), ...scatolaDi(g),
+      id: g.id, nome: g.nome, tinta: tintaDi(g.id),
+      copertinaUrl: g.copertinaUrl, ...scatolaDi(g),
     })),
     [giochiScaffale])
 

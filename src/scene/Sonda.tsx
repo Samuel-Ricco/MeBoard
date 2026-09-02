@@ -3,74 +3,83 @@ import { useEffect, useRef } from 'react'
 
 /* LA SONDA.
  *
- * La versione precedente dell'app era lenta e non si capiva perche':
- * mancava il numero. Questo lo mette a schermo -- fotogrammi, draw call,
- * triangoli, e soprattutto QUANTE TEXTURE sono in memoria video, che e'
- * la voce che aveva affondato lo scaffale di prima.
+ * La versione precedente era lenta e non si capiva perche': mancava il
+ * numero. Questo lo mette a schermo -- e soprattutto mette QUANTE TEXTURE
+ * sono in memoria video, che e' la voce che l'aveva affondata.
+ *
+ * DUE FAMIGLIE DI NUMERI, DUE TEMPI DIVERSI.
+ *
+ * Draw call, triangoli e fotogrammi si possono sapere solo DISEGNANDO:
+ * `gl.info.render` si azzera a ogni fotogramma. Ma in "demand" da fermi
+ * non si disegna, quindi quei numeri restano quelli dell'ultimo
+ * fotogramma -- e vanno detti per quello che sono, non spacciati per
+ * attuali.
+ *
+ * Texture, geometrie e programmi invece sono CONTATORI VIVI: valgono
+ * sempre, anche a scena ferma. Leggerli solo dentro un fotogramma faceva
+ * mostrare "0 tex" per sempre a un atlante caricato un istante dopo
+ * l'ultimo disegno -- cioe' una bugia proprio sul numero che conta di
+ * piu'.
  *
  * Scrive nel DOM direttamente, senza setState: e' anche l'esempio della
- * regola da rispettare con r3f. Un setState per fotogramma qui
- * ricostruirebbe da capo il problema che stiamo evitando.
- *
- * Nota sui fotogrammi: con frameloop="demand" da fermi non se ne disegna
- * nessuno -- e' voluto, e' il risparmio. Percio' l'aggiornamento e' legato
- * al TEMPO e non al conteggio, se no da fermi la sonda resterebbe muta.
+ * regola da rispettare con r3f.
  */
 export function Sonda() {
   const gl = useThree((s) => s.gl)
   const invalidate = useThree((s) => s.invalidate)
-  const acc = useRef(0)
-  const n = useRef(0)
-  const ultimo = useRef(performance.now())
-  /* Finche' non si e' scritto un valore vero, quello a schermo sono gli
-     zeri del montaggio -- e "0 draw" letto a riposo sembra un guasto.
-     Costa gia' un'ora di diagnosi una volta: la prima misura utile va
-     pubblicata appena c'e', senza aspettare la cadenza. */
-  const maiScritto = useRef(true)
 
-  const scrivi = (fps: number | null) => {
-    const el = document.getElementById('sonda')
-    if (!el) return
-    const r = gl.info.render
-    el.textContent =
-      `${fps === null ? 'fermo' : fps + ' fps'} · ${r.calls} draw · ` +
-      `${(r.triangles / 1000).toFixed(1)}k tri · ` +
-      `${gl.info.memory.textures} tex · ${gl.info.programs?.length ?? 0} shader · ` +
-      `dpr ${gl.getPixelRatio().toFixed(2)}`
-  }
+  // quel che si sa dell'ultimo fotogramma disegnato
+  const ultimoFotogramma = useRef(0)
+  const passo = useRef(0)
+  const disegno = useRef({ calls: 0, triangles: 0 })
 
   useEffect(() => {
-    /* Appeso a window per poterlo interrogare a mano da DevTools quando
-       l'app gira sul telefono vero: e' li' che servono i numeri. */
+    /* Comodo per interrogare `gl.info` a mano da DevTools quando l'app
+       gira sul telefono vero. */
     ;(window as unknown as { meboard?: unknown }).meboard = { gl, info: () => gl.info }
-    /* NON si pubblicano gli zeri del montaggio: `gl.info` si azzera a ogni
-       render, quindi letto prima del primo disegno dice "0 draw" -- che su
-       un'app che funziona benissimo sembra un guasto. Meglio un trattino
-       finche' non c'e' una misura vera. */
-    const el = document.getElementById('sonda')
-    if (el && !el.textContent) el.textContent = '--'
+
+    const scrivi = () => {
+      const el = document.getElementById('sonda')
+      if (!el) return
+      const m = gl.info.memory
+      const fermoDa = performance.now() - ultimoFotogramma.current
+
+      /* Sopra il mezzo secondo senza disegnare la scena e' ferma, ed e'
+         il comportamento voluto: si dice "fermo" invece di un fps
+         inventato sull'ultimo intervallo. */
+      const ritmo = !ultimoFotogramma.current ? '--'
+        : fermoDa > 500 ? 'fermo'
+        : Math.round(1000 / Math.max(1, passo.current)) + ' fps'
+
+      el.textContent =
+        `${ritmo} · ${disegno.current.calls} draw · ` +
+        `${(disegno.current.triangles / 1000).toFixed(1)}k tri · ` +
+        `${m.textures} tex · ${m.geometries} geo · ` +
+        `${gl.info.programs?.length ?? 0} shader · dpr ${gl.getPixelRatio().toFixed(2)}`
+    }
+
+    scrivi()
+    /* I contatori di memoria cambiano anche a scena ferma -- un atlante
+       che finisce di caricarsi, una texture liberata -- quindi si
+       rileggono a tempo, non a fotogramma. */
+    const battito = setInterval(scrivi, 500)
+    /* Un fotogramma all'avvio: senza, `gl.info.render` non e' mai stato
+       riempito e i draw call resterebbero a zero su un'app sanissima. */
     invalidate()
-  })
+    return () => clearInterval(battito)
+  }, [gl, invalidate])
 
   useFrame(() => {
     const ora = performance.now()
-    acc.current += ora - ultimo.current
-    ultimo.current = ora
-    n.current++
-    /* In "demand" i fotogrammi sono rari: al primo si legge ancora un
-       contatore azzerato, quindi la sonda se ne chiede un altro da sola.
-       E' l'unico posto in cui invalidare per misurare e' legittimo. */
-    if (maiScritto.current && n.current < 2) { invalidate(); return }
-    if (acc.current < 250 && !maiScritto.current) return
-    maiScritto.current = false
-    const medio = acc.current / n.current
-    /* In modalita' "demand" da fermi i fotogrammi sono radi: un fps
-       calcolato su quelli direbbe "1" e sembrerebbe un guasto. Sopra i
-       100 ms di intervallo medio non stiamo disegnando davvero, stiamo
-       risparmiando: si scrive "fermo". */
-    scrivi(medio > 100 ? null : Math.round(1000 / medio))
-    acc.current = 0
-    n.current = 0
+    if (ultimoFotogramma.current) passo.current = ora - ultimoFotogramma.current
+    ultimoFotogramma.current = ora
+    /* `gl.info.render` si azzera all'inizio di ogni disegno: quel che si
+       legge qui e' il fotogramma PRECEDENTE, ed e' l'unico modo di
+       vederlo. */
+    disegno.current = {
+      calls: gl.info.render.calls,
+      triangles: gl.info.render.triangles,
+    }
   })
 
   return null
