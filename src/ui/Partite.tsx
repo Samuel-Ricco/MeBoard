@@ -2,16 +2,15 @@ import { useMemo, useState } from 'react'
 import type { Gioco } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
-import { SchedaGioco } from './SchedaGioco'
 import { Copertina } from './Copertina'
-import { Ghirigoro, IcoPiu } from './icone'
+import { Ghirigoro, IcoPiu, IcoCatalogo } from './icone'
 
 const giorno = (iso: string) =>
   new Date(iso + 'T00:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
 
 /* La data di OGGI, nel fuso di chi guarda.
-   `toISOString()` risponde in UTC: in Italia, fra mezzanotte e le due, darebbe
-   il giorno prima -- e una partita si segna proprio a quell'ora. */
+   `toISOString()` risponde in UTC: in Italia, fra mezzanotte e le due,
+   darebbe il giorno prima -- e una partita si segna proprio a quell'ora. */
 function oggi() {
   const d = new Date()
   const p = (n: number) => String(n).padStart(2, '0')
@@ -19,16 +18,22 @@ function oggi() {
 }
 
 /* LE PARTITE: il registro di cosa avete giocato e come e' finita. */
-export function Partite() {
+export function Partite({ apriScheda }: { apriScheda: (g: Gioco) => void }) {
   const { stato, giochi, giochiCollezione, registraPartita, eliminaPartita } = useStato()
   const [aperto, setAperto] = useState(false)
-  const [scheda, setScheda] = useState<Gioco | null>(null)
+  /* Il foglio ha due facce: il modulo e la scelta del gioco. Due fogli
+     annidati sarebbero un velo sopra un velo, e non si capirebbe piu'
+     quale dei due si chiude toccando fuori. */
+  const [scegliGioco, setScegliGioco] = useState(false)
+  const [cerca, setCerca] = useState('')
 
-  const [giocoId, setGiocoId] = useState<number | ''>('')
+  const [giocoId, setGiocoId] = useState<number | null>(null)
   const [data, setData] = useState(oggi)
   const [alTavolo, setAlTavolo] = useState<string[]>([])
   const [vincitore, setVincitore] = useState('')
   const [durata, setDurata] = useState('')
+
+  const scelto = giocoId === null ? null : giochi.get(giocoId) ?? null
 
   const oreTotali = useMemo(
     () => Math.round(stato.partite.reduce((s, p) => s + (p.durata ?? 0), 0) / 60),
@@ -43,8 +48,14 @@ export function Partite() {
     return vinto ? giochi.get(vinto)?.nome ?? '—' : '—'
   }, [stato.partite, giochi])
 
+  const candidati = useMemo(() => {
+    const q = cerca.trim().toLowerCase()
+    return q ? giochiCollezione.filter((g) => g.nome.toLowerCase().includes(q)) : giochiCollezione
+  }, [giochiCollezione, cerca])
+
   const azzera = () => {
-    setGiocoId(''); setAlTavolo([]); setVincitore(''); setDurata(''); setData(oggi())
+    setGiocoId(null); setAlTavolo([]); setVincitore(''); setDurata('')
+    setData(oggi()); setCerca(''); setScegliGioco(false)
   }
 
   const cambiaAlTavolo = (nome: string) => {
@@ -58,10 +69,10 @@ export function Partite() {
   }
 
   const salva = () => {
-    if (!giocoId) return
+    if (giocoId === null) return
     const min = parseInt(durata, 10)
     registraPartita({
-      giocoId: Number(giocoId),
+      giocoId,
       data,
       giocatori: alTavolo,
       vincitore: vincitore || undefined,
@@ -110,8 +121,10 @@ export function Partite() {
             const g = giochi.get(p.giocoId)
             return (
               <div className="riga" key={p.id}>
-                <button className="riga-apri" onClick={() => g && setScheda(g)} disabled={!g}>
-                  {g ? <Copertina gioco={g} /> : <span className="dorso" style={{ background: 'var(--fioco)' }} />}
+                <button className="riga-apri" onClick={() => g && apriScheda(g)} disabled={!g}>
+                  {g
+                    ? <Copertina gioco={g} />
+                    : <span className="dorso" style={{ background: 'var(--fioco)' }} />}
                   <span className="riga-corpo">
                     <span className="riga-nome">{g?.nome ?? 'Gioco sconosciuto'}</span>
                     <span className="riga-sotto">
@@ -137,93 +150,137 @@ export function Partite() {
       )}
 
       {aperto && (
-        <Foglio titolo="Segna una partita" chiudi={() => { azzera(); setAperto(false) }}>
-          <div className="scheda">
-            <label className="cerca" style={{ margin: '0 0 14px' }}>
-              <select
-                value={giocoId}
-                onChange={(e) => setGiocoId(e.target.value ? Number(e.target.value) : '')}
-                aria-label="Gioco"
-                style={{
-                  flex: 1, border: 0, outline: 0, background: 'transparent',
-                  color: giocoId ? 'var(--inchiostro)' : 'var(--fioco)',
-                  fontFamily: 'var(--testo)', fontSize: 15,
-                }}
-              >
-                <option value="">Quale gioco?</option>
-                {giochiCollezione.map((g) => (
-                  <option key={g.id} value={g.id} style={{ color: '#111' }}>{g.nome}</option>
+        <Foglio
+          titolo={scegliGioco ? 'A cosa avete giocato' : 'Segna una partita'}
+          chiudi={() => {
+            if (scegliGioco) setScegliGioco(false)
+            else { azzera(); setAperto(false) }
+          }}
+        >
+          {scegliGioco ? (
+            <>
+              <label className="cerca">
+                <IcoCatalogo size={17} />
+                <input
+                  value={cerca}
+                  onChange={(e) => setCerca(e.target.value)}
+                  placeholder="Cerca nella collezione"
+                  aria-label="Cerca il gioco"
+                />
+              </label>
+              <div className="elenco">
+                {candidati.map((g) => (
+                  <button
+                    className="riga riga-tutta"
+                    key={g.id}
+                    onClick={() => { setGiocoId(g.id); setScegliGioco(false); setCerca('') }}
+                  >
+                    <Copertina gioco={g} />
+                    <span className="riga-corpo">
+                      <span className="riga-nome">{g.nome}</span>
+                      <span className="riga-sotto">{g.editore ?? '—'} · {g.anno ?? '—'}</span>
+                    </span>
+                  </button>
                 ))}
-              </select>
-            </label>
+                {candidati.length === 0 && (
+                  <p className="scheda-nota" style={{ padding: '0 18px' }}>
+                    Niente con questo nome fra i giochi che hai.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="scheda">
+              {/* IL GIOCO SI SCEGLIE DA UN ELENCO VERO.
+                  Era un <select> di sistema: su Android e' un menu grigio
+                  che non somiglia a niente del resto dell'app, e senza
+                  copertine un gioco non si riconosce a colpo d'occhio. */}
+              <button className="scelta-gioco" onClick={() => setScegliGioco(true)}>
+                {scelto ? (
+                  <>
+                    <Copertina gioco={scelto} lato={40} />
+                    <span className="riga-corpo">
+                      <span className="riga-nome">{scelto.nome}</span>
+                      <span className="riga-sotto">tocca per cambiare</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="dorso" style={{ background: 'var(--fioco)', minHeight: 40 }} />
+                    <span className="riga-corpo">
+                      <span className="riga-nome">Quale gioco?</span>
+                      <span className="riga-sotto">scegli dalla tua collezione</span>
+                    </span>
+                  </>
+                )}
+              </button>
 
-            <div className="aggiungi" style={{ marginTop: 0 }}>
-              <input
-                className="campo" type="date" value={data}
-                onChange={(e) => setData(e.target.value)} aria-label="Data"
-              />
-              <input
-                className="campo" type="number" inputMode="numeric" min={1} max={600}
-                value={durata} onChange={(e) => setDurata(e.target.value)}
-                placeholder="minuti" aria-label="Durata in minuti"
-                style={{ maxWidth: 110 }}
-              />
-            </div>
+              <div className="aggiungi" style={{ marginTop: 14 }}>
+                <input
+                  className="campo" type="date" value={data}
+                  onChange={(e) => setData(e.target.value)} aria-label="Data"
+                />
+                <input
+                  className="campo" type="number" inputMode="numeric" min={1} max={600}
+                  value={durata} onChange={(e) => setDurata(e.target.value)}
+                  placeholder="minuti" aria-label="Durata in minuti"
+                  style={{ maxWidth: 110 }}
+                />
+              </div>
 
-            {/* I giocatori SI SCELGONO, non si riscrivono ogni volta.
-                Il testo libero produceva "Giulia", "giulia" e "Giuli" come
-                tre persone diverse, e le statistiche non tornavano piu'. */}
-            <section className="scheda-sezione">
-              <h3 className="scheda-titolo">Chi c&apos;era</h3>
-              {stato.giocatori.length === 0 ? (
-                <p className="scheda-nota">
-                  Nessun giocatore ancora: aggiungili dal profilo, in alto a destra.
-                </p>
-              ) : (
-                <div className="scheda-comandi">
-                  {stato.giocatori.map((g) => (
-                    <button
-                      key={g}
-                      className={'pillola' + (alTavolo.includes(g) ? ' pillola-piena' : ' pillola-fantasma')}
-                      onClick={() => cambiaAlTavolo(g)}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {alTavolo.length > 0 && (
+              {/* I giocatori SI SCELGONO, non si riscrivono ogni volta.
+                  Il testo libero produceva "Giulia", "giulia" e "Giuli"
+                  come tre persone diverse. */}
               <section className="scheda-sezione">
-                <h3 className="scheda-titolo">Chi ha vinto</h3>
-                <div className="scheda-comandi">
-                  {alTavolo.map((g) => (
-                    <button
-                      key={g}
-                      className={'pillola' + (vincitore === g ? ' pillola-piena' : ' pillola-fantasma')}
-                      onClick={() => setVincitore(vincitore === g ? '' : g)}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
+                <h3 className="scheda-titolo">Chi c&apos;era</h3>
+                {stato.giocatori.length === 0 ? (
+                  <p className="scheda-nota">
+                    Nessun giocatore ancora: aggiungili dal profilo, in alto a destra.
+                  </p>
+                ) : (
+                  <div className="scheda-comandi">
+                    {stato.giocatori.map((g) => (
+                      <button
+                        key={g}
+                        className={'pillola' + (alTavolo.includes(g) ? ' pillola-piena' : ' pillola-fantasma')}
+                        onClick={() => cambiaAlTavolo(g)}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </section>
-            )}
 
-            <button
-              className="pillola pillola-piena"
-              style={{ justifyContent: 'center', height: 46, width: '100%', marginTop: 20 }}
-              onClick={salva}
-              disabled={!giocoId}
-            >
-              Salva la partita
-            </button>
-          </div>
+              {alTavolo.length > 0 && (
+                <section className="scheda-sezione">
+                  <h3 className="scheda-titolo">Chi ha vinto</h3>
+                  <div className="scheda-comandi">
+                    {alTavolo.map((g) => (
+                      <button
+                        key={g}
+                        className={'pillola' + (vincitore === g ? ' pillola-piena' : ' pillola-fantasma')}
+                        onClick={() => setVincitore(vincitore === g ? '' : g)}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <button
+                className="pillola pillola-piena"
+                style={{ justifyContent: 'center', height: 46, width: '100%', marginTop: 20 }}
+                onClick={salva}
+                disabled={giocoId === null}
+              >
+                Salva la partita
+              </button>
+            </div>
+          )}
         </Foglio>
       )}
-
-      {scheda && <SchedaGioco gioco={scheda} chiudi={() => setScheda(null)} />}
     </div>
   )
 }

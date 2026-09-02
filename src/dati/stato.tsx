@@ -3,7 +3,7 @@ import { SEMI } from './semi'
 import { perIdi } from './catalogo'
 import type { Gioco } from './gioco'
 import { CELLE } from '../scene/mobile'
-import { ASPETTO_INIZIALE, dentro, LEGNI, MURI, PAVIMENTI, LUCI, type Aspetto } from '../scene/finiture'
+import { coloreValido, type Ordine } from '../scene/finiture'
 
 /* LO STATO DELL'APP.
  *
@@ -20,29 +20,35 @@ import { ASPETTO_INIZIALE, dentro, LEGNI, MURI, PAVIMENTI, LUCI, type Aspetto } 
 export type Partita = {
   id: string
   giocoId: number
-  data: string            // ISO, solo giorno
+  data: string
   giocatori: string[]
   vincitore?: string
-  durata?: number         // minuti
+  durata?: number
 }
 
-export type Recensione = {
-  voto: number            // 1..10, come su BGG
-  testo: string
-  quando: string
-}
-
+export type Recensione = { voto: number; testo: string; quando: string }
 export type Etichetta = { id: string; nome: string }
+export type Profilo = { nick: string; tinta: string }
 
-export type Profilo = {
-  nick: string
-  /** il colore del meeple: e' tutta l'identita' che serve senza un account */
-  tinta: string
+/* UNA LIBRERIA E' UN MOBILE CON LE SUE COSE.
+ *
+ * Nome, legno, luce e criterio di disposizione stanno QUI e non nella
+ * stanza: due mobili nella stessa stanza possono essere di legno diverso,
+ * ed e' il motivo per cui se ne tiene piu' d'uno. Muro e pavimento invece
+ * sono della stanza, che e' una sola. */
+export type Libreria = {
+  id: string
+  nome: string
+  /** null = segue la tavolozza dell'app */
+  legno: string | null
+  forza: number
+  ordine: Ordine
+  /** gli id dei giochi, nell'ordine delle caselle */
+  caselle: number[]
 }
 
 type Stato = {
   collezione: number[]
-  scaffale: number[]      // nell'ORDINE delle caselle
   desideri: number[]
   partite: Partita[]
   recensioni: Record<number, Recensione>
@@ -50,23 +56,34 @@ type Stato = {
   etichetteDi: Record<number, string[]>
   giocatori: string[]
   profilo: Profilo
-  /** com'e' fatta e come si dispone la libreria */
-  aspetto: Aspetto
+  librerie: Libreria[]
+  /** quale si sta guardando */
+  attiva: number
+  // ---- della stanza, non del singolo mobile ----
+  muro: string | null
+  pavimento: string | null
+  /** gli ultimi colori scelti col selettore libero */
+  mieiColori: string[]
 }
 
-/* La versione sale perche' gli id sono cambiati: erano slug inventati
-   ('wingspan'), ora sono quelli di BGG (266192). Uno stato vecchio non e'
-   recuperabile -- meglio ripartire pulito che mostrare uno scaffale di
-   giochi che non si risolvono. */
-const CHIAVE = 'meboard.stato.v2'
+/* v3: le librerie sono diventate piu' d'una, e `scaffale` non esiste
+   piu'. Uno stato vecchio non e' traducibile senza inventare, quindi si
+   riparte pulito. */
+const CHIAVE = 'meboard.stato.v3'
 
 const idSemi = SEMI.map((g) => g.id)
 
+const nuovaLibreria = (nome: string, caselle: number[] = []): Libreria => ({
+  id: 'l' + Date.now() + Math.random().toString(36).slice(2, 6),
+  nome,
+  legno: null,
+  forza: 1,
+  ordine: 'mano',
+  caselle,
+})
+
 const INIZIALE: Stato = {
   collezione: idSemi.slice(0, 14),
-  /* meno del ripiano che della collezione: cosi' il gesto "aggiungi"
-     e' subito disponibile invece di nascere disabilitato */
-  scaffale: idSemi.slice(0, 10),
   desideri: idSemi.slice(14, 17),
   partite: [],
   recensioni: {},
@@ -78,7 +95,11 @@ const INIZIALE: Stato = {
   etichetteDi: {},
   giocatori: ['Samuel', 'Giulia', 'Marco', 'Elia'],
   profilo: { nick: 'Samuel', tinta: '#CCFF4D' },
-  aspetto: ASPETTO_INIZIALE,
+  librerie: [{ ...nuovaLibreria('Salotto', idSemi.slice(0, 10)), id: 'l1' }],
+  attiva: 0,
+  muro: null,
+  pavimento: null,
+  mieiColori: [],
 }
 
 /* JSON non conosce le chiavi numeriche: `{266192: ...}` torna indietro
@@ -100,9 +121,16 @@ function leggi(): Stato {
     if (!grezzo) return INIZIALE
     const s = JSON.parse(grezzo) as Partial<Stato>
     const arr = <T,>(v: unknown, r: T[]) => (Array.isArray(v) ? (v as T[]) : r)
+    const librerie = arr<Libreria>(s.librerie, INIZIALE.librerie)
+      .filter((l) => l && typeof l.id === 'string')
+      .map((l) => ({
+        ...l,
+        legno: coloreValido(l.legno) ? l.legno : null,
+        forza: Math.min(2, Math.max(0, Number(l.forza) || 1)),
+        caselle: Array.isArray(l.caselle) ? l.caselle.slice(0, CELLE) : [],
+      }))
     return {
       collezione: arr(s.collezione, INIZIALE.collezione),
-      scaffale: arr(s.scaffale, INIZIALE.scaffale),
       desideri: arr(s.desideri, INIZIALE.desideri),
       partite: arr(s.partite, INIZIALE.partite),
       recensioni: chiaviNumeriche<Recensione>(s.recensioni),
@@ -110,19 +138,11 @@ function leggi(): Stato {
       etichetteDi: chiaviNumeriche<string[]>(s.etichetteDi),
       giocatori: arr(s.giocatori, INIZIALE.giocatori),
       profilo: { ...INIZIALE.profilo, ...(s.profilo ?? {}) },
-      /* Le finiture si ripassano dalle liste: un colore arrivato da uno
-         stato vecchio, o scritto a mano, non deve poter dipingere. */
-      aspetto: (() => {
-        const a = { ...ASPETTO_INIZIALE, ...((s.aspetto ?? {}) as Partial<Aspetto>) }
-        return {
-          ...a,
-          legno: dentro(LEGNI, a.legno, null),
-          muro: dentro(MURI, a.muro, null),
-          pavimento: dentro(PAVIMENTI, a.pavimento, null),
-          luce: dentro(LUCI, a.luce, ASPETTO_INIZIALE.luce) ?? ASPETTO_INIZIALE.luce,
-          forza: Math.min(2, Math.max(0, Number(a.forza) || 1)),
-        }
-      })(),
+      librerie: librerie.length ? librerie : INIZIALE.librerie,
+      attiva: Math.min(Math.max(0, Number(s.attiva) || 0), Math.max(0, librerie.length - 1)),
+      muro: coloreValido(s.muro) ? s.muro : null,
+      pavimento: coloreValido(s.pavimento) ? s.pavimento : null,
+      mieiColori: arr<string>(s.mieiColori, []).filter(coloreValido).slice(-12),
     }
   } catch {
     return INIZIALE
@@ -135,18 +155,52 @@ const oggi = () => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
+/* COME SI DISPONGONO LE SCATOLE.
+ *
+ * "Come li metto io" e' l'ordine delle caselle e non si tocca. Un gioco
+ * senza il dato su cui si ordina va IN FONDO, non davanti: un gioco mai
+ * giocato non e' "giocato tantissimo tempo fa", e uno senza rank non e'
+ * il migliore di tutti. */
+function disponi(giochi: Gioco[], ordine: Ordine, s: Stato): Gioco[] {
+  if (ordine === 'mano') return giochi
+  const v = giochi.slice()
+  const inFondo = (x: number | null | undefined) => (x === null || x === undefined ? Infinity : x)
+
+  if (ordine === 'nome') return v.sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
+  if (ordine === 'rank') return v.sort((a, b) => inFondo(a.posizione) - inFondo(b.posizione))
+  if (ordine === 'voto') {
+    return v.sort((a, b) => (s.recensioni[b.id]?.voto ?? -1) - (s.recensioni[a.id]?.voto ?? -1))
+  }
+  const ultima = new Map<number, string>()
+  s.partite.forEach((p) => {
+    const c = ultima.get(p.giocoId)
+    if (!c || p.data > c) ultima.set(p.giocoId, p.data)
+  })
+  return v.sort((a, b) => (ultima.get(b.id) ?? '').localeCompare(ultima.get(a.id) ?? ''))
+}
+
 type Azioni = {
   stato: Stato
   celle: number
+  libreria: Libreria
   pieno: boolean
-  /** i giochi risolti dal catalogo, per id */
   giochi: Map<number, Gioco>
-  giochiScaffale: Gioco[]
+  giochiLibreria: Gioco[]
   giochiCollezione: Gioco[]
   giochiDesiderati: Gioco[]
-  aggiungiAScaffale: (id: number) => void
-  togliDaScaffale: (id: number) => void
-  scambiaSuScaffale: (da: number, a: number) => void
+  /** in quale libreria sta un gioco, se c'e' */
+  dovEsta: (id: number) => Libreria | null
+  metti: (giocoId: number, casella?: number) => void
+  togli: (giocoId: number) => void
+  scambia: (da: number, a: number) => void
+  /** sposta un gioco in un'altra libreria, nella casella data */
+  trasloca: (giocoId: number, libreriaId: string, casella: number) => void
+  vaiA: (indice: number) => void
+  creaLibreria: (nome?: string) => void
+  eliminaLibreria: (id: string) => void
+  cambiaLibreria: (id: string, p: Partial<Omit<Libreria, 'id' | 'caselle'>>) => void
+  cambiaStanza: (p: { muro?: string | null; pavimento?: string | null }) => void
+  ricordaColore: (v: string) => void
   cambiaPossesso: (id: number, posseduto: boolean) => void
   cambiaDesiderio: (id: number, voluto: boolean) => void
   salvaRecensione: (giocoId: number, voto: number, testo: string) => void
@@ -158,48 +212,15 @@ type Azioni = {
   aggiungiGiocatore: (nome: string) => void
   togliGiocatore: (nome: string) => void
   salvaProfilo: (p: Partial<Profilo>) => void
-  cambiaAspetto: (p: Partial<Aspetto>) => void
   registraPartita: (p: Omit<Partita, 'id'>) => void
   eliminaPartita: (id: string) => void
   partiteDelGioco: (giocoId: number) => Partita[]
-}
-
-/* COME SI DISPONGONO LE SCATOLE NELLE CASELLE.
- *
- * "Come li metto io" e' l'ordine dell'elenco e non si tocca. Gli altri
- * sono criteri: finche' sono attivi, spostare a mano non ha senso e il
- * pannello lo dice invece di lasciare frecce che non fanno niente.
- *
- * Un gioco senza il dato su cui si ordina va IN FONDO, non davanti: un
- * gioco mai giocato non e' "giocato tantissimo tempo fa", e un gioco
- * senza rank non e' il migliore di tutti. */
-function disponi(giochi: Gioco[], ordine: Aspetto['ordine'], s: Stato): Gioco[] {
-  if (ordine === 'mano') return giochi
-  const v = giochi.slice()
-  const inFondo = (x: number | null | undefined) => (x === null || x === undefined ? Infinity : x)
-
-  if (ordine === 'nome') return v.sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
-  if (ordine === 'rank') return v.sort((a, b) => inFondo(a.posizione) - inFondo(b.posizione))
-  if (ordine === 'voto') {
-    return v.sort((a, b) =>
-      (s.recensioni[b.id]?.voto ?? -1) - (s.recensioni[a.id]?.voto ?? -1))
-  }
-  // giocati di recente: l'ultima partita di ciascuno
-  const ultima = new Map<number, string>()
-  s.partite.forEach((p) => {
-    const c = ultima.get(p.giocoId)
-    if (!c || p.data > c) ultima.set(p.giocoId, p.data)
-  })
-  return v.sort((a, b) => (ultima.get(b.id) ?? '').localeCompare(ultima.get(a.id) ?? ''))
 }
 
 const Ctx = createContext<Azioni | null>(null)
 
 export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
   const [stato, setStato] = useState<Stato>(leggi)
-  /* I giochi citati dagli id, risolti dal catalogo. Parte dai semi cosi'
-     la prima schermata ha gia' qualcosa da disegnare invece di apparire
-     vuota per un istante. */
   const [giochi, setGiochi] = useState<Map<number, Gioco>>(
     () => new Map(SEMI.map((g) => [g.id, g])))
 
@@ -207,14 +228,13 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     try { localStorage.setItem(CHIAVE, JSON.stringify(stato)) } catch { /* niente da fare */ }
   }, [stato])
 
-  /* Tutti gli id che l'app deve saper mostrare. Quelli che non conosce
-     ancora si chiedono al catalogo in un colpo solo, non uno per volta. */
   const citati = useMemo(() => {
-    const s = new Set<number>([...stato.collezione, ...stato.scaffale, ...stato.desideri])
+    const s = new Set<number>([...stato.collezione, ...stato.desideri])
+    stato.librerie.forEach((l) => l.caselle.forEach((id) => s.add(id)))
     stato.partite.forEach((p) => s.add(p.giocoId))
     Object.keys(stato.recensioni).forEach((k) => s.add(Number(k)))
     return [...s]
-  }, [stato.collezione, stato.scaffale, stato.desideri, stato.partite, stato.recensioni])
+  }, [stato.collezione, stato.desideri, stato.librerie, stato.partite, stato.recensioni])
 
   useEffect(() => {
     const mancanti = citati.filter((id) => !giochi.has(id))
@@ -235,25 +255,105 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     (ids: number[]) => ids.map((id) => giochi.get(id)).filter((g): g is Gioco => !!g),
     [giochi])
 
-  const aggiungiAScaffale = useCallback((id: number) => {
-    setStato((s) => (s.scaffale.includes(id) || s.scaffale.length >= CELLE)
-      ? s
-      : { ...s, scaffale: [...s.scaffale, id] })
+  /** Cambia la libreria che si sta guardando, lasciando stare le altre. */
+  const suAttiva = useCallback((f: (l: Libreria) => Libreria) => {
+    setStato((s) => ({
+      ...s,
+      librerie: s.librerie.map((l, i) => (i === s.attiva ? f(l) : l)),
+    }))
   }, [])
 
-  const togliDaScaffale = useCallback((id: number) => {
-    setStato((s) => ({ ...s, scaffale: s.scaffale.filter((x) => x !== id) }))
-  }, [])
+  const metti = useCallback((giocoId: number, casella?: number) => {
+    suAttiva((l) => {
+      if (l.caselle.includes(giocoId) || l.caselle.length >= CELLE) return l
+      if (casella === undefined || casella >= l.caselle.length) {
+        return { ...l, caselle: [...l.caselle, giocoId] }
+      }
+      const v = l.caselle.slice()
+      v.splice(casella, 0, giocoId)
+      return { ...l, caselle: v.slice(0, CELLE) }
+    })
+  }, [suAttiva])
+
+  const togli = useCallback((giocoId: number) => {
+    suAttiva((l) => ({ ...l, caselle: l.caselle.filter((x) => x !== giocoId) }))
+  }, [suAttiva])
 
   /* SCAMBIO, non scorrimento: su una griglia far scalare gli altri
      rimescolerebbe tutte le caselle successive. */
-  const scambiaSuScaffale = useCallback((da: number, a: number) => {
-    setStato((s) => {
-      if (da === a || da < 0 || a < 0 || da >= s.scaffale.length || a >= s.scaffale.length) return s
-      const v = s.scaffale.slice()
+  const scambia = useCallback((da: number, a: number) => {
+    suAttiva((l) => {
+      if (da === a || da < 0 || a < 0 || da >= l.caselle.length || a >= l.caselle.length) return l
+      const v = l.caselle.slice()
       ;[v[da], v[a]] = [v[a], v[da]]
-      return { ...s, scaffale: v }
+      return { ...l, caselle: v }
     })
+  }, [suAttiva])
+
+  /* Da una libreria all'altra: si toglie di la' e si mette di qua, in una
+     sola scrittura -- se fossero due, fra l'una e l'altra il gioco non
+     starebbe da nessuna parte. */
+  const trasloca = useCallback((giocoId: number, libreriaId: string, casella: number) => {
+    setStato((s) => {
+      const arrivo = s.librerie.find((l) => l.id === libreriaId)
+      if (!arrivo || arrivo.caselle.length >= CELLE) return s
+      return {
+        ...s,
+        librerie: s.librerie.map((l) => {
+          if (l.id === libreriaId) {
+            const v = l.caselle.filter((x) => x !== giocoId)
+            v.splice(Math.min(casella, v.length), 0, giocoId)
+            return { ...l, caselle: v.slice(0, CELLE) }
+          }
+          return { ...l, caselle: l.caselle.filter((x) => x !== giocoId) }
+        }),
+      }
+    })
+  }, [])
+
+  const vaiA = useCallback((indice: number) => {
+    setStato((s) => ({
+      ...s,
+      attiva: Math.min(Math.max(0, indice), s.librerie.length - 1),
+    }))
+  }, [])
+
+  const creaLibreria = useCallback((nome?: string) => {
+    setStato((s) => {
+      const l = nuovaLibreria(nome?.trim() || `Libreria ${s.librerie.length + 1}`)
+      // si va subito sulla nuova: e' quello che ci si aspetta dopo averla creata
+      return { ...s, librerie: [...s.librerie, l], attiva: s.librerie.length }
+    })
+  }, [])
+
+  const eliminaLibreria = useCallback((id: string) => {
+    setStato((s) => {
+      // l'ultima non si elimina: senza mobili la schermata non ha senso
+      if (s.librerie.length <= 1) return s
+      const librerie = s.librerie.filter((l) => l.id !== id)
+      return { ...s, librerie, attiva: Math.min(s.attiva, librerie.length - 1) }
+    })
+  }, [])
+
+  const cambiaLibreria = useCallback((id: string, p: Partial<Omit<Libreria, 'id' | 'caselle'>>) => {
+    setStato((s) => ({
+      ...s,
+      librerie: s.librerie.map((l) => (l.id === id ? { ...l, ...p } : l)),
+    }))
+  }, [])
+
+  const cambiaStanza = useCallback((p: { muro?: string | null; pavimento?: string | null }) => {
+    setStato((s) => ({ ...s, ...p }))
+  }, [])
+
+  /* L'ultimo colore scelto resta fra i predefiniti: chi ne trova uno che
+     gli piace lo ritrova, senza doverlo ricomporre a memoria. */
+  const ricordaColore = useCallback((v: string) => {
+    if (!coloreValido(v)) return
+    setStato((s) => ({
+      ...s,
+      mieiColori: [...s.mieiColori.filter((c) => c.toLowerCase() !== v.toLowerCase()), v].slice(-12),
+    }))
   }, [])
 
   const cambiaPossesso = useCallback((id: number, posseduto: boolean) => {
@@ -263,7 +363,9 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
         ? (s.collezione.includes(id) ? s.collezione : [...s.collezione, id])
         : s.collezione.filter((x) => x !== id),
       // un ripiano con sopra roba che non hai piu' non ha senso
-      scaffale: posseduto ? s.scaffale : s.scaffale.filter((x) => x !== id),
+      librerie: posseduto
+        ? s.librerie
+        : s.librerie.map((l) => ({ ...l, caselle: l.caselle.filter((x) => x !== id) })),
       // e comprarlo lo toglie dai desideri: e' lo stesso gesto da due lati
       desideri: posseduto ? s.desideri.filter((x) => x !== id) : s.desideri,
     }))
@@ -303,9 +405,6 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
 
   const eliminaEtichetta = useCallback((id: string) => {
     setStato((s) => {
-      /* Via l'etichetta, via i riferimenti: se no restano puntatori a
-         un'etichetta che non esiste e i filtri smettono di trovare
-         senza spiegare perche'. */
       const etichetteDi: Record<number, string[]> = {}
       Object.entries(s.etichetteDi).forEach(([g, v]) => {
         const resto = v.filter((x) => x !== id)
@@ -347,10 +446,6 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     setStato((s) => ({ ...s, profilo: { ...s.profilo, ...p } }))
   }, [])
 
-  const cambiaAspetto = useCallback((p: Partial<Aspetto>) => {
-    setStato((s) => ({ ...s, aspetto: { ...s.aspetto, ...p } }))
-  }, [])
-
   const registraPartita = useCallback((p: Omit<Partita, 'id'>) => {
     setStato((s) => ({ ...s, partite: [{ ...p, id: `p${Date.now()}` }, ...s.partite] }))
   }, [])
@@ -359,32 +454,36 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     setStato((s) => ({ ...s, partite: s.partite.filter((p) => p.id !== id) }))
   }, [])
 
+  const libreria = stato.librerie[stato.attiva] ?? stato.librerie[0]
+
   const valore = useMemo<Azioni>(() => ({
     stato,
     celle: CELLE,
-    pieno: stato.scaffale.length >= CELLE,
+    libreria,
+    pieno: libreria.caselle.length >= CELLE,
     giochi,
-    /* L'ordine del mobile e' quello dell'elenco -- cioe' come le hai
-       messe tu -- a meno che non si sia scelto un criterio. */
-    giochiScaffale: disponi(risolvi(stato.scaffale), stato.aspetto.ordine, stato),
+    giochiLibreria: disponi(risolvi(libreria.caselle), libreria.ordine, stato),
     giochiCollezione: risolvi(stato.collezione)
       .sort((a, b) => a.nome.localeCompare(b.nome, 'it')),
     giochiDesiderati: risolvi(stato.desideri),
+    dovEsta: (id) => stato.librerie.find((l) => l.caselle.includes(id)) ?? null,
     etichetteDelGioco: (giocoId) => {
       const ids = stato.etichetteDi[giocoId] ?? []
       return stato.etichette.filter((e) => ids.includes(e.id))
     },
     partiteDelGioco: (giocoId) => stato.partite.filter((p) => p.giocoId === giocoId),
-    aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
+    metti, togli, scambia, trasloca,
+    vaiA, creaLibreria, eliminaLibreria, cambiaLibreria, cambiaStanza, ricordaColore,
     cambiaPossesso, cambiaDesiderio,
     salvaRecensione, eliminaRecensione,
     creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
-    aggiungiGiocatore, togliGiocatore, salvaProfilo, cambiaAspetto,
+    aggiungiGiocatore, togliGiocatore, salvaProfilo,
     registraPartita, eliminaPartita,
-  }), [stato, giochi, risolvi, aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
+  }), [stato, libreria, giochi, risolvi, metti, togli, scambia, trasloca,
+       vaiA, creaLibreria, eliminaLibreria, cambiaLibreria, cambiaStanza, ricordaColore,
        cambiaPossesso, cambiaDesiderio, salvaRecensione, eliminaRecensione,
        creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
-       aggiungiGiocatore, togliGiocatore, salvaProfilo, cambiaAspetto,
+       aggiungiGiocatore, togliGiocatore, salvaProfilo,
        registraPartita, eliminaPartita])
 
   return <Ctx.Provider value={valore}>{children}</Ctx.Provider>

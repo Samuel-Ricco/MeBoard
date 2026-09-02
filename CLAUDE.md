@@ -289,33 +289,62 @@ Due trappole nel parser, entrambe gia' pagate:
 - **`'\d'` in una stringa TypeScript diventa `d`**. L'espressione cercava lettere invece di
   cifre e tornava zero risultati, senza un errore. Si usa `String.raw`.
 
-## Personalizzare la libreria
+## I gesti sul mobile
 
-Tavolozze in `scene/finiture.ts`, prese da `new_dado-e-trap` con le loro ragioni: i **muri**
-hanno un colore vero (le prime tinte erano tutte a mezzo passo dal bianco e sotto una luce
-diffusa si leggevano uguali), e i **faretti** non seguono la tavolozza degli intonaci --
-una lampadina non e' un muro. Le liste sono **chiuse**: un selettore libero, nell'altra
-app, dava scaffali al neon fucsia.
+Tre, e non si pestano i piedi:
 
-Si sceglie: nome, legno, muro, pavimento, colore e forza della luce, e come si dispongono
-le scatole.
+| | |
+|---|---|
+| **tocco corto** | apre la scheda del gioco |
+| **tieni premuto** | prendi la scatola e la porti in un'altra casella |
+| **scorri di lato** | cambi libreria; con una scatola in mano, **trascinarla fuori dal mobile** la porta con te |
 
-- **Pavimento e muro sono due parallelepipedi nella stessa `InstancedMesh` del mobile**:
-  restano una draw call, non due. Nulli vuol dire niente stanza, e il mobile galleggia sul
-  fondo dell'app -- che e' il predefinito e non un ripiego.
-- **I faretti non aggiungono una luce.** Restano due: il colore scelto tinge la
-  direzionale che c'e' gia'. Una terza costerebbe un moltiplicatore su ogni frammento, ed
-  e' il conto che nella versione precedente valeva il 28% del tempo GPU.
-- **Il colore sta sul faretto, non sull'ambiente.** Tingendo anche l'ambiente un'ambra a
-  piena forza sommergeva tutto, copertine comprese -- e vedere le copertine e' il punto
-  dello scaffale.
-- **Con un criterio di ordinamento attivo le frecce si spengono**: spostare a mano
-  contraddirebbe il criterio al fotogramma dopo. Un gioco senza il dato su cui si ordina va
-  in fondo, non davanti: un gioco mai giocato non e' "giocato tantissimo tempo fa".
+Trascinare **non gira il mobile**: c'erano gli OrbitControls e sono via. Girarlo era comodo
+per guardarlo, ma mangiava il gesto piu' usato di tutti -- sfogliare le librerie -- e su un
+telefono un gesto vale piu' di una rotazione.
 
-Restano fuori: **piu' librerie** (e' la domanda delle dodici caselle, punto 4 qui sotto, e
-va decisa non improvvisata), gli **arredi** (libri, dadi, piante: sono oggetti da
-modellare, non un'impostazione) e i **suoni**.
+Tutto sta in `scene/Gesti.tsx`: DOM puro sul canvas piu' un raycast a mano, cosi' non serve
+un piano invisibile per intercettare i movimenti -- che sarebbe una draw call in piu' per
+non disegnare niente.
+
+Mentre si trascina, **il mobile mostra gia' il risultato**: le due scatole si scambiano
+subito di posto, cosi' si vede dove andra' a finire invece di doverlo immaginare.
+
+## Piu' librerie
+
+Ogni libreria ha nome, legno, luce e criterio di disposizione **suoi**: due mobili nella
+stessa stanza possono essere di legno diverso, ed e' il motivo per cui se ne tiene piu'
+d'uno. **Muro e pavimento no**: la stanza e' una sola.
+
+L'ultima libreria non si elimina -- senza mobili la schermata non ha senso.
+
+## Personalizzare
+
+Pannello a **tendine**, in `ui/Aspetto.tsx`, aperto dal tasto in alto a sinistra. Aperte
+tutte insieme erano sette blocchi da scorrere per cambiare una cosa sola; chiuse mostrano
+comunque cosa c'e' scelto, che e' meta' del motivo per cui si aprirebbero.
+
+L'ordine va dal **particolare al generale**, e finisce con cio' che distrugge: nome, legno,
+luce, disposizione, poi la stanza, poi l'eliminazione.
+
+- **I colori predefiniti sono una proposta, non una gabbia.** Sei tinte scelte perche'
+  stiano bene fra loro e col tema, piu' un bottone che apre il selettore di sistema; il
+  colore scelto entra in coda ai predefiniti, cosi' si ritrova senza ricomporlo a memoria.
+- **La luce ha una temperatura sola.** C'erano dodici colori, neon compresi: una decisione
+  in piu' per un guadagno che non c'era, perche' una luce colorata tinge le copertine.
+- **Muro e pavimento nulli sono il predefinito**, non un ripiego: su uno schermo piccolo un
+  mobile senza contorno e' piu' pulito.
+- **I faretti non aggiungono una luce**: restano due. Una terza sarebbe un moltiplicatore
+  su ogni frammento, il conto che nella versione precedente valeva il 28% del tempo GPU.
+
+## Cose tolte perche' brutte
+
+- Il **pannello fisso** in fondo alla libreria, con "tocca una scatola" e due bottoni:
+  occupava un quinto dello schermo per spiegare un gesto e offrire un comando che stava
+  gia' altrove.
+- Il **`<select>` di sistema** per scegliere il gioco di una partita: su Android e' un menu
+  grigio che non somiglia a niente del resto, e senza copertine un gioco non si riconosce a
+  colpo d'occhio.
 
 ## L'atlante delle copertine
 

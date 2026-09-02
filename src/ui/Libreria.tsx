@@ -1,137 +1,91 @@
-import { useState } from 'react'
-import { type Gioco, scatolaDi } from '../dati/gioco'
+import { useMemo, useState } from 'react'
+import type { Gioco } from '../dati/gioco'
 import { useStato } from '../dati/stato'
-import { SchedaGioco } from './SchedaGioco'
-import { COLONNE, RIGHE, casella } from '../scene/mobile'
-import { Foglio } from './Foglio'
 import { Aspetto } from './Aspetto'
+import { Foglio } from './Foglio'
 import { Copertina } from './Copertina'
-import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra, IcoAspetto } from './icone'
+import { Ghirigoro, IcoPiu, IcoAspetto } from './icone'
 
 /* LA LIBRERIA.
  *
- * E' l'unica schermata che non copre la scena: il Kallax sta dietro e si
- * vede. I comandi galleggiano sopra, vicino al pollice.
+ * L'unica schermata che non copre la scena: il mobile sta dietro e si
+ * vede. Sopra ci sono solo il nome e due bottoni, perche' i comandi veri
+ * sono i GESTI sul mobile -- toccare per aprire, tenere premuto per
+ * spostare, scorrere per cambiare libreria.
  *
- * Si sceglie una scatola toccandola direttamente nel mobile -- il raycast
- * su InstancedMesh restituisce `instanceId`, che e' anche il numero della
- * casella. Scelta una scatola, la si sposta di casella, la si toglie,
- * oppure se ne aggiunge un'altra dalla collezione.
+ * C'era un pannello fisso in basso con "tocca una scatola" e due
+ * bottoni: occupava un quinto dello schermo per spiegare un gesto e per
+ * offrire un comando che sta gia' altrove.
  */
-export function Libreria({ selezionato, seleziona }: {
-  selezionato: number | null
-  seleziona: (id: number | null) => void
-}) {
-  const { giochiScaffale, giochiCollezione, stato, celle, pieno,
-          aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale } = useStato()
-  /* Con un criterio di ordinamento attivo le caselle si riempiono da
-     sole: spostare a mano contraddirebbe il criterio al fotogramma dopo,
-     quindi le frecce si spengono invece di fare finta. */
-  const aMano = stato.aspetto.ordine === 'mano'
-  const [foglioAperto, setFoglioAperto] = useState(false)
-  const [scheda, setScheda] = useState<Gioco | null>(null)
-  const [aspettoAperto, setAspettoAperto] = useState(false)
+export function Libreria({ apriScheda }: { apriScheda: (g: Gioco) => void }) {
+  const {
+    stato, libreria, giochiCollezione, celle, pieno,
+    metti, vaiA, creaLibreria,
+  } = useStato()
 
-  const posto = giochiScaffale.findIndex((g) => g.id === selezionato)
-  const scelto = posto >= 0 ? giochiScaffale[posto] : null
-  const dove = posto >= 0 ? casella(posto) : null
+  const [foglioAperto, setFoglioAperto] = useState(false)
+  const [aspettoAperto, setAspettoAperto] = useState(false)
 
   /* Si possono mettere nel mobile solo i giochi che possiedi e che non ci
      sono gia': il ripiano e' un sottoinsieme della collezione. */
-  const aggiungibili = giochiCollezione.filter((g) => !stato.scaffale.includes(g.id))
-
-  /* Una casella e' raggiungibile solo se esiste E se e' occupata: scambiare
-     con il vuoto vorrebbe dire lasciare un buco in mezzo alla griglia. */
-  const puo = (delta: number) => {
-    if (!aMano) return false
-    const a = posto + delta
-    return posto >= 0 && a >= 0 && a < giochiScaffale.length
-  }
-  const muovi = (delta: number) => { if (puo(delta)) scambiaSuScaffale(posto, posto + delta) }
+  const aggiungibili = useMemo(
+    () => giochiCollezione.filter((g) => !libreria.caselle.includes(g.id)),
+    [giochiCollezione, libreria.caselle])
 
   return (
     <div className="schermo schermo-vetro">
-      <header className="intestazione">
-        <div className="occhiello">{stato.aspetto.nome || 'la tua libreria'}</div>
+      <div className="attrezzi">
+        <button
+          className="bottoncino"
+          onClick={() => setAspettoAperto(true)}
+          aria-label="Modifica questa libreria"
+          title="Nome, legno, luce, ordine"
+        >
+          <IcoAspetto size={17} />
+        </button>
+        <button
+          className="bottoncino"
+          onClick={() => setFoglioAperto(true)}
+          disabled={pieno || aggiungibili.length === 0}
+          aria-label="Metti un gioco in questa libreria"
+          title={pieno ? 'Nessuna casella libera' : 'Metti un gioco'}
+        >
+          <IcoPiu size={17} />
+        </button>
+      </div>
+
+      <header className="intestazione intestazione-libreria">
+        <div className="occhiello">{libreria.nome}</div>
         <div className="intestazione-riga">
-          <span className="numerone">{giochiScaffale.length}</span>
+          <span className="numerone">{libreria.caselle.length}</span>
           <span className="coda">giochi su {celle} caselle</span>
         </div>
         <Ghirigoro w={104} h={22} />
       </header>
 
-      <div className="pannello">
-        {scelto && dove ? (
-          <>
-            <div className="pannello-titolo">
-              {/* Il nome apre la scheda: un bersaglio che c'e' gia', invece
-                  di un sesto bottone in una fila gia' piena. */}
-              <button className="pannello-nome" onClick={() => setScheda(scelto)}>
-                {scelto.nome}
-              </button>
-              <span className="pannello-posto">
-                riga {dove.riga + 1} · col {dove.colonna + 1}
-              </span>
-            </div>
-            {/* Le quattro direzioni come icone sole, e l'unica azione con
-                conseguenza -- togliere -- scritta a parole. */}
-            <div className="frecce">
-              <button className="bottoncino" aria-label="Sposta a sinistra"
-                      onClick={() => muovi(-1)} disabled={!puo(-1)}>
-                <IcoSinistra size={17} />
-              </button>
-              <button className="bottoncino" aria-label="Sposta in alto"
-                      onClick={() => muovi(-COLONNE)} disabled={!puo(-COLONNE)}>
-                <IcoSu size={17} />
-              </button>
-              <button className="bottoncino" aria-label="Sposta in basso"
-                      onClick={() => muovi(COLONNE)} disabled={!puo(COLONNE)}>
-                <IcoGiu size={17} />
-              </button>
-              <button className="bottoncino" aria-label="Sposta a destra"
-                      onClick={() => muovi(1)} disabled={!puo(1)}>
-                <IcoDestra size={17} />
-              </button>
-              <button
-                className="pillola pillola-fantasma"
-                onClick={() => { togliDaScaffale(scelto.id); seleziona(null) }}
-              >
-                <IcoMeno size={16} /> Togli
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="suggerimento">
-              {pieno
-                ? `Il mobile e' pieno: ${RIGHE}×${COLONNE} caselle. Togline uno per farne entrare un altro.`
-                : 'Tocca una scatola nel mobile per spostarla o toglierla.'}
-            </p>
-            <div className="pannello-comandi" style={{ marginTop: 11 }}>
-              <button
-                className="pillola pillola-piena"
-                onClick={() => setFoglioAperto(true)}
-                disabled={pieno || aggiungibili.length === 0}
-              >
-                <IcoPiu size={16} />
-                {pieno ? 'Nessuna casella libera'
-                  : aggiungibili.length ? 'Aggiungi un gioco'
-                  : 'Sono tutti nel mobile'}
-              </button>
-              <button
-                className="pillola pillola-fantasma"
-                onClick={() => setAspettoAperto(true)}
-                aria-label="Personalizza la libreria"
-                title="Legno, muro, luce, ordine"
-              >
-                <IcoAspetto size={16} />
-              </button>
-            </div>
-          </>
-        )}
+      {/* Le librerie: quale stai guardando e come si passa alle altre.
+          Il gesto e' lo scorrimento sul mobile; questi servono a chi
+          preferisce toccare, e a sapere quante ce ne sono. */}
+      <div className="librerie">
+        {stato.librerie.map((l, i) => (
+          <button
+            key={l.id}
+            className={'segno' + (i === stato.attiva ? ' segno-qui' : '')}
+            onClick={() => vaiA(i)}
+            aria-label={'Vai a ' + l.nome}
+            aria-current={i === stato.attiva}
+            title={l.nome}
+          />
+        ))}
+        <button
+          className="segno segno-piu"
+          onClick={() => creaLibreria()}
+          aria-label="Crea una libreria"
+          title="Crea una libreria"
+        >
+          +
+        </button>
       </div>
-
-      {scheda && <SchedaGioco gioco={scheda} chiudi={() => setScheda(null)} />}
 
       {aspettoAperto && <Aspetto chiudi={() => setAspettoAperto(false)} />}
 
@@ -140,28 +94,34 @@ export function Libreria({ selezionato, seleziona }: {
           <div className="elenco">
             {aggiungibili.map((g) => (
               <div className="riga" key={g.id}>
-                <Copertina gioco={g} />
-                <div className="riga-corpo">
-                  <div className="riga-nome">{g.nome}</div>
-                  <div className="riga-sotto">
-                    {g.editore ?? '—'} · {g.anno ?? '—'} · {scatolaDi(g).spessore} cm di spessore
-                  </div>
-                </div>
+                <button
+                  className="riga-apri"
+                  onClick={() => { apriScheda(g); setFoglioAperto(false) }}
+                >
+                  <Copertina gioco={g} />
+                  <span className="riga-corpo">
+                    <span className="riga-nome">{g.nome}</span>
+                    <span className="riga-sotto">
+                      {g.editore ?? '—'} · {g.anno ?? '—'}
+                    </span>
+                  </span>
+                </button>
                 <div className="riga-azioni">
                   <button
                     className="bottoncino bottoncino-acceso"
                     aria-label={'Metti ' + g.nome + ' nel mobile'}
-                    onClick={() => {
-                      aggiungiAScaffale(g.id)
-                      seleziona(g.id)
-                      setFoglioAperto(false)
-                    }}
+                    onClick={() => { metti(g.id); setFoglioAperto(false) }}
                   >
                     <IcoPiu size={17} />
                   </button>
                 </div>
               </div>
             ))}
+            {aggiungibili.length === 0 && (
+              <p className="scheda-nota" style={{ padding: '0 18px' }}>
+                Non hai altri giochi da mettere qui.
+              </p>
+            )}
           </div>
         </Foglio>
       )}

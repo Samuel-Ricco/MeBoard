@@ -86,13 +86,14 @@ export function SchedaGioco({ gioco: iniziale, chiudi }: { gioco: Gioco; chiudi:
 
   const {
     stato, etichetteDelGioco, partiteDelGioco,
-    cambiaPossesso, cambiaDesiderio, aggiungiAScaffale, togliDaScaffale, pieno,
+    cambiaPossesso, cambiaDesiderio, metti, togli, pieno, dovEsta, libreria,
     salvaRecensione, eliminaRecensione, cambiaEtichettaGioco,
   } = useStato()
 
   const posseduto = stato.collezione.includes(gioco.id)
   const desiderato = stato.desideri.includes(gioco.id)
-  const suRipiano = stato.scaffale.includes(gioco.id)
+  const dove = dovEsta(gioco.id)
+  const suRipiano = !!dove
   const recensione = stato.recensioni[gioco.id]
   const mie = etichetteDelGioco(gioco.id).map((e) => e.id)
   const partite = partiteDelGioco(gioco.id)
@@ -146,11 +147,15 @@ export function SchedaGioco({ gioco: iniziale, chiudi }: { gioco: Gioco; chiudi:
           {posseduto && (
             <button
               className={'pillola' + (suRipiano ? ' pillola-piena' : ' pillola-fantasma')}
-              onClick={() => suRipiano ? togliDaScaffale(gioco.id) : aggiungiAScaffale(gioco.id)}
+              onClick={() => suRipiano ? togli(gioco.id) : metti(gioco.id)}
               disabled={!suRipiano && pieno}
             >
               {suRipiano ? <IcoMeno size={16} /> : <IcoPiu size={16} />}
-              {suRipiano ? 'Nel mobile' : pieno ? 'Mobile pieno' : 'Metti nel mobile'}
+              {/* Con piu' librerie non basta dire "nel mobile": va detto
+                  in QUALE, se no non si sa dove andarlo a cercare. */}
+              {suRipiano ? 'In ' + dove!.nome
+                : pieno ? libreria.nome + ' e’ piena'
+                : 'Metti in ' + libreria.nome}
             </button>
           )}
         </div>

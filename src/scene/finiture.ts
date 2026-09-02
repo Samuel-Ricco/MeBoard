@@ -1,32 +1,31 @@
-/* LE FINITURE DELLA LIBRERIA.
+/* I COLORI DELLA LIBRERIA.
  *
  * Numeri puri, senza three.js e senza React: li leggono la scena, che
  * dipinge, e il pannello, che li mostra.
  *
- * Le tavolozze vengono da `new_dado-e-trap`, con le loro ragioni:
- *
- *  - i MURI hanno un colore vero. Le prime tinte erano tutte a mezzo
- *    passo dal bianco e sotto una luce diffusa si leggevano tutte
- *    uguali. Restano intonaci, non fluorescenze, ma si distinguono.
- *  - i FARETTI non seguono la tavolozza degli intonaci: una lampadina
- *    non e' un muro. Sono le temperature che una luce puo' davvero
- *    avere, piu' i neon -- e i neon sono l'unica cosa che esce dalla
- *    tavolozza, perche' un LED sotto un ripiano non deve andare
- *    d'accordo col muro, deve staccarsene.
- *  - le liste sono CHIUSE. Un selettore libero dava scaffali fucsia.
+ * I predefiniti sono COERENTI COL TEMA -- legni e intonaci nella stessa
+ * famiglia calda del fondo dell'app -- ma non sono una gabbia: da ogni
+ * sezione si apre un selettore libero, e il colore scelto entra in coda
+ * ai predefiniti. Cosi' chi vuole il suo verde non deve accontentarsi, e
+ * chi non vuole pensarci trova sei tinte che stanno bene insieme.
  */
 
 export type Finitura = { v: string; n: string }
 
+/* I LEGNI. Vanno d'accordo col cioccolato del tema scuro e con la carta
+   di quello chiaro: sono tutti caldi, nessuno vira al blu. */
 export const LEGNI: Finitura[] = [
   { v: '#8e6a4b', n: 'noce' },
   { v: '#5c4530', n: 'noce scuro' },
+  { v: '#c7af98', n: 'sabbia' },
   { v: '#747760', n: 'oliva' },
   { v: '#a6a89c', n: 'salvia' },
-  { v: '#c7af98', n: 'sabbia' },
   { v: '#c86a3c', n: 'terracotta' },
 ]
 
+/* I MURI hanno un colore vero. Le prime tinte erano tutte a mezzo passo
+   dal bianco e sotto una luce diffusa si leggevano tutte uguali: restano
+   intonaci, non fluorescenze, ma si distinguono. */
 export const MURI: Finitura[] = [
   { v: '#cfccc8', n: 'grigio caldo' },
   { v: '#c7af98', n: 'sabbia' },
@@ -45,21 +44,13 @@ export const PAVIMENTI: Finitura[] = [
   { v: '#c86a3c', n: 'cotto' },
 ]
 
-export const LUCI: Finitura[] = [
-  { v: '#ffb877', n: 'caldo' },
-  { v: '#ff8a3d', n: 'ambra' },
-  { v: '#fff1dc', n: 'bianco caldo' },
-  { v: '#e6eeff', n: 'bianco freddo' },
-  { v: '#a9c8ff', n: 'azzurro' },
-  { v: '#c86a3c', n: 'terracotta' },
-  // i neon: luce, non intonaco, e a stanza piena si vedono appena
-  { v: '#ff2f9e', n: 'neon rosa' },
-  { v: '#a24bff', n: 'neon viola' },
-  { v: '#2ee6ff', n: 'neon ciano' },
-  { v: '#39ff88', n: 'neon verde' },
-  { v: '#ffe93c', n: 'neon giallo' },
-  { v: '#3b6cff', n: 'neon blu' },
-]
+/* LA LUCE E' UNA SOLA, ED E' NATURALE.
+ *
+ * C'erano dodici temperature fra cui scegliere, neon compresi. Erano una
+ * decisione in piu' da prendere per un guadagno che non c'era: una luce
+ * colorata tinge le copertine, e vedere le copertine e' il punto dello
+ * scaffale. Resta un bianco appena caldo, quello di una stanza. */
+export const LUCE = '#fff1dc'
 
 /** Come si dispongono le scatole nelle caselle. */
 export type Ordine = 'mano' | 'nome' | 'rank' | 'voto' | 'recente'
@@ -72,29 +63,24 @@ export const ORDINI: Array<{ id: Ordine; nome: string }> = [
   { id: 'recente', nome: 'Giocati di recente' },
 ]
 
-export type Aspetto = {
-  nome: string
-  /** null = segue la tavolozza dell'app */
-  legno: string | null
-  muro: string | null
-  pavimento: string | null
-  luce: string
-  /** 0..2, quanto e' forte la luce */
-  forza: number
-  ordine: Ordine
-}
+export const FORZE = [
+  { v: 0.5, n: 'Soffusa' },
+  { v: 1, n: 'Normale' },
+  { v: 1.7, n: 'Piena' },
+]
 
-export const ASPETTO_INIZIALE: Aspetto = {
-  nome: 'La mia libreria',
-  legno: null,
-  muro: null,
-  pavimento: null,
-  luce: '#fff1dc',
-  forza: 1,
-  ordine: 'mano',
-}
+/** Un esadecimale valido, scritto per esteso. Serve a non far entrare
+ *  spazzatura nei colori salvati da chi arriva da uno stato vecchio. */
+export const coloreValido = (v: unknown): v is string =>
+  typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)
 
-/** Tiene un valore dentro la sua lista: un colore arrivato da uno stato
- *  vecchio, o scritto a mano, non deve poter dipingere niente. */
-export const dentro = (lista: Finitura[], v: string | null, ripiego: string | null) =>
-  v === null || lista.some((f) => f.v === v) ? v : ripiego
+/** I predefiniti piu' quelli che hai scelto tu, senza doppioni e senza
+ *  crescere all'infinito: gli ultimi sei bastano a ritrovarli. */
+export function conIMiei(base: Finitura[], miei: string[]): Finitura[] {
+  const gia = new Set(base.map((f) => f.v.toLowerCase()))
+  const aggiunti = miei
+    .filter((v) => coloreValido(v) && !gia.has(v.toLowerCase()))
+    .slice(-6)
+    .map((v) => ({ v, n: 'il tuo' }))
+  return [...base, ...aggiunti]
+}

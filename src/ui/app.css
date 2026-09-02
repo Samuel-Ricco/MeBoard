@@ -238,46 +238,6 @@
 .filtri::-webkit-scrollbar { display: none; }
 .filtri .pillola { flex: 0 0 auto; height: 34px; font-size: 12px; }
 
-/* ---------- pannello della libreria ---------- */
-
-.pannello {
-  position: fixed;
-  z-index: 2;
-  left: 14px; right: 14px;
-  bottom: calc(env(safe-area-inset-bottom) + 76px);
-  padding: 14px 15px 15px;
-  background: var(--superficie);
-  border: 1.5px solid var(--bordo-lime);
-  border-radius: var(--r-carta);
-}
-
-.pannello-titolo {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-  margin-bottom: 11px;
-}
-.pannello-nome {
-  font-family: var(--display);
-  font-size: 21px;
-  color: var(--inchiostro);
-  text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.pannello-posto {
-  font-family: var(--testo);
-  font-size: 11px; font-weight: 700; letter-spacing: .07em;
-  color: var(--lime); white-space: nowrap;
-}
-.pannello-comandi { display: flex; gap: 8px; }
-.pannello-comandi .pillola { flex: 1 1 auto; justify-content: center; }
-
-.suggerimento {
-  font-family: var(--testo);
-  font-size: 12.5px;
-  color: var(--tenue);
-  text-align: center;
-  line-height: 1.45;
-}
-
 /* ---------- foglio che sale dal basso ---------- */
 
 .velo {
@@ -338,11 +298,6 @@
   pointer-events: none;
 }
 
-/* Le quattro direzioni piu' l'azione scritta: le icone restano quadrate e
-   compatte, il "togli" si prende lo spazio che avanza perche' e' l'unico
-   comando con una conseguenza. */
-.frecce { display: flex; gap: 8px; align-items: center; }
-.frecce .pillola { flex: 1 1 auto; justify-content: center; margin-left: 2px; }
 
 /* ---------- il meeple: la porta del profilo ---------- */
 
@@ -559,15 +514,6 @@
   min-width: 22px; text-align: right;
 }
 
-/* Il nome nel pannello e' un bottone: apre la scheda del gioco. */
-button.pannello-nome {
-  border: 0; background: transparent; padding: 0;
-  text-align: left; cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--bordo-lime);
-  text-underline-offset: 4px;
-  text-decoration-thickness: 2px;
-}
 
 /* ---------- copertine ---------- */
 
@@ -638,3 +584,177 @@ button.pannello-nome {
   color: var(--inchiostro);
 }
 .finitura-nome { white-space: nowrap; }
+
+/* ---------- gli attrezzi della libreria ---------- */
+
+/* In alto a sinistra, di fianco al nome: sono due comandi rari -- si
+   cambia il legno una volta ogni tanto -- e non meritavano un pannello
+   fisso che si mangiava un quinto dello schermo. */
+.attrezzi {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+.attrezzi .bottoncino { background: var(--superficie); width: 38px; height: 38px; }
+
+/* La testata scende sotto gli attrezzi invece di scontrarcisi. */
+.intestazione-libreria { padding-top: 46px; }
+
+/* ---------- le librerie ---------- */
+
+.librerie {
+  position: fixed;
+  z-index: 2;
+  left: 0; right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 76px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+
+.segno {
+  width: 9px; height: 9px;
+  padding: 0;
+  border-radius: var(--r-pillola);
+  border: 1.5px solid var(--bordo-lime);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--scatto), width var(--scatto);
+}
+.segno-qui { background: var(--lime); border-color: var(--lime); width: 22px; }
+
+.segno-piu {
+  width: 22px; height: 22px;
+  border-style: dashed;
+  color: var(--tenue);
+  font-size: 15px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ---------- tendine ---------- */
+
+/* Aperte tutte insieme erano sette blocchi da scorrere per cambiare una
+   cosa sola. Chiuse mostrano comunque cosa c'e' scelto, che e' la meta'
+   del motivo per cui si aprirebbero. */
+.tendina {
+  border-top: 1.5px solid var(--bordo);
+  padding: 2px 0;
+}
+.tendina:first-of-type { border-top: 0; }
+
+.tendina summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.tendina summary::-webkit-details-marker { display: none; }
+
+.tendina-titolo {
+  font-family: var(--display);
+  font-size: 17px;
+  text-transform: uppercase;
+  color: var(--inchiostro);
+}
+.tendina-valore {
+  font-family: var(--testo);
+  font-size: 12.5px;
+  color: var(--tenue);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tendina[open] .tendina-valore { opacity: .45; }
+.tendina-corpo { padding: 0 0 16px; }
+
+.scheda-divisorio {
+  margin: 22px 0 4px;
+  padding-top: 16px;
+  border-top: 1.5px dashed var(--bordo);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fioco);
+}
+
+/* ---------- colori ---------- */
+
+.colori { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.colore {
+  width: 40px; height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  /* Il contorno serve sui colori chiari, che senno' spariscono nel fondo
+     chiaro e sembrano assenti. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+  transition: border-color var(--scatto), transform var(--scatto);
+}
+.colore:active { transform: translateY(1px); }
+.colore-scelto { border-color: var(--inchiostro); }
+
+/* "Come il tema" e "Niente" non sono colori: si scrivono. */
+.colore-nessuno {
+  width: auto;
+  padding: 0 13px;
+  background: transparent;
+  border: 1.5px solid var(--bordo);
+  box-shadow: none;
+  color: var(--tenue);
+  font-family: var(--testo);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.colore-nessuno.colore-scelto { border-color: var(--lime); color: var(--inchiostro); }
+
+/* Il selettore libero: l'input di sistema resta invisibile sotto, ma
+   dentro al bottone -- fuori, su qualche browser, non si apre. */
+.colore-scegli {
+  position: relative;
+  background: transparent;
+  border: 1.5px dashed var(--bordo);
+  box-shadow: none;
+  color: var(--tenue);
+  font-size: 20px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.colore-scegli input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ---------- scelta del gioco ---------- */
+
+/* Era un <select> di sistema: su Android un menu grigio che non somiglia
+   a niente del resto, e senza copertine un gioco non si riconosce. */
+.scelta-gioco,
+.riga-tutta {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 13px 14px;
+  background: var(--superficie);
+  border: 1.5px solid var(--bordo);
+  border-radius: var(--r-carta);
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: border-color var(--scatto);
+}
+.scelta-gioco:hover, .riga-tutta:hover { border-color: var(--bordo-lime); }

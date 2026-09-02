@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useThree, type ThreeEvent } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
   CM, CASELLA, MONTANTE, FONDO, RIGHE, COLONNE, PASSO,
@@ -7,7 +7,7 @@ import {
 } from './mobile'
 import { coloreDiTema } from '../ui/tema'
 import { costruisciAtlante, LATO_PAGINA, type Atlante } from './atlante'
-import type { Aspetto } from './finiture'
+
 import { COPERTINA_PX } from './budget'
 
 export { CM, LARGHEZZA, ALTEZZA, FONDO, CELLE } from './mobile'
@@ -47,6 +47,13 @@ function scurisci(hex: string, quanto: number) {
 /* IL MOBILE: dieci parallelepipedi, una sola draw call.
    Montanti verticali, ripiani orizzontali e la schiena, tutti dallo stesso
    cubo unitario con scale diverse. */
+export type Aspetto = {
+  legno: string | null
+  muro: string | null
+  pavimento: string | null
+  forza: number
+}
+
 function Mobile({ tema, aspetto }: { tema: string; aspetto: Aspetto }) {
   const ref = useRef<THREE.InstancedMesh>(null!)
   const invalidate = useThree((s) => s.invalidate)
@@ -197,13 +204,14 @@ function useAtlante(scatole: Scatola[]) {
  * l'instancing non regala e' una texture per scatola, ed e' li' che
  * entrera' l'atlante con l'offset UV per istanza.
  */
-function Scatole({ scatole, selezionato, onSeleziona, tema }: {
+function Scatole({ scatole, evidenziato, tema, meshRef }: {
   scatole: Scatola[]
-  selezionato?: number | null
-  onSeleziona?: (id: number | null) => void
+  /** l'indice della scatola che si sta portando, se ce n'e' una */
+  evidenziato: number | null
   tema: string
+  meshRef: React.RefObject<THREE.InstancedMesh | null>
 }) {
-  const ref = useRef<THREE.InstancedMesh>(null!)
+  const ref = meshRef
   const invalidate = useThree((s) => s.invalidate)
   const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
   const atlante = useAtlante(scatole)
@@ -301,7 +309,7 @@ ${shader.vertexShader}`
          sono, e resta il lime sulla scatola scelta -- una copertina
          virata di lime si riconosce a colpo d'occhio, ed e' l'unico modo
          per legare la riga dell'elenco all'oggetto nel mobile. */
-      const tinta = g.id === selezionato ? scelta : (atlante ? '#ffffff' : g.tinta)
+      const tinta = i === evidenziato ? scelta : (atlante ? '#ffffff' : g.tinta)
       mesh.setColorAt(i, col.set(tinta))
     })
 
@@ -311,37 +319,33 @@ ${shader.vertexShader}`
     /* In "demand" nessuno ridisegna da solo: dopo aver cambiato le matrici
        il fotogramma va chiesto a mano. */
     invalidate()
-  }, [scatole, selezionato, tema, atlante, invalidate])
-
-  const tocca = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation()
-    const i = e.instanceId
-    if (i === undefined || !scatole[i]) return
-    // ritoccare la scatola gia' scelta la deseleziona
-    onSeleziona?.(scatole[i].id === selezionato ? null : scatole[i].id)
-  }
+  }, [scatole, evidenziato, tema, atlante, invalidate, ref])
 
   return (
     <instancedMesh
       ref={ref}
       args={[geo, mat, Math.max(1, scatole.length)]}
       count={scatole.length}
-      onClick={tocca}
     />
   )
 }
 
 export function Kallax(props: {
   scatole: Scatola[]
-  selezionato?: number | null
-  onSeleziona?: (id: number | null) => void
+  evidenziato: number | null
   tema: string
   aspetto: Aspetto
+  meshRef: React.RefObject<THREE.InstancedMesh | null>
 }) {
   return (
     <>
       <Mobile tema={props.tema} aspetto={props.aspetto} />
-      <Scatole {...props} />
+      <Scatole
+        scatole={props.scatole}
+        evidenziato={props.evidenziato}
+        tema={props.tema}
+        meshRef={props.meshRef}
+      />
     </>
   )
 }

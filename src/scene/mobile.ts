@@ -41,3 +41,17 @@ export function casella(i: number) {
     riga, colonna,
   }
 }
+
+/** L'inverso di `casella`: da un punto sul piano del mobile, in
+ *  centimetri, alla casella che lo contiene. Serve a capire dove si sta
+ *  trascinando una scatola. `null` fuori dal mobile. */
+export function casellaDa(x: number, y: number): number | null {
+  const colonna = Math.round(x / PASSO + (COLONNE - 1) / 2)
+  if (colonna < 0 || colonna >= COLONNE) return null
+
+  const dalBasso = Math.floor((y - MONTANTE / 2) / PASSO)
+  if (dalBasso < 0 || dalBasso >= RIGHE) return null
+
+  const riga = RIGHE - 1 - dalBasso
+  return riga * COLONNE + colonna
+}

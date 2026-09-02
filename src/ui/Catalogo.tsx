@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Gioco } from '../dati/gioco'
 import { sfoglia, CATEGORIE, type Categoria } from '../dati/catalogo'
 import { useStato } from '../dati/stato'
-import { SchedaGioco } from './SchedaGioco'
 import { descriviInCatalogo } from './descrizione'
 import { Copertina } from './Copertina'
 import { Ghirigoro, IcoCatalogo, IcoSpunta, IcoPiu, IcoStella } from './icone'
@@ -19,14 +18,13 @@ import { Ghirigoro, IcoCatalogo, IcoSpunta, IcoPiu, IcoStella } from './icone'
  *    motivo. Quindi si aspetta che l'utente smetta di digitare invece di
  *    interrogare a ogni lettera.
  */
-export function Catalogo() {
+export function Catalogo({ apriScheda }: { apriScheda: (g: Gioco) => void }) {
   const { stato, cambiaPossesso, cambiaDesiderio } = useStato()
   const [cerca, setCerca] = useState('')
   const [categoria, setCategoria] = useState<Categoria>('tutti')
   const [giochi, setGiochi] = useState<Gioco[]>([])
   const [caricando, setCaricando] = useState(true)
   const [daDatabase, setDaDatabase] = useState(false)
-  const [aperto, setAperto] = useState<Gioco | null>(null)
   /* Solo i miei: filtri che vivono nell'elenco gia' scaricato, non nella
      query -- riguardano te, non il catalogo. */
   const [solo, setSolo] = useState<'niente' | 'mancanti' | 'desideri'>('niente')
@@ -119,7 +117,7 @@ export function Catalogo() {
             const voluto = stato.desideri.includes(g.id)
             return (
               <div className="riga" key={g.id}>
-                <button className="riga-apri" onClick={() => setAperto(g)}>
+                <button className="riga-apri" onClick={() => apriScheda(g)}>
                   <Copertina gioco={g} />
                   <span className="riga-corpo">
                     <span className="riga-nome">{g.nome}</span>
@@ -156,8 +154,6 @@ export function Catalogo() {
           )}
         </div>
       )}
-
-      {aperto && <SchedaGioco gioco={aperto} chiudi={() => setAperto(null)} />}
     </div>
   )
 }

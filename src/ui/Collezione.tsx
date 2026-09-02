@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Gioco } from '../dati/gioco'
 import { useStato } from '../dati/stato'
-import { SchedaGioco } from './SchedaGioco'
 import { descriviGioco } from './descrizione'
 import { Copertina } from './Copertina'
 import { Ghirigoro, IcoPiu, IcoMeno, IcoCatalogo } from './icone'
@@ -9,12 +8,11 @@ import { Ghirigoro, IcoPiu, IcoMeno, IcoCatalogo } from './icone'
 /* LA COLLEZIONE: i giochi che possiedi, nel mobile o no.
    Da qui si decide cosa ci sale e cosa ne scende, e si filtra per
    etichetta. Toccare una riga apre la scheda. */
-export function Collezione() {
-  const { giochiCollezione, stato, aggiungiAScaffale, togliDaScaffale, pieno,
-          etichetteDelGioco } = useStato()
+export function Collezione({ apriScheda }: { apriScheda: (g: Gioco) => void }) {
+  const { giochiCollezione, stato, libreria, metti, togli, pieno,
+          dovEsta, etichetteDelGioco } = useStato()
   const [cerca, setCerca] = useState('')
   const [etichetta, setEtichetta] = useState<string | null>(null)
-  const [aperto, setAperto] = useState<Gioco | null>(null)
 
   const visibili = useMemo(() => {
     const q = cerca.trim().toLowerCase()
@@ -27,7 +25,7 @@ export function Collezione() {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'it'))
   }, [giochiCollezione, cerca, etichetta, stato.etichetteDi])
 
-  const sulRipiano = giochiCollezione.filter((g) => stato.scaffale.includes(g.id)).length
+  const sulRipiano = giochiCollezione.filter((g) => !!dovEsta(g.id)).length
   const recensiti = giochiCollezione.filter((g) => stato.recensioni[g.id]).length
 
   return (
@@ -94,12 +92,13 @@ export function Collezione() {
       ) : (
         <div className="elenco">
           {visibili.map((g) => {
-            const suRipiano = stato.scaffale.includes(g.id)
+            const dove = dovEsta(g.id)
+            const suRipiano = !!dove
             const rec = stato.recensioni[g.id]
             const sue = etichetteDelGioco(g.id)
             return (
               <div className="riga" key={g.id}>
-                <button className="riga-apri" onClick={() => setAperto(g)}>
+                <button className="riga-apri" onClick={() => apriScheda(g)}>
                   <Copertina gioco={g} />
                   <span className="riga-corpo">
                     <span className="riga-nome">{g.nome}</span>
@@ -115,8 +114,9 @@ export function Collezione() {
                   <button
                     className={'bottoncino' + (suRipiano ? ' bottoncino-acceso' : '')}
                     aria-label={suRipiano ? 'Togli dal mobile' : 'Metti nel mobile'}
+                    title={suRipiano ? 'E&apos; in ' + dove!.nome : 'Metti in ' + libreria.nome}
                     disabled={!suRipiano && pieno}
-                    onClick={() => suRipiano ? togliDaScaffale(g.id) : aggiungiAScaffale(g.id)}
+                    onClick={() => suRipiano ? togli(g.id) : metti(g.id)}
                   >
                     {suRipiano ? <IcoMeno size={17} /> : <IcoPiu size={17} />}
                   </button>
@@ -126,8 +126,6 @@ export function Collezione() {
           })}
         </div>
       )}
-
-      {aperto && <SchedaGioco gioco={aperto} chiudi={() => setAperto(null)} />}
     </div>
   )
 }
