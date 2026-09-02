@@ -58,8 +58,41 @@ fa da **passacarte, non da magazzino**.
 
 ## Il primo riempimento del catalogo
 
-Il dump dei ranking di BGG (`boardgames_ranks.csv`, ~180.000 righe, 11 MB) si
-carica una volta e si aggiorna ogni tanto. È quello che rende il catalogo
-sfogliabile e filtrabile: l'API di BGG sa cercare per nome e restituire un
-gioco per id, e basta — un elenco ordinato per rank e filtrato per categoria
-non lo sa dare.
+Il dump dei ranking di BGG rende il catalogo sfogliabile e filtrabile, cosa che
+l'API non sa fare: quella cerca per nome e restituisce un gioco per id, e basta.
+
+```bash
+# 1. tradurre il dump nel formato della tabella
+node supabase/dump/prepara.mjs percorso/del/boardgames_ranks.csv
+
+# 2. caricarlo, da psql collegato al progetto
+\copy public.giochi (id, nome, anno, posizione, voto_medio, votanti, espansione, rank_astratti, rank_famiglia, rank_festa, rank_strategia, rank_tematici, rank_guerra) from 'supabase/dump/giochi.csv' with (format csv, header)
+```
+
+Verificato sul dump vero: **180.226 righe**, nessuna scartata, 31.183
+classificate. Lo script usa un parser CSV completo e non uno split sulle
+virgole, perché **4.231 nomi contengono una virgola** — *"Unmatched: Battle of
+Legends, Volume One"* — e uno split ingenuo sposterebbe tutte le colonne
+successive di un posto: anni che diventano rank, rank che diventano voti, e
+nessun errore a segnalarlo.
+
+I `.csv` non entrano nel repo: sono dati, si riscaricano e si rigenerano.
+
+## La edge function
+
+Tre rotte, in `functions/bgg/`:
+
+| | |
+|---|---|
+| `GET /bgg/cerca?q=` | cerca per nome su BGG |
+| `GET /bgg/dettagli?ids=` | fino a 20 id per volta; normalizza **e scrive in `giochi`** con la chiave di servizio |
+| `GET /bgg/copertina?u=` | rilancia i byte dell'immagine aggiungendo l'header CORS |
+
+Due dettagli che contano. `copertina` prende **l'indirizzo, non l'id**: quello
+ce l'abbiamo già in tabella dai dettagli, e ripartire dall'id vorrebbe dire un
+secondo giro su un'API a consumo. E accetta **solo gli host del CDN di BGG** —
+senza quel controllo sarebbe un proxy aperto, e chiunque potrebbe farsi
+scaricare qualsiasi indirizzo a spese nostre e col nostro IP.
+
+BGG mette in coda le richieste pesanti e risponde `202`: non è un errore, è
+"riprova fra poco". La function riprova con attese crescenti.

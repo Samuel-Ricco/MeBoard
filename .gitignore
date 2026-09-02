@@ -16,3 +16,6 @@ keystore.properties
 .bgg-token
 bggTOKEN.txt
 supabase/.temp/
+
+# i dump di BGG sono dati, non codice: si riscaricano e si rigenerano
+supabase/dump/*.csv
