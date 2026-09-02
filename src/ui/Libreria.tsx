@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Gioco } from '../dati/giochi'
+import { type Gioco, scatolaDi, tintaDi } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { SchedaGioco } from './SchedaGioco'
 import { COLONNE, RIGHE, casella } from '../scene/mobile'
@@ -17,8 +17,8 @@ import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra } fro
  * oppure se ne aggiunge un'altra dalla collezione.
  */
 export function Libreria({ selezionato, seleziona }: {
-  selezionato: string | null
-  seleziona: (id: string | null) => void
+  selezionato: number | null
+  seleziona: (id: number | null) => void
 }) {
   const { giochiScaffale, giochiCollezione, stato, celle, pieno,
           aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale } = useStato()
@@ -122,11 +122,11 @@ export function Libreria({ selezionato, seleziona }: {
           <div className="elenco">
             {aggiungibili.map((g) => (
               <div className="riga" key={g.id}>
-                <span className="dorso" style={{ background: g.tinta }} />
+                <span className="dorso" style={{ background: tintaDi(g.id) }} />
                 <div className="riga-corpo">
                   <div className="riga-nome">{g.nome}</div>
                   <div className="riga-sotto">
-                    {g.editore} · {g.anno} · {g.larghezza}×{g.altezza}×{g.spessore} cm
+                    {g.editore ?? '—'} · {g.anno ?? '—'} · {scatolaDi(g).spessore} cm di spessore
                   </div>
                 </div>
                 <div className="riga-azioni">

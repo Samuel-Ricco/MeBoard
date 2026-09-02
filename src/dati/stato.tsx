@@ -1,21 +1,24 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { CATALOGO, perId, type Gioco } from './giochi'
+import { SEMI } from './semi'
+import { perIdi } from './catalogo'
+import type { Gioco } from './gioco'
 import { CELLE } from '../scene/mobile'
 
-/* LO STATO DELL'APP, SENZA DATABASE.
+/* LO STATO DELL'APP.
  *
- * Tutto vive in memoria e viene specchiato in localStorage. Quando
- * arrivera' un backend cambia solo questo file: le schermate parlano con
- * le azioni, non con la persistenza.
+ * Qui dentro si tengono solo ID, mai copie dei giochi. Il nome, l'anno e
+ * la copertina stanno nel catalogo -- che e' la cache di BGG -- e si
+ * ricompongono al bisogno. Copiarli qui vorrebbe dire avere due verita'
+ * che col tempo divergono, e la seconda sarebbe sempre quella vecchia.
  *
- * Restano fuori, perche' un backend lo vogliono per forza: amici, codice
- * amico, e le recensioni degli altri. Quelle proprie invece sono dati
- * personali e stanno benissimo qui.
+ * Tutto e' specchiato in localStorage. Quando arrivera' la
+ * sincronizzazione col database cambia solo questo file: le schermate
+ * parlano con le azioni, non con la persistenza.
  */
 
 export type Partita = {
   id: string
-  giocoId: string
+  giocoId: number
   data: string            // ISO, solo giorno
   giocatori: string[]
   vincitore?: string
@@ -25,7 +28,7 @@ export type Partita = {
 export type Recensione = {
   voto: number            // 1..10, come su BGG
   testo: string
-  quando: string          // ISO, solo giorno
+  quando: string
 }
 
 export type Etichetta = { id: string; nome: string }
@@ -37,77 +40,74 @@ export type Profilo = {
 }
 
 type Stato = {
-  collezione: string[]    // id dei giochi posseduti
-  scaffale: string[]      // id nel mobile, NELL'ORDINE delle caselle
-  desideri: string[]      // id che vorresti ma non hai
+  collezione: number[]
+  scaffale: number[]      // nell'ORDINE delle caselle
+  desideri: number[]
   partite: Partita[]
-  recensioni: Record<string, Recensione>
+  recensioni: Record<number, Recensione>
   etichette: Etichetta[]
-  etichetteDi: Record<string, string[]>   // giocoId -> id delle etichette
-  giocatori: string[]     // chi si siede al tavolo, per non riscriverlo ogni volta
+  etichetteDi: Record<number, string[]>
+  giocatori: string[]
   profilo: Profilo
 }
 
-const CHIAVE = 'meboard.stato.v1'
+/* La versione sale perche' gli id sono cambiati: erano slug inventati
+   ('wingspan'), ora sono quelli di BGG (266192). Uno stato vecchio non e'
+   recuperabile -- meglio ripartire pulito che mostrare uno scaffale di
+   giochi che non si risolvono. */
+const CHIAVE = 'meboard.stato.v2'
+
+const idSemi = SEMI.map((g) => g.id)
 
 const INIZIALE: Stato = {
-  collezione: ['wingspan', 'azul', 'ticket', 'carcassonne', 'root', 'hive', 'patchwork',
-               'brass', 'splendor', 'cascadia', 'everdell', 'kingdomino', 'ark', 'scythe'],
-  /* meno dello scaffale che della collezione: cosi' il gesto "aggiungi"
+  collezione: idSemi.slice(0, 14),
+  /* meno del ripiano che della collezione: cosi' il gesto "aggiungi"
      e' subito disponibile invece di nascere disabilitato */
-  scaffale: ['scythe', 'wingspan', 'root', 'azul', 'brass', 'everdell', 'ticket',
-             'cascadia', 'carcassonne', 'ark'],
-  desideri: ['spirit', 'dune'],
-  partite: [
-    { id: 'p1', giocoId: 'wingspan',  data: '2026-08-29', giocatori: ['Samuel', 'Giulia'], vincitore: 'Giulia', durata: 55 },
-    { id: 'p2', giocoId: 'brass',     data: '2026-08-24', giocatori: ['Samuel', 'Marco', 'Elia'], vincitore: 'Samuel', durata: 135 },
-    { id: 'p3', giocoId: 'azul',      data: '2026-08-21', giocatori: ['Samuel', 'Giulia'], vincitore: 'Samuel', durata: 38 },
-    { id: 'p4', giocoId: 'root',      data: '2026-08-15', giocatori: ['Samuel', 'Marco', 'Elia', 'Giulia'], vincitore: 'Elia', durata: 95 },
-  ],
-  recensioni: {
-    brass: { voto: 9, testo: 'Il migliore per chi ha voglia di pensare. Pesante ma mai noioso.', quando: '2026-08-25' },
-    azul:  { voto: 7, testo: 'Elegante e velocissimo. Funziona con chiunque.', quando: '2026-08-22' },
-  },
+  scaffale: idSemi.slice(0, 10),
+  desideri: idSemi.slice(14, 17),
+  partite: [],
+  recensioni: {},
   etichette: [
     { id: 'e1', nome: 'in due' },
     { id: 'e2', nome: 'strategici' },
     { id: 'e3', nome: 'da tavolata' },
   ],
-  etichetteDi: {
-    brass: ['e2'], root: ['e2'], scythe: ['e2'], ark: ['e2'],
-    patchwork: ['e1'], hive: ['e1'], azul: ['e1'],
-    ticket: ['e3'], carcassonne: ['e3'], kingdomino: ['e3'],
-  },
+  etichetteDi: {},
   giocatori: ['Samuel', 'Giulia', 'Marco', 'Elia'],
   profilo: { nick: 'Samuel', tinta: '#CCFF4D' },
 }
 
-/* Si legge campo per campo con un ripiego per ciascuno, invece di fidarsi
-   dell'oggetto salvato: cosi' una versione vecchia in localStorage --
-   senza recensioni, senza etichette -- non lascia l'app in bianco ma si
-   riempie coi valori nuovi. */
+/* JSON non conosce le chiavi numeriche: `{266192: ...}` torna indietro
+   come `{"266192": ...}`. Senza questa conversione le recensioni
+   risulterebbero tutte assenti, e in silenzio. */
+function chiaviNumeriche<T>(v: unknown): Record<number, T> {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {}
+  const fuori: Record<number, T> = {}
+  Object.entries(v as Record<string, T>).forEach(([k, val]) => {
+    const n = Number(k)
+    if (Number.isFinite(n)) fuori[n] = val
+  })
+  return fuori
+}
+
 function leggi(): Stato {
   try {
     const grezzo = localStorage.getItem(CHIAVE)
     if (!grezzo) return INIZIALE
     const s = JSON.parse(grezzo) as Partial<Stato>
     const arr = <T,>(v: unknown, r: T[]) => (Array.isArray(v) ? (v as T[]) : r)
-    const ogg = <T,>(v: unknown, r: T) =>
-      (v && typeof v === 'object' && !Array.isArray(v) ? (v as T) : r)
     return {
       collezione: arr(s.collezione, INIZIALE.collezione),
       scaffale: arr(s.scaffale, INIZIALE.scaffale),
       desideri: arr(s.desideri, INIZIALE.desideri),
       partite: arr(s.partite, INIZIALE.partite),
-      recensioni: ogg(s.recensioni, INIZIALE.recensioni),
+      recensioni: chiaviNumeriche<Recensione>(s.recensioni),
       etichette: arr(s.etichette, INIZIALE.etichette),
-      etichetteDi: ogg(s.etichetteDi, INIZIALE.etichetteDi),
+      etichetteDi: chiaviNumeriche<string[]>(s.etichetteDi),
       giocatori: arr(s.giocatori, INIZIALE.giocatori),
-      profilo: { ...INIZIALE.profilo, ...ogg(s.profilo, {}) },
+      profilo: { ...INIZIALE.profilo, ...(s.profilo ?? {}) },
     }
   } catch {
-    /* finestra privata, spazio esaurito, dati corrotti: si riparte dal
-       predefinito invece di lasciare l'app in bianco */
     return INIZIALE
   }
 }
@@ -120,60 +120,86 @@ const oggi = () => {
 
 type Azioni = {
   stato: Stato
-  /** quante caselle ha il mobile */
   celle: number
-  /** se il mobile e' pieno non si aggiunge piu' niente */
   pieno: boolean
+  /** i giochi risolti dal catalogo, per id */
+  giochi: Map<number, Gioco>
   giochiScaffale: Gioco[]
   giochiCollezione: Gioco[]
   giochiDesiderati: Gioco[]
-  aggiungiAScaffale: (id: string) => void
-  togliDaScaffale: (id: string) => void
+  aggiungiAScaffale: (id: number) => void
+  togliDaScaffale: (id: number) => void
   scambiaSuScaffale: (da: number, a: number) => void
-  cambiaPossesso: (id: string, posseduto: boolean) => void
-  cambiaDesiderio: (id: string, voluto: boolean) => void
-  salvaRecensione: (giocoId: string, voto: number, testo: string) => void
-  eliminaRecensione: (giocoId: string) => void
+  cambiaPossesso: (id: number, posseduto: boolean) => void
+  cambiaDesiderio: (id: number, voluto: boolean) => void
+  salvaRecensione: (giocoId: number, voto: number, testo: string) => void
+  eliminaRecensione: (giocoId: number) => void
   creaEtichetta: (nome: string) => void
   eliminaEtichetta: (id: string) => void
-  cambiaEtichettaGioco: (giocoId: string, etichettaId: string, dentro: boolean) => void
-  etichetteDelGioco: (giocoId: string) => Etichetta[]
+  cambiaEtichettaGioco: (giocoId: number, etichettaId: string, dentro: boolean) => void
+  etichetteDelGioco: (giocoId: number) => Etichetta[]
   aggiungiGiocatore: (nome: string) => void
   togliGiocatore: (nome: string) => void
   salvaProfilo: (p: Partial<Profilo>) => void
   registraPartita: (p: Omit<Partita, 'id'>) => void
   eliminaPartita: (id: string) => void
-  partiteDelGioco: (giocoId: string) => Partita[]
+  partiteDelGioco: (giocoId: number) => Partita[]
 }
 
 const Ctx = createContext<Azioni | null>(null)
 
 export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
   const [stato, setStato] = useState<Stato>(leggi)
+  /* I giochi citati dagli id, risolti dal catalogo. Parte dai semi cosi'
+     la prima schermata ha gia' qualcosa da disegnare invece di apparire
+     vuota per un istante. */
+  const [giochi, setGiochi] = useState<Map<number, Gioco>>(
+    () => new Map(SEMI.map((g) => [g.id, g])))
 
   useEffect(() => {
     try { localStorage.setItem(CHIAVE, JSON.stringify(stato)) } catch { /* niente da fare */ }
   }, [stato])
 
-  /* Il mobile ha un numero FINITO di caselle, e quello e' il punto di
-     avere un mobile invece di un elenco: quando e' pieno bisogna scegliere
-     cosa togliere. La capienza la detta la scena, non un numero scritto
-     qui: se il Kallax cambia formato, cambia da sola. */
-  const aggiungiAScaffale = useCallback((id: string) => {
+  /* Tutti gli id che l'app deve saper mostrare. Quelli che non conosce
+     ancora si chiedono al catalogo in un colpo solo, non uno per volta. */
+  const citati = useMemo(() => {
+    const s = new Set<number>([...stato.collezione, ...stato.scaffale, ...stato.desideri])
+    stato.partite.forEach((p) => s.add(p.giocoId))
+    Object.keys(stato.recensioni).forEach((k) => s.add(Number(k)))
+    return [...s]
+  }, [stato.collezione, stato.scaffale, stato.desideri, stato.partite, stato.recensioni])
+
+  useEffect(() => {
+    const mancanti = citati.filter((id) => !giochi.has(id))
+    if (!mancanti.length) return
+    let vivo = true
+    perIdi(mancanti).then((trovati) => {
+      if (!vivo || !trovati.length) return
+      setGiochi((prima) => {
+        const dopo = new Map(prima)
+        trovati.forEach((g) => dopo.set(g.id, g))
+        return dopo
+      })
+    })
+    return () => { vivo = false }
+  }, [citati, giochi])
+
+  const risolvi = useCallback(
+    (ids: number[]) => ids.map((id) => giochi.get(id)).filter((g): g is Gioco => !!g),
+    [giochi])
+
+  const aggiungiAScaffale = useCallback((id: number) => {
     setStato((s) => (s.scaffale.includes(id) || s.scaffale.length >= CELLE)
       ? s
       : { ...s, scaffale: [...s.scaffale, id] })
   }, [])
 
-  const togliDaScaffale = useCallback((id: string) => {
+  const togliDaScaffale = useCallback((id: number) => {
     setStato((s) => ({ ...s, scaffale: s.scaffale.filter((x) => x !== id) }))
   }, [])
 
-  /* SCAMBIO, non scorrimento.
-     Su una fila spostare un elemento e far scalare gli altri e' naturale;
-     su una GRIGLIA no -- muovendo una scatola di una riga, uno splice
-     rimescolerebbe tutte le caselle successive e l'utente vedrebbe saltare
-     mezzo mobile. Due caselle si scambiano il contenuto, e basta. */
+  /* SCAMBIO, non scorrimento: su una griglia far scalare gli altri
+     rimescolerebbe tutte le caselle successive. */
   const scambiaSuScaffale = useCallback((da: number, a: number) => {
     setStato((s) => {
       if (da === a || da < 0 || a < 0 || da >= s.scaffale.length || a >= s.scaffale.length) return s
@@ -183,22 +209,20 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  const cambiaPossesso = useCallback((id: string, posseduto: boolean) => {
-    setStato((s) => {
-      const collezione = posseduto
+  const cambiaPossesso = useCallback((id: number, posseduto: boolean) => {
+    setStato((s) => ({
+      ...s,
+      collezione: posseduto
         ? (s.collezione.includes(id) ? s.collezione : [...s.collezione, id])
-        : s.collezione.filter((x) => x !== id)
-      /* togliere un gioco dalla collezione lo toglie anche dal mobile:
-         un ripiano con sopra roba che non hai piu' non ha senso */
-      const scaffale = posseduto ? s.scaffale : s.scaffale.filter((x) => x !== id)
-      /* e se lo compri smette di essere un desiderio: e' lo stesso gesto
-         visto da due parti */
-      const desideri = posseduto ? s.desideri.filter((x) => x !== id) : s.desideri
-      return { ...s, collezione, scaffale, desideri }
-    })
+        : s.collezione.filter((x) => x !== id),
+      // un ripiano con sopra roba che non hai piu' non ha senso
+      scaffale: posseduto ? s.scaffale : s.scaffale.filter((x) => x !== id),
+      // e comprarlo lo toglie dai desideri: e' lo stesso gesto da due lati
+      desideri: posseduto ? s.desideri.filter((x) => x !== id) : s.desideri,
+    }))
   }, [])
 
-  const cambiaDesiderio = useCallback((id: string, voluto: boolean) => {
+  const cambiaDesiderio = useCallback((id: number, voluto: boolean) => {
     setStato((s) => ({
       ...s,
       desideri: voluto
@@ -207,14 +231,14 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     }))
   }, [])
 
-  const salvaRecensione = useCallback((giocoId: string, voto: number, testo: string) => {
+  const salvaRecensione = useCallback((giocoId: number, voto: number, testo: string) => {
     setStato((s) => ({
       ...s,
       recensioni: { ...s.recensioni, [giocoId]: { voto, testo: testo.trim(), quando: oggi() } },
     }))
   }, [])
 
-  const eliminaRecensione = useCallback((giocoId: string) => {
+  const eliminaRecensione = useCallback((giocoId: number) => {
     setStato((s) => {
       const r = { ...s.recensioni }
       delete r[giocoId]
@@ -232,19 +256,19 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
 
   const eliminaEtichetta = useCallback((id: string) => {
     setStato((s) => {
-      /* Sparita l'etichetta, vanno tolti anche i riferimenti: se no
-         restano puntatori a un'etichetta che non esiste e i filtri
-         cominciano a non trovare niente senza spiegare perche'. */
-      const etichetteDi: Record<string, string[]> = {}
+      /* Via l'etichetta, via i riferimenti: se no restano puntatori a
+         un'etichetta che non esiste e i filtri smettono di trovare
+         senza spiegare perche'. */
+      const etichetteDi: Record<number, string[]> = {}
       Object.entries(s.etichetteDi).forEach(([g, v]) => {
         const resto = v.filter((x) => x !== id)
-        if (resto.length) etichetteDi[g] = resto
+        if (resto.length) etichetteDi[Number(g)] = resto
       })
       return { ...s, etichette: s.etichette.filter((e) => e.id !== id), etichetteDi }
     })
   }, [])
 
-  const cambiaEtichettaGioco = useCallback((giocoId: string, etichettaId: string, dentro: boolean) => {
+  const cambiaEtichettaGioco = useCallback((giocoId: number, etichettaId: string, dentro: boolean) => {
     setStato((s) => {
       const ora = s.etichetteDi[giocoId] ?? []
       const dopo = dentro
@@ -288,10 +312,12 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     stato,
     celle: CELLE,
     pieno: stato.scaffale.length >= CELLE,
+    giochi,
     /* l'ordine del mobile e' quello dell'elenco, non quello del catalogo */
-    giochiScaffale: stato.scaffale.map(perId).filter((g): g is Gioco => !!g),
-    giochiCollezione: CATALOGO.filter((g) => stato.collezione.includes(g.id)),
-    giochiDesiderati: CATALOGO.filter((g) => stato.desideri.includes(g.id)),
+    giochiScaffale: risolvi(stato.scaffale),
+    giochiCollezione: risolvi(stato.collezione)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'it')),
+    giochiDesiderati: risolvi(stato.desideri),
     etichetteDelGioco: (giocoId) => {
       const ids = stato.etichetteDi[giocoId] ?? []
       return stato.etichette.filter((e) => ids.includes(e.id))
@@ -303,7 +329,7 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
     aggiungiGiocatore, togliGiocatore, salvaProfilo,
     registraPartita, eliminaPartita,
-  }), [stato, aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
+  }), [stato, giochi, risolvi, aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
        cambiaPossesso, cambiaDesiderio, salvaRecensione, eliminaRecensione,
        creaEtichetta, eliminaEtichetta, cambiaEtichettaGioco,
        aggiungiGiocatore, togliGiocatore, salvaProfilo,

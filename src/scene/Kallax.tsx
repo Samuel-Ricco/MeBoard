@@ -10,7 +10,8 @@ import { coloreDiTema } from '../ui/tema'
 export { CM, LARGHEZZA, ALTEZZA, FONDO, CELLE } from './mobile'
 
 export type Scatola = {
-  id: string
+  /** l'id BGG del gioco: la scatola non ha un'identita' sua */
+  id: number
   nome: string
   /* Misure reali in centimetri, come arrivano dalle API. */
   larghezza: number
@@ -106,8 +107,8 @@ function Mobile({ tema }: { tema: string }) {
  */
 function Scatole({ scatole, selezionato, onSeleziona, tema }: {
   scatole: Scatola[]
-  selezionato?: string | null
-  onSeleziona?: (id: string | null) => void
+  selezionato?: number | null
+  onSeleziona?: (id: number | null) => void
   tema: string
 }) {
   const ref = useRef<THREE.InstancedMesh>(null!)
@@ -177,8 +178,8 @@ function Scatole({ scatole, selezionato, onSeleziona, tema }: {
 
 export function Kallax(props: {
   scatole: Scatola[]
-  selezionato?: string | null
-  onSeleziona?: (id: string | null) => void
+  selezionato?: number | null
+  onSeleziona?: (id: number | null) => void
   tema: string
 }) {
   return (

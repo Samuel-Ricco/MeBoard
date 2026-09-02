@@ -11,8 +11,8 @@ const P = FONDO * CM
 
 export function Scena({ scatole, selezionato, onSeleziona, tema, sopra = 0, sotto = 0 }: {
   scatole: Scatola[]
-  selezionato: string | null
-  onSeleziona: (id: string | null) => void
+  selezionato: number | null
+  onSeleziona: (id: number | null) => void
   /** la tavolozza in uso: il mobile si tinge da quella */
   tema: string
   /** pixel CSS coperti dall'interfaccia, sopra e sotto la scena */

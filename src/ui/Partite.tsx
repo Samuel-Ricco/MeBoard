@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { perId, type Gioco } from '../dati/giochi'
+import { type Gioco, tintaDi } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
 import { SchedaGioco } from './SchedaGioco'
@@ -19,11 +19,11 @@ function oggi() {
 
 /* LE PARTITE: il registro di cosa avete giocato e come e' finita. */
 export function Partite() {
-  const { stato, giochiCollezione, registraPartita, eliminaPartita } = useStato()
+  const { stato, giochi, giochiCollezione, registraPartita, eliminaPartita } = useStato()
   const [aperto, setAperto] = useState(false)
   const [scheda, setScheda] = useState<Gioco | null>(null)
 
-  const [giocoId, setGiocoId] = useState('')
+  const [giocoId, setGiocoId] = useState<number | ''>('')
   const [data, setData] = useState(oggi)
   const [alTavolo, setAlTavolo] = useState<string[]>([])
   const [vincitore, setVincitore] = useState('')
@@ -34,13 +34,13 @@ export function Partite() {
     [stato.partite])
 
   const giocoPiuVisto = useMemo(() => {
-    const conta = new Map<string, number>()
+    const conta = new Map<number, number>()
     stato.partite.forEach((p) => conta.set(p.giocoId, (conta.get(p.giocoId) ?? 0) + 1))
-    let vinto = ''
+    let vinto = 0
     let max = 0
     conta.forEach((n, id) => { if (n > max) { max = n; vinto = id } })
-    return vinto ? perId(vinto)?.nome ?? '—' : '—'
-  }, [stato.partite])
+    return vinto ? giochi.get(vinto)?.nome ?? '—' : '—'
+  }, [stato.partite, giochi])
 
   const azzera = () => {
     setGiocoId(''); setAlTavolo([]); setVincitore(''); setDurata(''); setData(oggi())
@@ -60,7 +60,7 @@ export function Partite() {
     if (!giocoId) return
     const min = parseInt(durata, 10)
     registraPartita({
-      giocoId,
+      giocoId: Number(giocoId),
       data,
       giocatori: alTavolo,
       vincitore: vincitore || undefined,
@@ -106,11 +106,11 @@ export function Partite() {
       ) : (
         <div className="elenco">
           {stato.partite.map((p) => {
-            const g = perId(p.giocoId)
+            const g = giochi.get(p.giocoId)
             return (
               <div className="riga" key={p.id}>
                 <button className="riga-apri" onClick={() => g && setScheda(g)} disabled={!g}>
-                  <span className="dorso" style={{ background: g?.tinta ?? 'var(--fioco)' }} />
+                  <span className="dorso" style={{ background: g ? tintaDi(g.id) : 'var(--fioco)' }} />
                   <span className="riga-corpo">
                     <span className="riga-nome">{g?.nome ?? 'Gioco sconosciuto'}</span>
                     <span className="riga-sotto">
@@ -141,7 +141,7 @@ export function Partite() {
             <label className="cerca" style={{ margin: '0 0 14px' }}>
               <select
                 value={giocoId}
-                onChange={(e) => setGiocoId(e.target.value)}
+                onChange={(e) => setGiocoId(e.target.value ? Number(e.target.value) : '')}
                 aria-label="Gioco"
                 style={{
                   flex: 1, border: 0, outline: 0, background: 'transparent',

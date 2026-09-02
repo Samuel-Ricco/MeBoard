@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import type { Gioco } from '../dati/giochi'
+import { type Gioco, tintaDi } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { SchedaGioco } from './SchedaGioco'
+import { descriviGioco } from './descrizione'
 import { Ghirigoro, IcoPiu, IcoMeno, IcoCatalogo } from './icone'
 
 /* LA COLLEZIONE: i giochi che possiedi, nel mobile o no.
@@ -18,7 +19,7 @@ export function Collezione() {
     const q = cerca.trim().toLowerCase()
     return giochiCollezione
       .filter((g) => {
-        if (q && !g.nome.toLowerCase().includes(q) && !g.editore.toLowerCase().includes(q)) return false
+        if (q && !g.nome.toLowerCase().includes(q) && !(g.editore ?? '').toLowerCase().includes(q)) return false
         if (etichetta && !(stato.etichetteDi[g.id] ?? []).includes(etichetta)) return false
         return true
       })
@@ -98,13 +99,13 @@ export function Collezione() {
             return (
               <div className="riga" key={g.id}>
                 <button className="riga-apri" onClick={() => setAperto(g)}>
-                  <span className="dorso" style={{ background: g.tinta }} />
+                  <span className="dorso" style={{ background: tintaDi(g.id) }} />
                   <span className="riga-corpo">
                     <span className="riga-nome">{g.nome}</span>
                     <span className="riga-sotto">
                       {sue.length
                         ? sue.map((e) => e.nome).join(' · ')
-                        : `${g.giocatori[0]}–${g.giocatori[1]} giocatori · ${g.durata} min`}
+                        : descriviGioco(g)}
                     </span>
                   </span>
                   {rec && <span className="riga-voto">{rec.voto || '–'}</span>}

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import type { Gioco } from '../dati/giochi'
+import { useEffect, useState } from 'react'
+import { type Gioco, scatolaDi } from '../dati/gioco'
+import { assicuraDettagli } from '../dati/catalogo'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
 import { IcoSpunta, IcoStella, IcoPiu, IcoMeno, IcoMatita } from './icone'
@@ -32,7 +33,24 @@ function Voto({ valore, cambia }: { valore: number; cambia: (n: number) => void 
   )
 }
 
-export function SchedaGioco({ gioco, chiudi }: { gioco: Gioco; chiudi: () => void }) {
+export function SchedaGioco({ gioco: iniziale, chiudi }: { gioco: Gioco; chiudi: () => void }) {
+  /* APRIRE LA SCHEDA E' IL MOMENTO IN CUI VALE LA PENA DISTURBARE BGG.
+     Del catalogo si conoscono nome, anno e rank per tutti; giocatori,
+     durata, peso e copertina arrivano solo per i giochi che qualcuno apre
+     davvero. Chiederli per centottantamila giochi in anticipo sarebbe
+     sbagliato; chiederli qui, una volta e per tutti, e' il punto giusto. */
+  const [gioco, setGioco] = useState(iniziale)
+
+  useEffect(() => {
+    setGioco(iniziale)
+    if (iniziale.giocatoriMin !== null) return   // gia' completo
+    let vivo = true
+    assicuraDettagli([iniziale]).then(([pieno]) => {
+      if (vivo && pieno) setGioco(pieno)
+    })
+    return () => { vivo = false }
+  }, [iniziale])
+
   const {
     stato, etichetteDelGioco, partiteDelGioco,
     cambiaPossesso, cambiaDesiderio, aggiungiAScaffale, togliDaScaffale, pieno,
@@ -59,15 +77,15 @@ export function SchedaGioco({ gioco, chiudi }: { gioco: Gioco; chiudi: () => voi
 
         <div className="statistiche" style={{ padding: '0 0 16px' }}>
           <div className="statistica">
-            <div className="valore">{gioco.giocatori[0]}–{gioco.giocatori[1]}</div>
+            <div className="valore">{gioco.giocatoriMin ?? '?'}–{gioco.giocatoriMax ?? '?'}</div>
             <div className="nome">giocatori</div>
           </div>
           <div className="statistica">
-            <div className="valore">{gioco.durata}&apos;</div>
+            <div className="valore">{gioco.durataMax ?? gioco.durataMin ?? '?'}&apos;</div>
             <div className="nome">durata</div>
           </div>
           <div className="statistica">
-            <div className="valore">{gioco.peso}<span style={{ opacity: .4 }}>/5</span></div>
+            <div className="valore">{gioco.peso ? gioco.peso.toFixed(1) : '?'}<span style={{ opacity: .4 }}>/5</span></div>
             <div className="nome">peso</div>
           </div>
         </div>
@@ -207,7 +225,7 @@ export function SchedaGioco({ gioco, chiudi }: { gioco: Gioco; chiudi: () => voi
         </section>
 
         <p className="scheda-misure">
-          Scatola {gioco.larghezza}×{gioco.altezza}×{gioco.spessore} cm
+          Scatola stimata {scatolaDi(gioco).larghezza}×{scatolaDi(gioco).altezza}×{scatolaDi(gioco).spessore} cm
         </p>
       </div>
     </Foglio>

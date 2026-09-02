@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Scena } from './scene/Scena'
 import { ProvvedoreStato, useStato } from './dati/stato'
+import { scatolaDi, tintaDi } from './dati/gioco'
 import { TabBar, type Tab } from './ui/TabBar'
 import { Libreria } from './ui/Libreria'
 import { Collezione } from './ui/Collezione'
@@ -16,8 +17,17 @@ function Guscio() {
   /* La scelta vive qui e non dentro la libreria: la tengono sia il pannello
      dei comandi sia il mobile 3D, che stanno in due rami diversi
      dell'albero. */
-  const [selezionato, setSelezionato] = useState<string | null>(null)
+  const [selezionato, setSelezionato] = useState<number | null>(null)
   const [profiloAperto, setProfiloAperto] = useState(false)
+
+  /* Da gioco a scatola: le misure sono una stima (BGG non pubblica le
+     dimensioni) e la tinta deriva dall'id, finche' l'atlante non portera'
+     le copertine vere. */
+  const scatole = useMemo(
+    () => giochiScaffale.map((g) => ({
+      id: g.id, nome: g.nome, tinta: tintaDi(g.id), ...scatolaDi(g),
+    })),
+    [giochiScaffale])
 
   return (
     <>
@@ -32,7 +42,7 @@ function Guscio() {
             toccare. Rispecchiano ui/app.css: se cambiano quelle misure,
             vanno cambiate qui. */}
         <Scena
-          scatole={giochiScaffale}
+          scatole={scatole}
           selezionato={selezionato}
           onSeleziona={setSelezionato}
           tema={attiva}
