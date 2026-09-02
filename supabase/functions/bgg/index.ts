@@ -141,7 +141,12 @@ function leggiSchede(xml: string): Scheda[] {
    di tutti e lo scrive soltanto la function, con la chiave di servizio. */
 const servizio = () => createClient(
   Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  /* Supabase ha due generazioni di chiavi in giro: quella storica
+     `service_role` e quella nuova `sb_secret_...`. Si accettano entrambe,
+     cosi' la function non si rompe il giorno che il progetto passa
+     all'una o all'altra. */
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ||
+  Deno.env.get('SUPABASE_SECRET_KEY')!,
   { auth: { persistSession: false } },
 )
 

@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient, type Session } from '@supabase/supabase-js'
 
 /* IL COLLEGAMENTO AL DATABASE.
  *
@@ -7,18 +7,20 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  * 1. SENZA CHIAVI L'APP FUNZIONA LO STESSO. Chi clona il repo e fa
  *    `npm run dev` non deve trovarsi una schermata bianca perche' manca un
  *    `.env.local`: `collegato` resta falso, lo stato vive in locale come ha
- *    sempre fatto, e non si rompe niente. Il database e' un'aggiunta, non
- *    un requisito per accendere l'app.
+ *    sempre fatto, e non si rompe niente.
  *
- * 2. L'ACCESSO E' ANONIMO E SILENZIOSO. Nessuna schermata di login: al
- *    primo avvio si crea un utente vero, che serve solo a dare un
- *    `auth.uid()` alle policy. Piu' avanti ci si potra' collegare un'email
- *    per non perdere tutto cambiando telefono -- ed e' bene dirlo
- *    all'utente prima che il telefono lo perda, non dopo.
+ * 2. SENZA ACCESSO L'APP FUNZIONA LO STESSO. L'accesso serve a
+ *    SINCRONIZZARE, non a usare l'app: chi non entra tiene i suoi dati sul
+ *    telefono. Un'app che ti sbatte un login in faccia prima di farti
+ *    vedere lo scaffale sarebbe peggiore di quella che sostituisce.
+ *
+ * La chiave qui e' quella PUBBLICABILE (`sb_publishable_...`): e' fatta per
+ * stare in un browser, e a proteggere i dati e' RLS. La chiave segreta non
+ * deve mai comparire da questa parte.
  */
 
 const INDIRIZZO = import.meta.env.VITE_SUPABASE_URL
-const CHIAVE = import.meta.env.VITE_SUPABASE_ANON_KEY
+const CHIAVE = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 /** Se le chiavi non ci sono si lavora in locale e basta. */
 export const collegato = Boolean(INDIRIZZO && CHIAVE)
@@ -29,27 +31,52 @@ export const supabase: SupabaseClient | null = collegato
         // la sessione sopravvive alla chiusura dell'app
         persistSession: true,
         autoRefreshToken: true,
-        // non c'e' nessun ritorno da OAuth da cui pescare un token
-        detectSessionInUrl: false,
+        /* Serve acceso: dopo il giro su Google si torna con il token
+           nell'indirizzo, ed e' da li' che va raccolto. */
+        detectSessionInUrl: true,
+        flowType: 'pkce',
       },
     })
   : null
 
-/** L'identita' in uso, o null se si sta lavorando senza database. */
-export async function entra(): Promise<string | null> {
+export async function sessione(): Promise<Session | null> {
   if (!supabase) return null
+  const { data } = await supabase.auth.getSession()
+  return data.session
+}
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session?.user) return session.user.id
+/* IL GIRO SU GOOGLE, E QUELLO CHE COMPORTA SU UN TELEFONO.
+ *
+ * Nel browser questo funziona e basta. Dentro Capacitor no, e va saputo
+ * prima di impacchettare: l'app vive su un'origine sua, Google rimanda a
+ * un indirizzo `https://` e quel ritorno non rientra da solo nella
+ * WebView. Serve `@capacitor/browser` per aprire il giro fuori, un
+ * redirect verso uno schema dell'app, e l'aggancio del deep link per
+ * riportare dentro il token.
+ *
+ * Finche' si sta nel browser, `redirectTo` puo' restare l'indirizzo
+ * corrente; per l'app andra' cambiato -- e l'indirizzo di ritorno va
+ * autorizzato anche nel pannello Supabase, sotto le URL di redirect.
+ */
+export async function entraConGoogle(): Promise<{ errore?: string }> {
+  if (!supabase) return { errore: 'nessun collegamento configurato' }
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin },
+  })
+  return error ? { errore: error.message } : {}
+}
 
-  const { data, error } = await supabase.auth.signInAnonymously()
-  if (error) {
-    /* Il caso piu' probabile e' l'accesso anonimo non acceso nel pannello.
-       Non e' motivo per fermare l'app: si continua in locale. */
-    console.warn('accesso anonimo non riuscito, si resta in locale:', error.message)
-    return null
-  }
-  return data.user?.id ?? null
+export async function esci(): Promise<void> {
+  await supabase?.auth.signOut()
+}
+
+/** Avvisa quando si entra o si esce. Restituisce come smettere di
+ *  ascoltare: senza, ogni rimontaggio lascerebbe dietro un ascoltatore. */
+export function osservaAccesso(quando: (s: Session | null) => void): () => void {
+  if (!supabase) return () => {}
+  const { data } = supabase.auth.onAuthStateChange((_evento, s) => quando(s))
+  return () => data.subscription.unsubscribe()
 }
 
 /** L'indirizzo della edge function, per cercare e leggere da BGG. */
