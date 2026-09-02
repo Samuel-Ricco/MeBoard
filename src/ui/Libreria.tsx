@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { type Gioco, scatolaDi, tintaDi } from '../dati/gioco'
+import { type Gioco, scatolaDi } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { SchedaGioco } from './SchedaGioco'
 import { COLONNE, RIGHE, casella } from '../scene/mobile'
 import { Foglio } from './Foglio'
+import { Copertina } from './Copertina'
 import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra } from './icone'
 
 /* LA LIBRERIA.
@@ -122,7 +123,7 @@ export function Libreria({ selezionato, seleziona }: {
           <div className="elenco">
             {aggiungibili.map((g) => (
               <div className="riga" key={g.id}>
-                <span className="dorso" style={{ background: tintaDi(g.id) }} />
+                <Copertina gioco={g} />
                 <div className="riga-corpo">
                   <div className="riga-nome">{g.nome}</div>
                   <div className="riga-sotto">

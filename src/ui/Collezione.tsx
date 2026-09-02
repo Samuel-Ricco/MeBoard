@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { type Gioco, tintaDi } from '../dati/gioco'
+import type { Gioco } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { SchedaGioco } from './SchedaGioco'
 import { descriviGioco } from './descrizione'
+import { Copertina } from './Copertina'
 import { Ghirigoro, IcoPiu, IcoMeno, IcoCatalogo } from './icone'
 
 /* LA COLLEZIONE: i giochi che possiedi, nel mobile o no.
@@ -99,7 +100,7 @@ export function Collezione() {
             return (
               <div className="riga" key={g.id}>
                 <button className="riga-apri" onClick={() => setAperto(g)}>
-                  <span className="dorso" style={{ background: tintaDi(g.id) }} />
+                  <Copertina gioco={g} />
                   <span className="riga-corpo">
                     <span className="riga-nome">{g.nome}</span>
                     <span className="riga-sotto">

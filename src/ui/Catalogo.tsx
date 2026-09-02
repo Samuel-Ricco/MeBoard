@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { type Gioco, tintaDi } from '../dati/gioco'
+import type { Gioco } from '../dati/gioco'
 import { sfoglia, CATEGORIE, type Categoria } from '../dati/catalogo'
 import { useStato } from '../dati/stato'
 import { SchedaGioco } from './SchedaGioco'
 import { descriviInCatalogo } from './descrizione'
+import { Copertina } from './Copertina'
 import { Ghirigoro, IcoCatalogo, IcoSpunta, IcoPiu, IcoStella } from './icone'
 
 /* IL CATALOGO: centottantamila giochi, non piu' ventotto scritti a mano.
@@ -119,7 +120,7 @@ export function Catalogo() {
             return (
               <div className="riga" key={g.id}>
                 <button className="riga-apri" onClick={() => setAperto(g)}>
-                  <span className="dorso" style={{ background: tintaDi(g.id) }} />
+                  <Copertina gioco={g} />
                   <span className="riga-corpo">
                     <span className="riga-nome">{g.nome}</span>
                     <span className="riga-sotto">{descriviInCatalogo(g)}</span>

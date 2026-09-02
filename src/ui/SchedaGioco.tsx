@@ -3,6 +3,7 @@ import { type Gioco, scatolaDi } from '../dati/gioco'
 import { assicuraDettagli } from '../dati/catalogo'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
+import { CopertinaGrande } from './Copertina'
 import { IcoSpunta, IcoStella, IcoPiu, IcoMeno, IcoMatita } from './icone'
 
 const giorno = (iso: string) =>
@@ -71,6 +72,7 @@ export function SchedaGioco({ gioco: iniziale, chiudi }: { gioco: Gioco; chiudi:
   return (
     <Foglio titolo={gioco.nome} chiudi={chiudi}>
       <div className="scheda">
+        <CopertinaGrande gioco={gioco} />
         <p className="scheda-sotto">
           {gioco.editore} · {gioco.anno}
         </p>

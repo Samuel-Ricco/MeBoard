@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { type Gioco, tintaDi } from '../dati/gioco'
+import type { Gioco } from '../dati/gioco'
 import { useStato } from '../dati/stato'
 import { Foglio } from './Foglio'
 import { SchedaGioco } from './SchedaGioco'
+import { Copertina } from './Copertina'
 import { Ghirigoro, IcoPiu } from './icone'
 
 const giorno = (iso: string) =>
@@ -110,7 +111,7 @@ export function Partite() {
             return (
               <div className="riga" key={p.id}>
                 <button className="riga-apri" onClick={() => g && setScheda(g)} disabled={!g}>
-                  <span className="dorso" style={{ background: g ? tintaDi(g.id) : 'var(--fioco)' }} />
+                  {g ? <Copertina gioco={g} /> : <span className="dorso" style={{ background: 'var(--fioco)' }} />}
                   <span className="riga-corpo">
                     <span className="riga-nome">{g?.nome ?? 'Gioco sconosciuto'}</span>
                     <span className="riga-sotto">
