@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
-import { Kallax, LARGHEZZA, ALTEZZA, FONDO, CM, type Scatola, type Aspetto } from './Kallax'
+import { Kallax, LARGHEZZA, ALTEZZA, FONDO, CM, type Scatola, type Aspetto, type Vicina } from './Kallax'
 import { Inquadratura } from './Inquadratura'
 import { Gesti } from './Gesti'
 import { Scorrimento, type Comando } from './Scorrimento'
@@ -14,7 +14,7 @@ const A = ALTEZZA * CM
 const P = FONDO * CM
 
 export function Scena({
-  scatole, evidenziato, tema, aspetto, sopra = 0, sotto = 0,
+  scatole, evidenziato, tema, aspetto, firma, vicine, sopra = 0, sotto = 0,
   apri, prendi, trascina, lascia, scorri,
 }: {
   scatole: Scatola[]
@@ -23,6 +23,10 @@ export function Scena({
   /** la tavolozza in uso: il mobile si tinge da quella */
   tema: string
   aspetto: Aspetto
+  /** identifica il contenuto della libreria nella dispensa degli atlanti */
+  firma: string
+  /** le librerie vicine, da preparare in anticipo */
+  vicine: Vicina[]
   /** pixel CSS coperti dall'interfaccia, sopra e sotto la scena */
   sopra?: number
   sotto?: number
@@ -87,6 +91,8 @@ export function Scena({
           tema={tema}
           aspetto={aspetto}
           meshRef={mesh}
+          firma={firma}
+          vicine={vicine}
         />
       </group>
       <Scorrimento gruppo={gruppo} comando={comando} aMeta={scorri} />

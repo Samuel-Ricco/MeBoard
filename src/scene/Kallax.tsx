@@ -6,7 +6,7 @@ import {
   LARGHEZZA, ALTEZZA, RIENTRO, casella,
 } from './mobile'
 import { coloreDiTema } from '../ui/tema'
-import { costruisciAtlante, LATO_PAGINA, type Atlante } from './atlante'
+import { ottieni, prepara, tieniSolo, LARGO, ALTO, type Atlante, type Tessera } from './atlante'
 
 import { COPERTINA_PX } from './budget'
 
@@ -139,61 +139,55 @@ function Mobile({ tema, aspetto }: { tema: string; aspetto: Aspetto }) {
   return <instancedMesh ref={ref} args={[geo, mat, pezzi.length]} count={pezzi.length} />
 }
 
-/* COSTRUISCE L'ATLANTE QUANDO CAMBIA IL RIPIANO.
+export type Vicina = { firma: string; tessere: Tessera[] }
+
+/* L'ATLANTE DI QUESTA LIBRERIA, E QUELLI DELLE VICINE.
  *
- * Si rifa' solo se cambia l'ELENCO delle copertine, non a ogni render:
- * scaricare dodici immagini perche' e' cambiata la selezione sarebbe
- * assurdo. La firma e' la lista degli indirizzi, in ordine.
+ * Se e' gia' in dispensa si mette SUBITO, senza passare dal vuoto: e'
+ * tutto il punto: il lampo cambiando libreria era l'attesa della rete.
+ * Se invece va costruito si azzera, perche' la texture di prima
+ * mostrerebbe le copertine di un'altra libreria -- meglio un attimo di
+ * tinte piatte che un attimo di bugie.
  *
- * L'AbortSignal non e' pignoleria: togliendo una scatola mentre i
- * download sono in volo, senza di quello le immagini vecchie finirebbero
- * disegnate nelle tessere nuove -- una copertina sulla scatola sbagliata,
- * e nessun errore a dirlo. */
-function useAtlante(scatole: Scatola[]) {
+ * Le vicine si preparano DOPO, e con un ritardo: mentre si arriva su una
+ * libreria la rete serve a lei, e mettersi a scaricarne altre quattro
+ * nello stesso istante rallenterebbe proprio quella che si sta
+ * guardando.
+ */
+function useAtlante(firma: string, tessere: Tessera[], vicine: Vicina[]) {
   const [atlante, setAtlante] = useState<Atlante | null>(null)
-  /* Chi e' in uso ADESSO. Serve un riferimento e non lo stato: la
-     liberazione deve avvenire nell'istante esatto della sostituzione, non
-     alla pulizia dell'effetto -- e quella arriva un giro dopo. Con la
-     versione sfasata restava sempre un atlante indietro: ventun megabyte
-     di memoria video che non tornavano mai. */
-  const inUso = useRef<Atlante | null>(null)
-  const firma = scatole.map((s) => s.copertinaUrl ?? '-').join('|')
+  const tessereOra = useRef(tessere)
+  tessereOra.current = tessere
 
   useEffect(() => {
-    /* Cambiando libreria le scatole sono altre, ma l'atlante e' ancora
-       quello di prima: senza questo, per il secondo che serve a scaricare
-       le nuove copertine si vedrebbero le VECCHIE sulle scatole nuove.
-       Meglio un attimo di tinte piatte che un attimo di bugie. */
-    setAtlante(null)
-    if (!scatole.length) return
     const taglia = new AbortController()
+    const esito = ottieni(firma, tessereOra.current, taglia.signal)
 
-    costruisciAtlante(
-      scatole.map((s) => ({ copertinaUrl: s.copertinaUrl, tinta: s.tinta })),
-      taglia.signal,
-    ).then((a) => {
-      // un atlante arrivato dopo che l'elenco e' cambiato non serve piu'
-      if (taglia.signal.aborted) { a.texture.dispose(); return }
-      /* Qui NON si libera niente: la vecchia texture e' ancora attaccata
-         al materiale, e liberarla adesso la farebbe ricaricare al primo
-         fotogramma. Se ne occupa l'effetto che monta la nuova. */
-      inUso.current = a
-      setAtlante(a)
-    })
-
-    /* L'AbortSignal non e' pignoleria: togliendo una scatola mentre i
-       download sono in volo, senza di quello le immagini vecchie
-       finirebbero disegnate nelle tessere nuove -- una copertina sulla
-       scatola sbagliata, e nessun errore a dirlo. */
+    if (esito instanceof Promise) {
+      setAtlante(null)
+      esito.then((a) => { if (!taglia.signal.aborted) setAtlante(a) })
+    } else {
+      setAtlante(esito)
+    }
     return () => taglia.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firma])
 
-  // e alla chiusura non resta niente in memoria
-  useEffect(() => () => {
-    inUso.current?.texture.dispose()
-    inUso.current = null
-  }, [])
+  const firmeVicine = vicine.map((v) => v.firma).join('|')
+  useEffect(() => {
+    const attesa = setTimeout(() => {
+      vicine.forEach((v) => prepara(v.firma, v.tessere))
+    }, 400)
+    return () => clearTimeout(attesa)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firmeVicine])
+
+  /* Fuori dalla finestra si libera: cinque atlanti sono venti megabyte,
+     dieci sarebbero quaranta, e cosi' via fino al problema da cui questo
+     progetto e' nato. */
+  useEffect(() => {
+    tieniSolo([firma, ...vicine.map((v) => v.firma)])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firma, firmeVicine])
 
   return atlante
 }
@@ -209,17 +203,22 @@ function useAtlante(scatole: Scatola[]) {
  * l'instancing non regala e' una texture per scatola, ed e' li' che
  * entrera' l'atlante con l'offset UV per istanza.
  */
-function Scatole({ scatole, evidenziato, tema, meshRef }: {
+function Scatole({ scatole, evidenziato, tema, meshRef, firma, vicine }: {
   scatole: Scatola[]
   /** l'indice della scatola che si sta portando, se ce n'e' una */
   evidenziato: number | null
   tema: string
   meshRef: React.RefObject<THREE.InstancedMesh | null>
+  firma: string
+  vicine: Vicina[]
 }) {
   const ref = meshRef
   const invalidate = useThree((s) => s.invalidate)
   const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
-  const atlante = useAtlante(scatole)
+  const tessere = useMemo(
+    () => scatole.map((s) => ({ copertinaUrl: s.copertinaUrl, tinta: s.tinta })),
+    [scatole])
+  const atlante = useAtlante(firma, tessere, vicine)
 
   /* UNA TEXTURE SOLA, DODICI IMMAGINI DIVERSE.
    *
@@ -241,10 +240,14 @@ ${shader.vertexShader}`
         '#include <uv_vertex>',
         `#include <uv_vertex>
         #ifdef USE_MAP
-          vMapUv = vMapUv * SCALA_TESSERA + offsetUv;
+          vMapUv = vMapUv * vec2(SCALA_X, SCALA_Y) + offsetUv;
         #endif`,
       )
-      shader.defines = { ...shader.defines, SCALA_TESSERA: (COPERTINA_PX / LATO_PAGINA).toFixed(6) }
+      shader.defines = {
+        ...shader.defines,
+        SCALA_X: (COPERTINA_PX / LARGO).toFixed(6),
+        SCALA_Y: (COPERTINA_PX / ALTO).toFixed(6),
+      }
     }
     return m
   }, [])
@@ -252,16 +255,11 @@ ${shader.vertexShader}`
   /* L'atlante entra in scena quando e' pronto: prima le scatole sono
      tinte piatte, poi diventano copertine. Nessuna schermata di attesa,
      nessun salto. */
-  /* LA VECCHIA SI LIBERA DOPO AVER MONTATO LA NUOVA, NON PRIMA.
-   *
-   * Liberandola prima resta comunque attaccata al materiale finche' React
-   * non riesegue questo effetto, e un fotogramma disegnato nel frattempo
-   * la fa RICARICARE alla GPU: torna in memoria da sola, senza piu'
-   * nessuno che la possa liberare. Misurato: il contatore delle texture
-   * saliva di uno a ogni ricostruzione anche con la liberazione al posto
-   * giusto nel codice ma nel momento sbagliato. */
-  const montata = useRef<THREE.Texture | null>(null)
-
+  /* Le texture non si liberano qui: le possiede la dispensa, che tiene
+     solo la finestra delle librerie vicine. Liberarne una ancora
+     attaccata al materiale la farebbe ricaricare alla GPU al primo
+     fotogramma -- tornerebbe in memoria da sola, senza piu' nessuno che
+     la possa liberare. */
   useEffect(() => {
     if (atlante) {
       geo.setAttribute('offsetUv', new THREE.InstancedBufferAttribute(atlante.offset, 2))
@@ -273,11 +271,6 @@ ${shader.vertexShader}`
     /* Cambiare la presenza di `map` cambia i #define dello shader: senza
        questo il programma resta quello vecchio e la texture non si vede. */
     mat.needsUpdate = true
-
-    const prima = montata.current
-    montata.current = atlante?.texture ?? null
-    if (prima && prima !== montata.current) prima.dispose()
-
     invalidate()
   }, [atlante, geo, mat, invalidate])
 
@@ -341,6 +334,10 @@ export function Kallax(props: {
   tema: string
   aspetto: Aspetto
   meshRef: React.RefObject<THREE.InstancedMesh | null>
+  /** identifica il contenuto di questa libreria nella dispensa */
+  firma: string
+  /** le librerie vicine, da preparare in anticipo */
+  vicine: Vicina[]
 }) {
   return (
     <>
@@ -350,6 +347,8 @@ export function Kallax(props: {
         evidenziato={props.evidenziato}
         tema={props.tema}
         meshRef={props.meshRef}
+        firma={props.firma}
+        vicine={props.vicine}
       />
     </>
   )

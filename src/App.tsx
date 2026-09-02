@@ -76,6 +76,34 @@ function Guscio() {
     vaiA(prossima)
   }, [stato.attiva, stato.librerie, inMano, giochiLibreria, trasloca, vaiA])
 
+  /* LA FINESTRA DELLE LIBRERIE DA TENERE PRONTE.
+   *
+   * Questa piu' le due prima e le due dopo. Cinque atlanti a quattro
+   * megabyte sono venti in tutto -- meno del singolo atlante da 512 di
+   * prima, e il motivo per cui il precaricamento si puo' permettere. */
+  const firmaDi = useCallback((caselle: number[]) =>
+    caselle.map((id) => giochi.get(id)?.copertinaUrl ?? '-').join('|'), [giochi])
+
+  const firma = useMemo(
+    () => libreria.id + ':' + firmaDi(libreria.caselle),
+    [libreria.id, libreria.caselle, firmaDi])
+
+  const vicine = useMemo(() => {
+    const fuori = []
+    for (const d of [-2, -1, 1, 2]) {
+      const l = stato.librerie[stato.attiva + d]
+      if (!l) continue
+      fuori.push({
+        firma: l.id + ':' + firmaDi(l.caselle),
+        tessere: l.caselle
+          .map((id) => giochi.get(id))
+          .filter((g) => !!g)
+          .map((g) => ({ copertinaUrl: g!.copertinaUrl, tinta: tintaDi(g!.id) })),
+      })
+    }
+    return fuori
+  }, [stato.librerie, stato.attiva, giochi, firmaDi])
+
   const aspetto = useMemo(() => ({
     legno: libreria.legno,
     muro: stato.muro,
@@ -98,6 +126,8 @@ function Guscio() {
           evidenziato={inMano === null ? null : (bersaglio ?? inMano)}
           tema={attiva}
           aspetto={aspetto}
+          firma={firma}
+          vicine={vicine}
           sopra={tab === 'libreria' ? 170 : 0}
           sotto={tab === 'libreria' ? 120 : 0}
           apri={apri}

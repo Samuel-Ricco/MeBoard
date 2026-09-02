@@ -369,6 +369,35 @@ luce, disposizione, poi la stanza, poi l'eliminazione.
 
 ## L'atlante delle copertine
 
+### La dispensa, e perche' si puo' permettere
+
+Il lampo cambiando libreria era la **rete**: l'atlante nuovo si scaricava da zero. Ora gli
+atlanti si tengono da parte e le **due librerie prima e le due dopo si preparano in
+anticipo**, cosi' arrivando la texture c'e' gia'.
+
+Il conto della memoria e' il motivo per cui e' possibile, ed e' nato da una domanda:
+**quanto e' grande una scatola a schermo?** Da quando l'inquadratura e' fissa -- niente
+piu' zoom -- si sa: dodici caselle su un ritratto da 375 px fanno **146 pixel reali**. Le
+copertine erano a 512, cioe' **tre volte e mezzo** il necessario, avanzo dei tempi in cui
+si poteva zoomare.
+
+| | pagina | una libreria | cinque |
+|---|---|---|---|
+| copertine 512 | 2048x2048 | 21 MB | 106 MB |
+| copertine 256 | 1024x768 | **4 MB** | **20 MB** |
+
+Cinque librerie precaricate costano **meno del singolo atlante di prima**. La pagina e'
+esattamente dodici tessere, quante sono le caselle: non si sprecano righe per arrivare a
+una potenza di due.
+
+Fuori dalla finestra le texture **si liberano**: dieci atlanti sarebbero quaranta megabyte,
+e cosi' via fino al problema da cui questo progetto e' nato.
+
+I vicini si preparano **dopo un ritardo**: mentre si arriva su una libreria la rete serve a
+lei, e scaricarne altre quattro nello stesso istante rallenterebbe proprio quella che si
+sta guardando.
+
+
 `scene/atlante.ts`. Ogni copertina si riduce a **512 durante la decodifica**
 (`createImageBitmap` con `resizeWidth`), quindi l'immagine grande non arriva mai in memoria
 video. Tutte finiscono in **una pagina 2048x2048** — ~21 MB comprese le mipmap, per tutto

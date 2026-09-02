@@ -14,17 +14,22 @@
  *  singolo parametro che sposta di piu' il frame rate. */
 export const DPR_MAX = 1.5
 
-/** Lato della copertina nell'atlante dello scaffale.
- *  Una texture serve a coprire i pixel che occupa a schermo: 512 texel
- *  bastano fino a quando la scatola riempie meta' schermo su un 1080p.
- *  Oltre quello si passa al livello "scheda aperta". */
-export const COPERTINA_PX = 512
+/** Lato della copertina nell'atlante del mobile.
+ *
+ *  Una texture serve a coprire i pixel che occupa A SCHERMO, e da quando
+ *  l'inquadratura e' fissa quel numero si sa: dodici caselle su un
+ *  ritratto da 375 px fanno una scatola di 97 px CSS, cioe' 146 reali a
+ *  dpr 1.5. A 512 se ne spendevano tre volte e mezzo il necessario --
+ *  avanzo dei tempi in cui si poteva zoomare. A 256 se ne spendono 1,8
+ *  volte, che e' il margine giusto, e una pagina passa da 21 MB a 4.
+ *
+ *  E' quel risparmio che rende possibile tenere in memoria anche le
+ *  librerie vicine, invece del lampo a ogni cambio. */
+export const COPERTINA_PX = 256
 
-/** Lato di una pagina d'atlante. */
-export const ATLANTE_PX = 4096
-
-/** Quante copertine entrano in una pagina: 8 x 8 = 64. */
-export const PER_PAGINA = (ATLANTE_PX / COPERTINA_PX) ** 2
+/* La pagina d'atlante e' esattamente dodici tessere -- quante sono le
+   caselle -- e le sue misure stanno in `atlante.ts`, che sa il formato
+   del mobile. */
 
 /** Lato della costa, che e' disegnata e non fotografata: colore piu' titolo.
  *  Va nel suo atlante insieme alle altre, se no sono due CanvasTexture per
