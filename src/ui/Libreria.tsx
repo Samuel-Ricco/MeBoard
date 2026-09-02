@@ -1,37 +1,42 @@
 import { useState } from 'react'
 import { useStato } from '../dati/stato'
+import { COLONNE, RIGHE, casella } from '../scene/mobile'
 import { Foglio } from './Foglio'
-import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu } from './icone'
+import { Ghirigoro, IcoPiu, IcoMeno, IcoSu, IcoGiu, IcoSinistra, IcoDestra } from './icone'
 
 /* LA LIBRERIA.
  *
- * E' l'unica schermata che non copre la scena: lo scaffale 3D sta dietro e
- * si vede. I comandi galleggiano sopra, vicino al pollice.
+ * E' l'unica schermata che non copre la scena: il Kallax sta dietro e si
+ * vede. I comandi galleggiano sopra, vicino al pollice.
  *
- * Si sceglie una scatola toccandola direttamente sullo scaffale -- il
- * raycast su InstancedMesh restituisce l'indice dell'istanza, che e' anche
- * la posizione sul ripiano. Scelta una scatola, la si sposta, la si toglie,
+ * Si sceglie una scatola toccandola direttamente nel mobile -- il raycast
+ * su InstancedMesh restituisce `instanceId`, che e' anche il numero della
+ * casella. Scelta una scatola, la si sposta di casella, la si toglie,
  * oppure se ne aggiunge un'altra dalla collezione.
  */
 export function Libreria({ selezionato, seleziona }: {
   selezionato: string | null
   seleziona: (id: string | null) => void
 }) {
-  const { giochiScaffale, giochiCollezione, stato,
-          aggiungiAScaffale, togliDaScaffale, spostaSuScaffale } = useStato()
+  const { giochiScaffale, giochiCollezione, stato, celle, pieno,
+          aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale } = useStato()
   const [foglioAperto, setFoglioAperto] = useState(false)
 
   const posto = giochiScaffale.findIndex((g) => g.id === selezionato)
   const scelto = posto >= 0 ? giochiScaffale[posto] : null
+  const dove = posto >= 0 ? casella(posto) : null
 
-  /* Si possono mettere sullo scaffale solo i giochi che possiedi e che non
-     ci sono gia': lo scaffale e' un sottoinsieme della collezione. */
+  /* Si possono mettere nel mobile solo i giochi che possiedi e che non ci
+     sono gia': il ripiano e' un sottoinsieme della collezione. */
   const aggiungibili = giochiCollezione.filter((g) => !stato.scaffale.includes(g.id))
 
-  const sposta = (verso: -1 | 1) => {
-    if (posto < 0) return
-    spostaSuScaffale(posto, posto + verso)
+  /* Una casella e' raggiungibile solo se esiste E se e' occupata: scambiare
+     con il vuoto vorrebbe dire lasciare un buco in mezzo alla griglia. */
+  const puo = (delta: number) => {
+    const a = posto + delta
+    return posto >= 0 && a >= 0 && a < giochiScaffale.length
   }
+  const muovi = (delta: number) => { if (puo(delta)) scambiaSuScaffale(posto, posto + delta) }
 
   return (
     <div className="schermo schermo-vetro">
@@ -39,36 +44,38 @@ export function Libreria({ selezionato, seleziona }: {
         <div className="occhiello">la tua libreria</div>
         <div className="intestazione-riga">
           <span className="numerone">{giochiScaffale.length}</span>
-          <span className="coda">scatole sul ripiano</span>
+          <span className="coda">giochi su {celle} caselle</span>
         </div>
         <Ghirigoro w={104} h={22} />
       </header>
 
       <div className="pannello">
-        {scelto ? (
+        {scelto && dove ? (
           <>
             <div className="pannello-titolo">
               <span className="pannello-nome">{scelto.nome}</span>
               <span className="pannello-posto">
-                {posto + 1} / {giochiScaffale.length}
+                riga {dove.riga + 1} · col {dove.colonna + 1}
               </span>
             </div>
-            <div className="pannello-comandi">
-              <button
-                className="pillola pillola-fantasma"
-                onClick={() => sposta(-1)}
-                disabled={posto === 0}
-                aria-label="Sposta a sinistra"
-              >
-                <IcoSu size={16} /> Sposta
+            {/* Le quattro direzioni come icone sole, e l'unica azione con
+                conseguenza -- togliere -- scritta a parole. */}
+            <div className="frecce">
+              <button className="bottoncino" aria-label="Sposta a sinistra"
+                      onClick={() => muovi(-1)} disabled={!puo(-1)}>
+                <IcoSinistra size={17} />
               </button>
-              <button
-                className="pillola pillola-fantasma"
-                onClick={() => sposta(1)}
-                disabled={posto === giochiScaffale.length - 1}
-                aria-label="Sposta a destra"
-              >
-                <IcoGiu size={16} /> Sposta
+              <button className="bottoncino" aria-label="Sposta in alto"
+                      onClick={() => muovi(-COLONNE)} disabled={!puo(-COLONNE)}>
+                <IcoSu size={17} />
+              </button>
+              <button className="bottoncino" aria-label="Sposta in basso"
+                      onClick={() => muovi(COLONNE)} disabled={!puo(COLONNE)}>
+                <IcoGiu size={17} />
+              </button>
+              <button className="bottoncino" aria-label="Sposta a destra"
+                      onClick={() => muovi(1)} disabled={!puo(1)}>
+                <IcoDestra size={17} />
               </button>
               <button
                 className="pillola pillola-fantasma"
@@ -81,16 +88,20 @@ export function Libreria({ selezionato, seleziona }: {
         ) : (
           <>
             <p className="suggerimento">
-              Tocca una scatola sullo scaffale per spostarla o toglierla.
+              {pieno
+                ? `Il mobile e' pieno: ${RIGHE}×${COLONNE} caselle. Togline uno per farne entrare un altro.`
+                : 'Tocca una scatola nel mobile per spostarla o toglierla.'}
             </p>
             <div className="pannello-comandi" style={{ marginTop: 11 }}>
               <button
                 className="pillola pillola-piena"
                 onClick={() => setFoglioAperto(true)}
-                disabled={aggiungibili.length === 0}
+                disabled={pieno || aggiungibili.length === 0}
               >
                 <IcoPiu size={16} />
-                {aggiungibili.length ? 'Aggiungi un gioco' : 'Sono tutti sul ripiano'}
+                {pieno ? 'Nessuna casella libera'
+                  : aggiungibili.length ? 'Aggiungi un gioco'
+                  : 'Sono tutti nel mobile'}
               </button>
             </div>
           </>
@@ -98,7 +109,7 @@ export function Libreria({ selezionato, seleziona }: {
       </div>
 
       {foglioAperto && (
-        <Foglio titolo="Metti sul ripiano" chiudi={() => setFoglioAperto(false)}>
+        <Foglio titolo="Metti nel mobile" chiudi={() => setFoglioAperto(false)}>
           <div className="elenco">
             {aggiungibili.map((g) => (
               <div className="riga" key={g.id}>
@@ -112,8 +123,12 @@ export function Libreria({ selezionato, seleziona }: {
                 <div className="riga-azioni">
                   <button
                     className="bottoncino bottoncino-acceso"
-                    aria-label={'Metti ' + g.nome + ' sul ripiano'}
-                    onClick={() => { aggiungiAScaffale(g.id); seleziona(g.id) }}
+                    aria-label={'Metti ' + g.nome + ' nel mobile'}
+                    onClick={() => {
+                      aggiungiAScaffale(g.id)
+                      seleziona(g.id)
+                      setFoglioAperto(false)
+                    }}
                   >
                     <IcoPiu size={17} />
                   </button>

@@ -19,13 +19,38 @@ modificabile**, e il profilo per ora non c'e'.
 
 | tab | cos'e' |
 |---|---|
-| **Libreria** | lo scaffale 3D. Si tocca una scatola per sceglierla, poi la si sposta o la si toglie; se ne aggiungono dalla collezione |
+| **Libreria** | il Kallax 3D. Si tocca una scatola per sceglierla, poi la si sposta di casella o la si toglie; se ne aggiungono dalla collezione |
 | **Collezione** | i giochi che possiedi. Da qui si decide cosa sale sul ripiano |
 | **Catalogo** | tutti i giochi conosciuti, da cui si dichiara "questo ce l'ho" |
 | **Partite** | il registro delle serate |
 
 Lo scaffale e' un **sottoinsieme della collezione**: togliere un gioco dalla collezione lo
 toglie anche dal ripiano.
+
+## Il mobile
+
+Un **Kallax 4x3**, in centimetri veri: caselle interne da 33, montanti da 3.9, fondo 39 —
+115 x 152 cm in tutto. La specifica sta in `scene/mobile.ts`, numeri puri senza three.js,
+perche' la leggono sia la scena sia lo stato: **il mobile ha dodici caselle e finiscono**.
+Quando e' pieno bisogna scegliere cosa togliere, ed e' proprio il punto di avere un mobile
+invece di un elenco. La capienza non e' scritta a mano da nessuna parte: se il Kallax
+cambia formato, cambia da sola.
+
+Le misure vere non sono vezzo: le scatole dei giochi da tavolo sono quadrate da ~29.5
+**proprio perche'** devono entrare in un Kallax. Una scatola piu' grande della casella si
+stringe invece di sbordare dal montante.
+
+Le scatole stanno **di faccia**: il cubo unitario si scala `(larghezza, altezza, spessore)`
+invece di `(spessore, altezza, larghezza)`. Stessa geometria, altra matrice. Si appoggiano
+al pavimento della casella e sono spinte verso il filo del mobile.
+
+Due `InstancedMesh`, quindi **due draw call**: il mobile (dieci parallelepipedi fra
+montanti, ripiani e schiena) e le scatole. Un solo programma shader per entrambi, perche'
+il materiale e' lo stesso.
+
+Spostare una scatola e' uno **scambio di casella**, non uno scorrimento: su una fila far
+scalare gli altri e' naturale, su una griglia rimescolerebbe tutte le caselle successive e
+si vedrebbe saltare mezzo mobile.
 
 La scelta della scatola si fa col **raycast su InstancedMesh**: r3f restituisce
 `instanceId`, che e' anche la posizione sul ripiano. Vive in `App`, non dentro la libreria,
@@ -125,9 +150,17 @@ intermedio in streaming per lo zoom profondo.
 - **`frameloop="demand"`**: da fermi non si disegna nulla. Su un telefono e' batteria e
   temperatura, quindi throttling che non arriva. Durante il gesto ogni evento chiede il suo
   fotogramma, l'interazione resta continua.
-- **L'inquadratura si calcola dal contenuto.** Il `fov` di una camera prospettica e' quello
-  *verticale*: in ritratto l'apertura orizzontale si stringe e uno scaffale largo esce dai
-  bordi. Con una posizione fissa funzionava sul monitor e non sul telefono.
+- **L'inquadratura si calcola dal contenuto**, e sbaglia in tre modi diversi se e' fissa:
+  il `fov` di una camera prospettica e' quello *verticale*, quindi quale dimensione
+  "stringe" dipende dallo schermo e vanno calcolate entrambe; la faccia anteriore del
+  mobile e' piu' vicina della sua mezzeria e va sommata mezza profondita'; e **lo schermo
+  non e' tutto libero** — testata e pannello coprono una fetta dell'altezza, e inquadrare
+  sul viewport intero nasconde la riga in basso dietro ai comandi. Una scatola nascosta non
+  si puo' nemmeno toccare. Si inquadra sulla **banda visibile** e si sposta la camera
+  perche' il mobile finisca al centro di quella.
+- **`maxDistance` di OrbitControls puo' combattere l'inquadratura.** Se e' piu' corto della
+  distanza che serve a far entrare tutto, i controlli tirano la camera avanti e i lati
+  restano tagliati — senza nessun errore, e col calcolo giusto.
 
 ## La regola di React con r3f
 
@@ -166,9 +199,12 @@ impacchettati in locale**, e `@capacitor/keyboard`.
 - **Contesti di impilamento.** Un foglio modale nato dentro `.schermo` (che ha gia' un suo
   `z-index`) non compete piu' con la barra dei tab, per quanto alto lo si faccia: la barra
   gli passa sopra e copre il bottone di conferma. Va in un **portale sul body**.
-- **La sonda a riposo mostrava gli zeri del montaggio.** "0 draw" letto da fermi sembra un
-  guasto ed e' costato un'ora di diagnosi su un'app che funzionava. Ora la prima misura
-  vera si pubblica appena c'e'.
+- **La sonda a riposo mostrava gli zeri del montaggio.** `gl.info` si azzera a ogni render,
+  quindi letto prima del primo disegno dice "0 draw" — che su un'app perfettamente sana
+  sembra un guasto, ed e' costato un'ora di diagnosi. Due volte, per giunta: la prima
+  correzione non bastava perche' in `demand` un solo fotogramma lascia ancora il contatore
+  a zero. Ora la sonda **si chiede da sola il secondo fotogramma** e fino ad allora scrive
+  un trattino invece di un numero falso.
 - **`toISOString()` risponde in UTC.** Per la data di oggi in Italia, fra mezzanotte e le
   due, darebbe il giorno prima — e una partita si segna proprio a quell'ora.
 - Con la pagina non visibile `requestAnimationFrame` e' sospeso, e in `demand` i fotogrammi
@@ -186,5 +222,9 @@ impacchettati in locale**, e `@capacitor/keyboard`.
 3. Quel che manca rispetto a `dado-e-trap`: profilo, recensioni, desideri, gruppi. Fuori
    perimetro per ora anche database e accessi.
 4. Capacitor: `cap add android`, e la coda della checklist WebView.
-5. Piu' ripiani invece di una fila sola: oltre una quarantina di scatole la fila diventa
-   troppo lunga e la camera troppo lontana.
+5. Cosa fare quando le dodici caselle non bastano: un secondo Kallax accanto, oppure
+   scatole impilate in profondita' nella stessa casella (come si fa davvero) — ma quelle
+   dietro diventano invisibili e non toccabili, quindi va pensato.
+6. Le misure dell'interfaccia passate all'inquadratura (`sopra`/`sotto` in `App.tsx`) sono
+   numeri che rispecchiano `ui/app.css` a mano. Se il pannello cambia altezza vanno
+   cambiate anche li'; misurarle a runtime sarebbe piu' solido.

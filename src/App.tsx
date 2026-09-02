@@ -21,10 +21,18 @@ function Guscio() {
           distrugge. Ricreare il contesto WebGL vorrebbe dire ricaricare
           tutte le texture a ogni passaggio. */}
       <div className="fondale">
+        {/* Quanto l'interfaccia copre della scena, in pixel CSS: testata in
+            alto, pannello dei comandi piu' barra dei tab in basso. Servono
+            all'inquadratura, che senno' nasconde la riga di sotto dietro ai
+            comandi -- e una scatola nascosta non si puo' toccare.
+            Rispecchiano ui/app.css: se cambiano quelle misure, vanno
+            cambiate qui. */}
         <Scena
           scatole={giochiScaffale}
           selezionato={selezionato}
           onSeleziona={setSelezionato}
+          sopra={tab === 'libreria' ? 150 : 0}
+          sotto={tab === 'libreria' ? 210 : 0}
         />
       </div>
 

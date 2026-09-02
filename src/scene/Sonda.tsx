@@ -18,6 +18,7 @@ import { useEffect, useRef } from 'react'
  */
 export function Sonda() {
   const gl = useThree((s) => s.gl)
+  const invalidate = useThree((s) => s.invalidate)
   const acc = useRef(0)
   const n = useRef(0)
   const ultimo = useRef(performance.now())
@@ -42,7 +43,13 @@ export function Sonda() {
     /* Appeso a window per poterlo interrogare a mano da DevTools quando
        l'app gira sul telefono vero: e' li' che servono i numeri. */
     ;(window as unknown as { meboard?: unknown }).meboard = { gl, info: () => gl.info }
-    scrivi(null)
+    /* NON si pubblicano gli zeri del montaggio: `gl.info` si azzera a ogni
+       render, quindi letto prima del primo disegno dice "0 draw" -- che su
+       un'app che funziona benissimo sembra un guasto. Meglio un trattino
+       finche' non c'e' una misura vera. */
+    const el = document.getElementById('sonda')
+    if (el && !el.textContent) el.textContent = '--'
+    invalidate()
   })
 
   useFrame(() => {
@@ -50,7 +57,11 @@ export function Sonda() {
     acc.current += ora - ultimo.current
     ultimo.current = ora
     n.current++
-    if (acc.current < 250 && !(maiScritto.current && n.current >= 2)) return
+    /* In "demand" i fotogrammi sono rari: al primo si legge ancora un
+       contatore azzerato, quindi la sonda se ne chiede un altro da sola.
+       E' l'unico posto in cui invalidare per misurare e' legittimo. */
+    if (maiScritto.current && n.current < 2) { invalidate(); return }
+    if (acc.current < 250 && !maiScritto.current) return
     maiScritto.current = false
     const medio = acc.current / n.current
     /* In modalita' "demand" da fermi i fotogrammi sono radi: un fps

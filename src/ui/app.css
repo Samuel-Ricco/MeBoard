@@ -333,3 +333,9 @@
   color: var(--fioco);
   pointer-events: none;
 }
+
+/* Le quattro direzioni piu' l'azione scritta: le icone restano quadrate e
+   compatte, il "togli" si prende lo spazio che avanza perche' e' l'unico
+   comando con una conseguenza. */
+.frecce { display: flex; gap: 8px; align-items: center; }
+.frecce .pillola { flex: 1 1 auto; justify-content: center; margin-left: 2px; }

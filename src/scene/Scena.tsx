@@ -1,21 +1,25 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Scaffale, larghezzaScaffale, profonditaScaffale, type Scatola } from './Scaffale'
+import { Kallax, LARGHEZZA, ALTEZZA, FONDO, CM, type Scatola } from './Kallax'
 import { Inquadratura } from './Inquadratura'
 import { Sonda } from './Sonda'
 import { DPR_MAX } from './budget'
 
-export function Scena({ scatole, selezionato, onSeleziona }: {
+const L = LARGHEZZA * CM
+const A = ALTEZZA * CM
+const P = FONDO * CM
+
+export function Scena({ scatole, selezionato, onSeleziona, sopra = 0, sotto = 0 }: {
   scatole: Scatola[]
   selezionato: string | null
   onSeleziona: (id: string | null) => void
+  /** pixel CSS coperti dall'interfaccia, sopra e sotto la scena */
+  sopra?: number
+  sotto?: number
 }) {
-  const larghezza = larghezzaScaffale(scatole)
-  const profondita = profonditaScaffale(scatole)
-
   return (
     <Canvas
-      /* "demand" disegna solo quando qualcosa cambia. Uno scaffale e' fermo
+      /* "demand" disegna solo quando qualcosa cambia. Un mobile e' fermo
          finche' non lo tocchi: da fermo il consumo GPU va a zero, e su un
          telefono questo e' insieme batteria e temperatura -- cioe' anche
          throttling che non arriva. Durante il gesto ogni evento chiede il
@@ -40,20 +44,36 @@ export function Scena({ scatole, selezionato, onSeleziona }: {
     >
       {/* DUE LUCI. Ogni luce dinamica in piu' e' un moltiplicatore su ogni
           frammento: nella versione precedente quel conto valeva, da solo,
-          il 28% del tempo GPU. */}
-      <ambientLight intensity={1.15} />
-      <directionalLight position={[4, 8, 6]} intensity={1.35} />
+          il 28% del tempo GPU.
 
-      <Scaffale scatole={scatole} selezionato={selezionato} onSeleziona={onSeleziona} />
-      <Inquadratura larghezza={larghezza} profondita={profondita} />
+          La direzionale viene da sinistra e un po' dall'alto: serve a
+          staccare i montanti dal fondo delle caselle, se no un mobile
+          visto di faccia e' una tinta piatta. */}
+      <ambientLight intensity={1.05} />
+      <directionalLight position={[-3, 5, 7]} intensity={1.25} />
+
+      <Kallax scatole={scatole} selezionato={selezionato} onSeleziona={onSeleziona} />
+      <Inquadratura larghezza={L} altezza={A} profondita={P} sopra={sopra} sotto={sotto} />
       {import.meta.env.DEV && <Sonda />}
 
       <OrbitControls
-        target={[0, 1.5, 0]}
+        /* makeDefault: cosi' l'inquadratura puo' riallineare il bersaglio
+           alla quota dell'occhio dopo averla calcolata. */
+        makeDefault
         enablePan={false}
-        minDistance={3}
-        maxDistance={40}
-        maxPolarAngle={Math.PI / 2}
+        minDistance={A * 0.35}
+        /* Generoso: se il massimo fosse piu' corto della distanza che serve
+           a far entrare tutto, i controlli tirerebbero la camera avanti e
+           taglierebbero i lati del mobile -- ed e' esattamente quello che
+           succedeva. */
+        maxDistance={A * 6}
+        /* Le copertine si guardano di faccia: si concede un po' di
+           parallasse per dare volume, non un giro completo che
+           mostrerebbe il retro del mobile. */
+        minPolarAngle={Math.PI / 2 - 0.42}
+        maxPolarAngle={Math.PI / 2 + 0.30}
+        minAzimuthAngle={-0.55}
+        maxAzimuthAngle={0.55}
       />
     </Canvas>
   )

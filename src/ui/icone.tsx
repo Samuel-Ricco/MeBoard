@@ -62,6 +62,14 @@ export const IcoGiu = ({ size = 20 }: P) => (
   <svg {...base(size)}><path d="M12 5v14M6 13l6 6 6-6" /></svg>
 )
 
+export const IcoSinistra = ({ size = 20 }: P) => (
+  <svg {...base(size)}><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+)
+
+export const IcoDestra = ({ size = 20 }: P) => (
+  <svg {...base(size)}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+)
+
 export const IcoSpunta = ({ size = 20 }: P) => (
   <svg {...base(size)}><path d="m5 12.5 4.5 4.5L19 7" /></svg>
 )

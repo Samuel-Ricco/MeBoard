@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { CATALOGO, perId, type Gioco } from './giochi'
+import { CELLE } from '../scene/mobile'
 
 /* LO STATO DELL'APP, SENZA DATABASE.
  *
@@ -59,11 +60,15 @@ function leggi(): Stato {
 
 type Azioni = {
   stato: Stato
+  /** quante caselle ha il mobile */
+  celle: number
+  /** se il mobile e' pieno non si aggiunge piu' niente */
+  pieno: boolean
   giochiScaffale: Gioco[]
   giochiCollezione: Gioco[]
   aggiungiAScaffale: (id: string) => void
   togliDaScaffale: (id: string) => void
-  spostaSuScaffale: (da: number, a: number) => void
+  scambiaSuScaffale: (da: number, a: number) => void
   cambiaPossesso: (id: string, posseduto: boolean) => void
   registraPartita: (p: Omit<Partita, 'id'>) => void
   eliminaPartita: (id: string) => void
@@ -78,20 +83,30 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
     try { localStorage.setItem(CHIAVE, JSON.stringify(stato)) } catch { /* niente da fare */ }
   }, [stato])
 
+  /* Il mobile ha un numero FINITO di caselle, e quello e' il punto di
+     avere un mobile invece di un elenco: quando e' pieno bisogna scegliere
+     cosa togliere. La capienza la detta la scena, non un numero scritto
+     qui: se il Kallax cambia formato, cambia da sola. */
   const aggiungiAScaffale = useCallback((id: string) => {
-    setStato((s) => s.scaffale.includes(id) ? s : { ...s, scaffale: [...s.scaffale, id] })
+    setStato((s) => (s.scaffale.includes(id) || s.scaffale.length >= CELLE)
+      ? s
+      : { ...s, scaffale: [...s.scaffale, id] })
   }, [])
 
   const togliDaScaffale = useCallback((id: string) => {
     setStato((s) => ({ ...s, scaffale: s.scaffale.filter((x) => x !== id) }))
   }, [])
 
-  const spostaSuScaffale = useCallback((da: number, a: number) => {
+  /* SCAMBIO, non scorrimento.
+     Su una fila spostare un elemento e far scalare gli altri e' naturale;
+     su una GRIGLIA no -- muovendo una scatola di una riga, uno splice
+     rimescolerebbe tutte le caselle successive e l'utente vedrebbe saltare
+     mezzo mobile. Due caselle si scambiano il contenuto, e basta. */
+  const scambiaSuScaffale = useCallback((da: number, a: number) => {
     setStato((s) => {
       if (da === a || da < 0 || a < 0 || da >= s.scaffale.length || a >= s.scaffale.length) return s
       const v = s.scaffale.slice()
-      const [preso] = v.splice(da, 1)
-      v.splice(a, 0, preso)
+      ;[v[da], v[a]] = [v[a], v[da]]
       return { ...s, scaffale: v }
     })
   }, [])
@@ -118,12 +133,14 @@ export function ProvvedoreStato({ children }: { children: React.ReactNode }) {
 
   const valore = useMemo<Azioni>(() => ({
     stato,
+    celle: CELLE,
+    pieno: stato.scaffale.length >= CELLE,
     /* l'ordine dello scaffale e' quello dell'elenco, non quello del catalogo */
     giochiScaffale: stato.scaffale.map(perId).filter((g): g is Gioco => !!g),
     giochiCollezione: CATALOGO.filter((g) => stato.collezione.includes(g.id)),
-    aggiungiAScaffale, togliDaScaffale, spostaSuScaffale,
+    aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
     cambiaPossesso, registraPartita, eliminaPartita,
-  }), [stato, aggiungiAScaffale, togliDaScaffale, spostaSuScaffale,
+  }), [stato, aggiungiAScaffale, togliDaScaffale, scambiaSuScaffale,
        cambiaPossesso, registraPartita, eliminaPartita])
 
   return <Ctx.Provider value={valore}>{children}</Ctx.Provider>
