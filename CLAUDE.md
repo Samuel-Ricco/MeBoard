@@ -272,17 +272,32 @@ impacchettati in locale**, e `@capacitor/keyboard`.
 
 ## Da fare
 
-1. La pipeline dell'atlante (copertine e coste) con offset UV per istanza. Le scatole sono
-   ancora tinte piatte.
-2. Le miniature **generate a monte**, non sul telefono: ridimensionare in locale vuol dire
-   aver gia' pagato download e decodifica. Supabase puo' servirle gia' piccole, oppure si
-   genera la miniatura al caricamento del gioco.
-3. Quel che manca rispetto a `dado-e-trap`: profilo, recensioni, desideri, gruppi. Fuori
-   perimetro per ora anche database e accessi.
-4. Capacitor: `cap add android`, e la coda della checklist WebView.
-5. Cosa fare quando le dodici caselle non bastano: un secondo Kallax accanto, oppure
+In ordine di quanto sbloccano, non di quanto costano.
+
+1. **L'atlante delle copertine** (e le coste) con offset UV per istanza. Le scatole sono
+   ancora tinte piatte, ed e' insieme il buco visivo piu' evidente e la pipeline che
+   risolve il problema che aveva affondato la versione precedente. Serve pero' il punto 2:
+   senza immagini vere non c'e' niente da impacchettare.
+2. **I dati veri.** Il catalogo sono 28 giochi scritti a mano. Qui si decide se pescare da
+   BGG, se serve Supabase, e dove nascono le miniature — che vanno **generate a monte**,
+   non sul telefono: ridimensionare in locale vuol dire aver gia' pagato download e
+   decodifica. E' la decisione che apre tutto il resto ed e' ancora fuori perimetro.
+3. **Capacitor: `cap add android`** e la coda della checklist WebView — tasto indietro
+   agganciato alla navigazione (il tradimento numero uno), splash nascosto dopo il primo
+   paint, `@capacitor/keyboard`. Finora l'app non e' mai stata impacchettata: e' il primo
+   momento in cui si scopre come si comporta davvero su un telefono.
+4. **Cosa fare quando le dodici caselle non bastano**: un secondo Kallax accanto, oppure
    scatole impilate in profondita' nella stessa casella (come si fa davvero) — ma quelle
-   dietro diventano invisibili e non toccabili, quindi va pensato.
-6. Le misure dell'interfaccia passate all'inquadratura (`sopra`/`sotto` in `App.tsx`) sono
-   numeri che rispecchiano `ui/app.css` a mano. Se il pannello cambia altezza vanno
-   cambiate anche li'; misurarle a runtime sarebbe piu' solido.
+   dietro diventano invisibili e non toccabili, quindi va pensato prima di scriverlo.
+5. **Le misure dell'interfaccia passate all'inquadratura** (`sopra`/`sotto` in `App.tsx`)
+   rispecchiano `ui/app.css` a mano. Se il pannello cambia altezza vanno cambiate anche
+   li': misurarle a runtime sarebbe piu' solido.
+6. **L'i18n IT/EN.** Non e' difficile, e' lunga: si fa quando le stringhe smettono di
+   cambiare tutti i giorni, se no si traduce due volte.
+7. **iOS**, quando si vorra': build in cloud (Codemagic o Actions con runner macOS) piu'
+   Apple Developer Program. Il buco vero non e' compilare ma **collaudare** senza un
+   iPhone.
+
+Restano fuori per scelta finche' non c'e' un backend: amici e codice amico, le recensioni
+degli altri, la stanza arredabile. E i suoni, che vogliono un lavoro di sound design a
+parte.
