@@ -38,12 +38,13 @@ export type Gesti = {
 export function Gesti({ mesh, apri, prendi, trascina, lascia, scorri }: Gesti) {
   const gl = useThree((s) => s.gl)
   const camera = useThree((s) => s.camera)
+  const invalidate = useThree((s) => s.invalidate)
 
   /* Le funzioni cambiano a ogni render; l'ascoltatore no. Tenerle in una
      ref evita di staccare e riattaccare i listener di continuo, che su
      un pointerdown in corso vorrebbe dire perdere il gesto a meta'. */
-  const ora = useRef({ apri, prendi, trascina, lascia, scorri })
-  ora.current = { apri, prendi, trascina, lascia, scorri }
+  const ora = useRef({ apri, prendi, trascina, lascia, scorri, invalidate })
+  ora.current = { apri, prendi, trascina, lascia, scorri, invalidate }
 
   useEffect(() => {
     const tela = gl.domElement
@@ -117,6 +118,9 @@ export function Gesti({ mesh, apri, prendi, trascina, lascia, scorri }: Gesti) {
             && Math.abs(dx) > FUORI && Math.abs(dx) > Math.abs(dy)) {
           scorso = true
           ora.current.scorri(dx < 0 ? 1 : -1)
+          /* In "demand" da fermi non si disegna: senza questo il comando
+             resterebbe scritto e nessuno lo leggerebbe mai. */
+          ora.current.invalidate()
         }
         return
       }
@@ -133,6 +137,8 @@ export function Gesti({ mesh, apri, prendi, trascina, lascia, scorri }: Gesti) {
       if (!scorso && Math.abs(dx) > SCORRIMENTO && Math.abs(dx) > Math.abs(dy)) {
         scorso = true
         ora.current.scorri(dx < 0 ? 1 : -1)
+        // vedi sopra: il primo fotogramma va chiesto a mano
+        ora.current.invalidate()
       }
     }
 

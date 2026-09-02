@@ -160,6 +160,11 @@ function useAtlante(scatole: Scatola[]) {
   const firma = scatole.map((s) => s.copertinaUrl ?? '-').join('|')
 
   useEffect(() => {
+    /* Cambiando libreria le scatole sono altre, ma l'atlante e' ancora
+       quello di prima: senza questo, per il secondo che serve a scaricare
+       le nuove copertine si vedrebbero le VECCHIE sulle scatole nuove.
+       Meglio un attimo di tinte piatte che un attimo di bugie. */
+    setAtlante(null)
     if (!scatole.length) return
     const taglia = new AbortController()
 

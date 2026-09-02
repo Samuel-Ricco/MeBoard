@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { Kallax, LARGHEZZA, ALTEZZA, FONDO, CM, type Scatola, type Aspetto } from './Kallax'
 import { Inquadratura } from './Inquadratura'
 import { Gesti } from './Gesti'
+import { Scorrimento, type Comando } from './Scorrimento'
 import { Sonda } from './Sonda'
 import { LUCE } from './finiture'
 import { DPR_MAX } from './budget'
@@ -32,6 +33,13 @@ export function Scena({
   scorri: (verso: 1 | -1) => void
 }) {
   const mesh = useRef<THREE.InstancedMesh | null>(null)
+  /* Il mobile sta dentro un gruppo perche' l'animazione di scorrimento
+     possa spostarlo senza toccare ne' la camera ne' le matrici delle
+     istanze. */
+  const gruppo = useRef<THREE.Group | null>(null)
+  /* La richiesta di scorrere passa da una ref e non da uno stato: e'
+     l'animazione a consumarla, dentro `useFrame`. */
+  const comando = useRef<Comando>(null)
 
   return (
     <Canvas
@@ -72,13 +80,16 @@ export function Scena({
         color={LUCE}
       />
 
-      <Kallax
-        scatole={scatole}
-        evidenziato={evidenziato}
-        tema={tema}
-        aspetto={aspetto}
-        meshRef={mesh}
-      />
+      <group ref={gruppo}>
+        <Kallax
+          scatole={scatole}
+          evidenziato={evidenziato}
+          tema={tema}
+          aspetto={aspetto}
+          meshRef={mesh}
+        />
+      </group>
+      <Scorrimento gruppo={gruppo} comando={comando} aMeta={scorri} />
       <Inquadratura larghezza={L} altezza={A} profondita={P} sopra={sopra} sotto={sotto} />
       <Gesti
         mesh={mesh}
@@ -86,7 +97,7 @@ export function Scena({
         prendi={prendi}
         trascina={trascina}
         lascia={lascia}
-        scorri={scorri}
+        scorri={(verso) => { comando.current = { verso } }}
       />
       {import.meta.env.DEV && <Sonda />}
     </Canvas>

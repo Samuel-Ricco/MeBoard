@@ -310,6 +310,27 @@ non disegnare niente.
 Mentre si trascina, **il mobile mostra gia' il risultato**: le due scatole si scambiano
 subito di posto, cosi' si vede dove andra' a finire invece di doverlo immaginare.
 
+## Lo scorrimento fra librerie
+
+`scene/Scorrimento.tsx`. Il mobile esce da un lato, il contenuto cambia **mentre e' fuori
+campo**, e rientra dall'altro. Non ci sono due mobili in scena: ce n'e' sempre uno solo che
+va e torna, e questo vale due cose -- niente secondo atlante durante il passaggio (cioe'
+niente ventun megabyte di memoria video in piu' proprio mentre si sta gia' lavorando) e due
+draw call anche a meta' animazione.
+
+Tre cose da sapere:
+
+- **lo stato che anima non passa da React**: vive in una ref e si applica dentro
+  `useFrame`. Un `setState` per fotogramma ricostruirebbe il problema da cui scappiamo;
+- **in "demand" il primo fotogramma va chiesto a mano.** Scrivere il comando in una ref non
+  sveglia nessuno: senza `invalidate()` il comando restava li' e non lo leggeva mai
+  nessuno. Da li' in poi l'animazione si tiene viva da sola, e quando finisce smette --
+  la scena torna a costare zero;
+- **cambiando libreria l'atlante si azzera subito.** Le scatole sono altre ma la texture e'
+  ancora quella di prima: senza azzerarlo, per il secondo che serve a scaricare le
+  copertine nuove si vedrebbero le VECCHIE sulle scatole nuove. Meglio un attimo di tinte
+  piatte che un attimo di bugie.
+
 ## Piu' librerie
 
 Ogni libreria ha nome, legno, luce e criterio di disposizione **suoi**: due mobili nella
