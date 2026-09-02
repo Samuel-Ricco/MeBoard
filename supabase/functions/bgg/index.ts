@@ -40,7 +40,7 @@ function intestazioni(origine: string | null) {
   return {
     'Access-Control-Allow-Origin': ok ? (origine || '*') : 'null',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     'Vary': 'Origin',
   }
 }
@@ -155,7 +155,12 @@ Deno.serve(async (req) => {
   const cors = intestazioni(req.headers.get('origin'))
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
-  if (req.method !== 'GET') return json(405, { errore: 'solo GET' }, cors)
+  /* HEAD va accettato ovunque sia accettato GET: lo usano cache e
+     controlli di raggiungibilita', e rifiutarlo fa sembrare rotta una
+     rotta che funziona. Il corpo lo scarta il protocollo da solo. */
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return json(405, { errore: 'solo GET' }, cors)
+  }
   if (!token()) return json(500, { errore: 'BGG_TOKEN non configurato' }, cors)
 
   const dove = url.pathname.split('/').filter(Boolean).pop()
