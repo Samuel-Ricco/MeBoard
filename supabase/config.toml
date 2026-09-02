@@ -1,0 +1,9 @@
+# Il progetto a cui questa cartella si riferisce.
+# https://supabase.com/dashboard/project/srmjqlhprumjvocspbgj
+project_id = "srmjqlhprumjvocspbgj"
+
+[functions.bgg]
+# La function e' pubblica: la chiama anche l'app prima che l'utente
+# anonimo esista. A proteggerla ci sono il controllo sull'origine e
+# l'elenco degli host ammessi per le immagini, non una chiave.
+verify_jwt = false
