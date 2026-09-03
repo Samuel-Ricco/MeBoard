@@ -70,7 +70,22 @@ const server = http.createServer(async function(req, res){
         if (d) return d;
         return (b.year || 0) - (a.year || 0);
       });
-      return json(res, 200, hits.slice(0, 12));
+      /* DUECENTO, NON DODICI.
+
+         Il tetto stava a dodici, ed era il numero di una ricerca che si
+         guarda tutta insieme. Ma il catalogo la ricerca la SFOGLIA --
+         ventiquattro righe per pagina, e «carica altro» sotto -- e con
+         dodici risultati quel pulsante non compariva mai: cercando una
+         parola comune si vedeva una pagina e basta, senza modo di
+         sapere che ce n'erano altre.
+
+         Duecento e' lo stesso tetto dell'indice in casa
+         (`js/bggdump.js`), e le due fonti devono comportarsi uguale: da
+         qui in poi cambia da dove arrivano i titoli, non quanti se ne
+         possono guardare. Costa una risposta piu' lunga e nient'altro:
+         le miniature si chiedono una PAGINA per volta, non un
+         risultato per volta. */
+      return json(res, 200, hits.slice(0, 200));
     }
 
     /* LE MINIATURE PER L'ELENCO, molte in una chiamata sola.

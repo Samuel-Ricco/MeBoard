@@ -97,7 +97,18 @@ const cubX  = (l, c) => libX(l) - LIB_W/2 + KAL.t + KAL.cell/2 + c * KAL.passo;
 const state = {
   phase: 'load',
   mode: 'utente',
-  sort: 'aggiunta',
+  /* L'ORDINE DI PARTENZA E' ALFABETICO, e non la data di aggiunta.
+
+     Una collezione si guarda per CERCARE un gioco, e chi cerca un
+     gioco sa come si chiama: in ordine alfabetico ci arriva a colpo
+     d'occhio, e sopra ogni gruppo di titoli c'e' la sua lettera. In
+     ordine di aggiunta ci arriva solo chi si ricorda QUANDO l'ha
+     messo, che e' una cosa che nessuno si ricorda.
+
+     Chi ne sceglie un altro se lo tiene: la scelta sta in
+     `meboard-ordine`, e questo e' solo il valore di quando non c'e'
+     ancora niente di scelto. */
+  sort: 'nome',
   hover: null,
   focused: null,
   bayLight: 0,
@@ -4455,6 +4466,24 @@ let catMostra = 0, catRicerca = false;
    quella vecchia, la supera. */
 let catGiro = 0;
 
+/* "ALTRI GIOCHI" O "CARICA ALTRO".
+
+   E' lo stesso pulsante e fa due cose diverse, e la parola lo dice:
+   sfogliando CHIEDE una pagina nuova al catalogo, cercando SCOPRE
+   righe che sono gia' arrivate. Chi ha appena cercato "war" non vuole
+   altri giochi, vuole altri risultati.
+
+   Si cambia l'ATTRIBUTO, non solo il testo: `data-i18n` e' quello che
+   l'i18n rilegge cambiando lingua, e riscrivendo il solo testo la
+   prima passata di lingua rimetterebbe l'etichetta dello sfogliare. */
+function etichettaPiu(cercando){
+  const b = q('#cat-piu');
+  if (!b) return;
+  const k = cercando ? 'cat.piuRicerca' : 'cat.piu';
+  b.setAttribute('data-i18n', k);
+  b.textContent = TP(k);
+}
+
 function catMsg(html, kind){
   const el = q('#cat-msg');
   el.innerHTML = html;
@@ -4519,6 +4548,7 @@ async function catSfoglia(daCapo){
   try { await WISH.carica(); } catch(e){}
   if (daCapo){ catVoci = []; catOffset = 0; catFine = false; catMostra = 0; q('#cat-list').innerHTML = ''; }
   catRicerca = false;
+  etichettaPiu(false);
   q('#cat-piu').disabled = true;
   catMsg(T(catVoci.length ? 'cat.prendoAltri' : 'cat.apro'));
   try {
@@ -4564,6 +4594,7 @@ async function catCerca(){
        qui non chiede niente a nessuno: scopre righe che ci sono gia'. */
     catVoci = voci;
     catRicerca = true;
+    etichettaPiu(true);
     catMostra = 0;
     catFine = catVoci.length <= CAT_PAG;
     disegnaCatalogo(0, CAT_PAG);
@@ -8576,6 +8607,23 @@ function medagliaDi(x){
   return '';
 }
 
+/* C'E' UNA MEDAGLIA IN CAMPO? Da qui in poi la corona di chi non ne ha
+   una non si disegna piu' -- il quarto posto non ha coroncina, che e'
+   come funziona un podio -- e il foglio di stile lo legge da questa
+   classe.
+
+   Si guarda il DOM e non `paCorrente.chi`: la classe deve dire cosa c'e'
+   ADESSO sullo schermo, e le corone le mettono due strade diverse
+   (`disegnaTavolo` rifa' tutto, `aggiornaTavoloInPosto` ritocca in
+   posto mentre si scrivono i punti). Leggendo quello che e' appena
+   stato scritto, la risposta e' una sola per tutte e due. */
+function segnaMedaglie(){
+  const ul = q('#pa-chi');
+  if (!ul) return;
+  ul.classList.toggle('medaglie',
+    !!ul.querySelector('.corona.oro, .corona.argento, .corona.bronzo'));
+}
+
 /* IL PODIO. I numeretti accanto ai nomi si leggono uno per uno; un
    podio si legge tutto insieme. Ci stanno i primi QUATTRO, che e' il
    tavolo tipico di un gioco da tavolo: tre sui gradini e il quarto
@@ -8658,6 +8706,7 @@ function disegnaTavolo(){
     if (c) disegnaFaccia(c, avatarDi(paCorrente.chi[i].nome), 34);
   });
 
+  segnaMedaglie();
   disegnaPodio();
 
   // i suggerimenti si rifanno con quello che c'e' scritto adesso
@@ -8795,6 +8844,7 @@ function aggiornaTavoloInPosto(){
       p.textContent = x.posizione + '\u00b0';
     } else if (p) p.remove();
   });
+  segnaMedaglie();
   /* Il podio invece si rifa' per intero: sono quattro nodi, e li' sotto
      il dito non c'e' niente da staccare. */
   disegnaPodio();
@@ -9677,7 +9727,7 @@ function gate(giaDentro){
 }
 
 async function boot(){
-  try { state.sort = localStorage.getItem('meboard-ordine') || 'aggiunta'; } catch(e){}
+  try { state.sort = localStorage.getItem('meboard-ordine') || 'nome'; } catch(e){}
   state.vista = 'tutti';        // si riparte sempre dalla prima vista
   qa('#sortmenu button').forEach(function(b){
     b.classList.toggle('on', b.getAttribute('data-sort') === state.sort);

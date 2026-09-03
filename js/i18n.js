@@ -191,6 +191,7 @@ it: {
   'cat.cerca':          'cerca',
   'cat.pulisciTitolo':  'pulisci la ricerca',
   'cat.piu':            'altri giochi',
+  'cat.piuRicerca':     'carica altro',
   'cat.bgg':            'dati e immagini da BoardGameGeek',
   'cat.vistaCat':       'il catalogo',
   'cat.vistaWish':      'la wishlist',
@@ -301,6 +302,9 @@ it: {
   'rec.nota1':          'La leggono i tuoi amici quando aprono',
   'rec.nota2':          'nella tua libreria. Poche righe bastano.',
   'rec.votoMio':        'il tuo voto',
+  /* La forma corta, per dove i due voti stanno sulla stessa riga: li'
+     "il tuo voto" accanto a "BGG" sbilancia la coppia e manda a capo. */
+  'rec.votoMioBreve':   'tuo',
   'rec.votoBgg':        'BGG',
   'rec.voto':           'voto',
   'rec.recensione':     'recensione',
@@ -875,6 +879,7 @@ en: {
   'cat.cerca':          'search',
   'cat.pulisciTitolo':  'clear the search',
   'cat.piu':            'more games',
+  'cat.piuRicerca':     'load more',
   'cat.bgg':            'data and images from BoardGameGeek',
   'cat.vistaCat':       'the catalogue',
   'cat.vistaWish':      'the wishlist',
@@ -976,6 +981,7 @@ en: {
   'rec.nota1':          'Your friends read this when they open',
   'rec.nota2':          'in your collection. A few lines are plenty.',
   'rec.votoMio':        'your score',
+  'rec.votoMioBreve':   'yours',
   'rec.votoBgg':        'BGG',
   'rec.voto':           'rating',
   'rec.recensione':     'review',

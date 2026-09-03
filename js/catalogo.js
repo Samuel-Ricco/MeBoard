@@ -262,13 +262,42 @@ function miniaturaElenco(fileUrl, larghezza){
 }
 
 /* --- ricerca, qualunque sia la fonte ---------------------------- */
+/* CERCANDO, LE DUE FONTI SI SOMMANO.
+
+   BGG risponde con i primi risultati e li ordina per pertinenza vera --
+   e' il suo indice, sa quale sia IL gioco e quale l'espansione -- ma ne
+   manda pochi, e il catalogo la ricerca la SFOGLIA: con una manciata di
+   righe "carica altro" non compare mai e chi cerca una parola comune
+   vede una pagina e crede che sia tutto.
+
+   Il tetto sta nella funzione remota, che si aggiorna solo con un
+   rilascio; l'indice in casa invece e' un file gia' in memoria e ne
+   trova duecento a costo zero. Quindi: PRIMA quelli di BGG, nel loro
+   ordine, POI quelli del dump che non ci sono gia'.
+
+   La chiave del confronto e' l'id BGG, che e' lo stesso numero in tutte
+   e due le fonti -- non il titolo, che nelle due si scrive con
+   sottotitoli diversi e lascerebbe passare doppioni.
+
+   Non e' una fonte che ne rattoppa un'altra: e' la stessa divisione
+   gia' scritta qui sopra fra il dump e Wikidata. Il dump sa CHI
+   ESISTE, BGG sa quale conta di piu'. */
 async function cerca(q){
   const f = await fonte();
   if (f === 'bgg'){
     const hits = await BGG.cerca(q);
-    return hits.map(function(h){
+    const suoi = hits.map(function(h){
       return { fonte: 'bgg', id: String(h.id), title: h.title, year: h.year || '', bgg: h.id };
     });
+    let rincalzo = [];
+    try {
+      if (await DUMP.c_e()){
+        const visti = {};
+        suoi.forEach(function(v){ if (v.bgg) visti[v.bgg] = true; });
+        rincalzo = (await DUMP.cerca(q, 200)).filter(function(v){ return !visti[v.bgg]; });
+      }
+    } catch(e){}     // senza indice in casa restano i suoi, come prima
+    return suoi.concat(rincalzo).slice(0, 200);
   }
   /* Piu' di quanti se ne mostrino: la ricerca si sfoglia, e la
      seconda pagina non deve costare una seconda ricerca. Il dump e'

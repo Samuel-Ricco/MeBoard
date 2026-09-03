@@ -215,7 +215,12 @@ Deno.serve(async (req: Request) => {
         const d = rango(a.title) - rango(b.title);
         return d ? d : (b.year || 0) - (a.year || 0);
       });
-      return json(200, hits.slice(0, 12));
+      /* Duecento e non dodici: il catalogo la ricerca la SFOGLIA, e con
+         dodici risultati il pulsante "carica altro" non compariva mai.
+         Stesso tetto dell'indice in casa (js/bggdump.js) e del proxy
+         locale: da qui in poi cambia da dove arrivano i titoli, non
+         quanti se ne possono guardare. */
+      return json(200, hits.slice(0, 200));
     }
 
     if (dove === 'game') {

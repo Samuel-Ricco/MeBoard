@@ -80,6 +80,20 @@
   --ocra:#f0b429;        --su-ocra:#241f18;
   --verde:#2f9e6b;       --su-verde:#241f18;
 
+  /* ORO, ARGENTO, BRONZO. Sono le uniche tinte del sito che non vengono
+     dalla tavolozza ne' cambiano col materiale, ed e' voluto: una
+     medaglia non e' una scelta estetica, e' un oggetto che ha il suo
+     colore -- come le temperature dei faretti, che per lo stesso
+     motivo non seguono le tavolozze.
+
+     Stanno qui e non due volte piu' sotto perche' le usano DUE posti
+     che devono dire la stessa cosa: la corona accanto al nome e il
+     gradino del podio. Scritte a mano in tutti e due, prima o poi una
+     delle due cambia da sola. */
+  --oro:#c8971f;
+  --argento:#8d949c;
+  --bronzo:#a2683c;
+
   --velo:rgba(33,28,22,.82);        /* la testata: cartone velato */
   --velo-lieve:rgba(33,28,22,.55);  /* sulla scena, dove non scorre niente */
   --velo-pieno:rgba(33,28,22,.94);  /* con la stanza in penombra */
@@ -1563,6 +1577,16 @@ body.review .pan-scroll>*:nth-child(7){transition-delay:.66s}
 
 .score{display:flex; align-items:baseline; gap:10px; margin:0 0 20px; padding-bottom:20px;
   border-bottom:1px dashed var(--line)}
+/* `hidden` DEVE VINCERE SU `display:flex`.
+
+   Il voto proprio nasce `hidden` e si accende solo se c'e' -- un
+   trattino accanto a un numero vero si legge come un guasto -- ma
+   `[hidden]{display:none}` e' una regola del BROWSER, senza classi, e
+   `.score{display:flex}` la batte: il blocco restava li' con la cifra
+   vuota e la sua etichetta. Su una colonna era una riga storta; da
+   quando i due voti stanno affiancati e' anche un filo tratteggiato
+   che non separa niente. */
+.score[hidden]{display:none}
 .score b{font-family:var(--ff-display); font-weight:900; text-transform:uppercase; letter-spacing:-.03em; font-size:40.3px; line-height:.8; color:var(--ink)}
 .score i{font-style:normal; font-size:19px; color:var(--ink-soft)}
 .score small{margin-left:auto; text-align:right; line-height:1.5;
@@ -3984,9 +4008,9 @@ body.browse:not(.elenco):not(.ferma):not(.sez-catalogo):not(.sez-profilo) .rail-
   display:flex; align-items:center; justify-content:center;
   font-family:var(--ff-display); font-weight:900; text-transform:uppercase; letter-spacing:.02em; font-size:15px; color:var(--card);
 }
-.pod-posto.oro     .pod-base{height:56px; background:#c8971f}
-.pod-posto.argento .pod-base{height:42px; background:#8d949c}
-.pod-posto.bronzo  .pod-base{height:32px; background:#a2683c}
+.pod-posto.oro     .pod-base{height:56px; background:var(--oro)}
+.pod-posto.argento .pod-base{height:42px; background:var(--argento)}
+.pod-posto.bronzo  .pod-base{height:32px; background:var(--bronzo)}
 /* Il quarto non ha medaglia e non ha gradino: una pedana bassa, del
    grigio della stanza, che dice "sei arrivato quarto" senza fingere. */
 .pod-posto.quarto  .pod-base{
@@ -4679,7 +4703,7 @@ body.muro-scuro.sez-collezione:not(.elenco) header{
 
 
 /* ============================================================
-   LE MEDAGLIE DEL TAVOLO -- e stanno IN FONDO AL FOGLIO apposta.
+   LE MEDAGLIE DEL TAVOLO -- e adesso vincono per PESO, non per posto.
 
    Dentro `#partitalayer` c'e' una regola che decide il colore di
    QUALUNQUE pulsante:
@@ -4690,21 +4714,53 @@ body.muro-scuro.sez-collezione:not(.elenco) header{
    la cosa che contiene. `.pa-chi .corona.oro` sono tre classi e perde,
    e perdeva anche `.pa-chi .corona.on`: la corona accesa non e' MAI
    stata terracotta, era inchiostro come tutti gli altri pulsanti del
-   modulo, e nessuno se n'era accorto finche' le medaglie non hanno
-   dato un colore da confrontare.
+   modulo.
 
-   E' la lezione della pastiglia della lingua, ripresentata. Qui si
-   risolve come la risolve gia' il pulsante del ritorno a casa: le
-   misure che devono vincere stanno dopo, in fondo.
+   La cura di allora era «stare in fondo al foglio», e ha retto finche'
+   il foglio non e' cresciuto: la fustella quella regola l'ha RISCRITTA
+   piu' sotto -- il tratteggio maiuscolo dei comandi dei pannelli -- e
+   la copia nuova, a parita' di peso, sta dopo le medaglie. Da li' in
+   poi le quattro corone erano di nuovo tutte dello stesso colore, e il
+   podio qui sotto le smentiva riga per riga.
+
+   **Stare in fondo non e' un peso: e' una scommessa su chi scrive
+   dopo.** Qui invece si vince e basta -- `#pa-chi` E' un id, l'elenco
+   lo porta gia' addosso, e due id battono un id piu' tre `:not()` in
+   qualunque ordine, per sempre. E' la stessa uscita della calcolatrice,
+   che dalla stessa regola si salva senza doverla nominare.
    ============================================================ */
-#partitalayer .pa-chi li .corona.on{color:var(--accent)}
-#partitalayer .pa-chi li .corona.oro{color:#c8971f; opacity:1}
-#partitalayer .pa-chi li .corona.argento{color:#8d949c; opacity:1}
-#partitalayer .pa-chi li .corona.bronzo{color:#a2683c; opacity:1}
-#partitalayer .pa-chi li .corona.on .ico path,
-#partitalayer .pa-chi li .corona.oro .ico path,
-#partitalayer .pa-chi li .corona.argento .ico path,
-#partitalayer .pa-chi li .corona.bronzo .ico path{fill:currentColor}
+#partitalayer #pa-chi li .corona.on{color:var(--accent)}
+#partitalayer #pa-chi li .corona.oro{color:var(--oro); opacity:1}
+#partitalayer #pa-chi li .corona.argento{color:var(--argento); opacity:1}
+#partitalayer #pa-chi li .corona.bronzo{color:var(--bronzo); opacity:1}
+#partitalayer #pa-chi li .corona.on .ico path,
+#partitalayer #pa-chi li .corona.oro .ico path,
+#partitalayer #pa-chi li .corona.argento .ico path,
+#partitalayer #pa-chi li .corona.bronzo .ico path{fill:currentColor}
+
+/* DAL QUARTO IN POI NIENTE CORONA.
+
+   Un podio ha tre posti, e la quarta corona -- disegnata al 18% come
+   tutte quelle spente -- accanto a tre medaglie non si leggeva come
+   «nessuna medaglia»: si leggeva come una medaglia sbiadita, cioe' un
+   quarto metallo che non esiste.
+
+   Sparisce solo QUANDO CE NE SONO, e la classe la mette
+   `segnaMedaglie`. Sempre invisibile non si puo': la corona e' anche
+   l'interruttore che dice chi ha vinto, e senza punti a schermo -- il
+   caso normale, uno si ricorda il punteggio di due su quattro -- e'
+   l'unico modo di dirlo. Con le medaglie in campo quel modo non serve
+   piu': le posizioni ci sono gia'.
+
+   Resta comunque un pulsante vero e sotto il dito torna: chi vuole
+   scavalcare la classifica puo' ancora farlo. */
+#partitalayer #pa-chi.medaglie li .corona:not(.oro):not(.argento):not(.bronzo){
+  opacity:0;
+}
+#partitalayer #pa-chi.medaglie li .corona:not(.oro):not(.argento):not(.bronzo):hover,
+#partitalayer #pa-chi.medaglie li .corona:not(.oro):not(.argento):not(.bronzo):focus-visible{
+  opacity:1;
+}
 
 
 /* ============================================================
@@ -5552,6 +5608,14 @@ input::placeholder, textarea::placeholder{
   display:flex; align-items:flex-end; gap:14px;
   margin:18px 0 0; padding:0 0 14px;
   border-bottom:2px solid var(--ink);
+  /* SU SCHERMO STRETTO SCENDONO LE MISURE, NON I VOTI.
+
+     La riga tiene due cose: i voti a sinistra e le misure a destra. Su
+     un telefono non ci stanno insieme, e senza dire chi cede per primo
+     cedeva la coppia dei voti -- che e' l'unica cosa qui dentro che
+     deve restare affiancata. Le misure invece sono una didascalia:
+     vanno a capo e restano allineate a destra, e non si nota. */
+  flex-wrap:wrap;
 }
 .pan-riga .voti{gap:14px; align-items:flex-end; flex:0 1 auto}
 .pan-riga .score{
@@ -5720,10 +5784,36 @@ input::placeholder, textarea::placeholder{
   border:0; display:block; grid-template-columns:none; gap:0;
 }
 .pan-riga .specs li{white-space:nowrap}
+/* I DUE VOTI STANNO AFFIANCATI, non uno sotto l'altro.
+
+   In colonna il proprio voto finiva sotto a quello di BGG e a meta'
+   della sua misura, e da li' si leggeva come una postilla del numero
+   grande -- una specie di sottotitolo di BoardGameGeek. Ma non e' una
+   postilla: e' l'unico dei due che riguardi chi sta guardando, ed e' il
+   motivo per cui questo sito esiste.
+
+   Affiancati, e della STESSA misura, dicono la cosa giusta: due
+   opinioni sullo stesso gioco, il mondo e tu. A distinguerli bastano
+   l'ocra e la fustella in mezzo -- che e' esattamente la forma che la
+   riga aperta dell'elenco usa gia' per la stessa coppia.
+
+   La misura scende da 64 a 50: due numeri grandi sulla stessa riga, e
+   sotto a un certo schermo vanno a capo lo stesso -- `flex-wrap` li
+   lascia fare, che e' meglio di due cifre schiacciate. */
 .pan-riga .voti{
-  flex-direction:column; align-items:flex-start; gap:2px;
+  flex-direction:row; align-items:flex-end; flex-wrap:wrap; gap:0 14px;
   flex:1 1 auto; min-width:0;
 }
+.pan-riga .score b{font-size:clamp(34px,11vw,50px)}
+/* Il filo fra i due e' TRATTEGGIATO, come ogni cosa che in questo sito
+   separa due pezzi della stessa plancia. */
+.pan-riga .score.mio{
+  border-left:1px dashed var(--line); padding-left:14px;
+}
+/* Stessa misura di quello di BGG: la differenza la fa il colore, non
+   la statura. */
+.pan-riga .score.mio b{font-size:clamp(34px,11vw,50px)}
+.pan-riga .score.mio i{font-size:16px; padding-bottom:8px}
 
 /* --- «segna partita» e' un blocco pieno ----------------------------
    La regola tratteggiata del piede porta `:not(#close)` e `:not(#del)`,
