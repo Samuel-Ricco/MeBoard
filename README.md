@@ -663,10 +663,9 @@ three.js è MIT.
   dei nomi doppi vive in `store.js` e regge, ma la garanzia sarebbe quella;
 - le **partite restano private**: gli amici vedono libreria e recensioni, non le
   partite. È il cambio di una policy, ed è una scelta di chi ci abita;
-- la migrazione **`schede_bgg` non è ancora applicata**: è quella che rende
-  misure e copertine un fatto sul *gioco* invece che sulla *tua copia*, cioè
-  una figura per immagine invece di una per utente. Finché manca, il sito si
-  comporta come prima e lo dice;
+- ~~la migrazione `schede_bgg`~~ **applicata il 2026-09-03**: misure e
+  copertine adesso sono condivise, una figura per immagine invece di una per
+  utente
 - il **modulo di aggiunta a mano** e la **correzione della scheda** non hanno
   nessuna porta. Le funzioni ci sono e gli agganci sono condizionati: manca il
   posto da cui chiamarle, e il posto naturale è il menu a tre punti dell'elenco

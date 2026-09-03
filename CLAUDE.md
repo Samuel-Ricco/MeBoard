@@ -3879,6 +3879,38 @@ si toglie un pezzo di catena e si lascia tutto il resto. Prima di riscrivere una
 funzione perche' «non c'e' piu'», si cerca il suo `data-fa` nel gestore: qui
 c'erano gestore, chiavi, icona e stile, e il lavoro era una riga.
 
+### La copertina che non si caricava, e perche' dava la colpa all'admin
+
+Sintomo: aggiungendo un gioco dal catalogo, **«copertina non caricata: il
+database dice di no, questo account non e' admin»**, e il gioco entrava con la
+copertina disegnata. Prima funzionava per chiunque.
+
+La catena, dal fondo:
+
+1. Il 2026-09-02 le copertine di BGG sono passate da `copertine/<uid>/…` a
+   `copertine/bgg/p<id>.jpg` -- **una figura per immagine invece di una per
+   persona**: il nome e' l'id della figura su BGG, unico al mondo, quindi due
+   persone con lo stesso gioco puntano allo stesso oggetto e la seconda non
+   carica niente. A 107 KB l'una, il tetto dello storage non lo alza il numero
+   di giochi, lo alza il numero di utenti.
+2. La policy che **permette a un utente qualsiasi di scrivere in `bgg/`** sta
+   dentro la migrazione `schede_bgg`.
+3. Quella migrazione non era applicata. Restava in vigore solo la regola
+   vecchia -- `copertine/<il tuo uid>/…` -- e la scrittura in `bgg/` la
+   rifiutava la RLS con un `42501`.
+
+**Il codice e la migrazione sono partiti insieme e sono arrivati separati.** E'
+il tipo di guasto che non si vede scrivendo, perche' in locale si prova quasi
+sempre da admin: e l'admin, con la policy vecchia, era l'unico che poteva
+scrivere ovunque.
+
+**E il messaggio dava la colpa alla cosa sbagliata.** `messaggio()` traduce
+*ogni* `42501` in «questo account non e' admin», che era vero quando a caricare
+erano solo gli admin. Qui la RLS diceva no per la CARTELLA, non per il ruolo --
+un admin ci scriveva eccome, ma non c'entrava l'essere admin. Se un giorno si
+tocca quella funzione: un `42501` sullo storage e un `42501` su una tabella non
+vogliono dire la stessa cosa.
+
 ### Quello che il 3D si tiene
 
 I dorsi dei libri e i segnalini dentro i cubi sono passati alla famiglia del
@@ -5795,8 +5827,8 @@ e' fatto* c'e' tutto il resto di questo file, che e' aggiornato.
 Il sito ha **quattro sezioni** — collezione (la scena 3D), catalogo, partite,
 profilo — piu' **l'elenco della collezione**, che e' una voce di navigazione sua
 e non un pulsante in testata. Due lingue, **604 chiavi in italiano e 597 in
-inglese**. **Sedici migrazioni nel repo, quindici applicate**: manca solo
-`schede_bgg`.
+inglese**. **Sedici migrazioni nel repo, sedici applicate**: `schede_bgg` e' stata
+applicata il 2026-09-03 e verificata contro il database vero.
 
 BGG lo serve una **edge function**, non piu' solo il proxy locale: e' la
 differenza fra un sito che funziona su questa macchina e uno che funziona anche
@@ -6187,14 +6219,12 @@ decimi.
 
 Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
 
-0. **La migrazione `schede_bgg` non e' ancora applicata.** E' l'unica delle
-   sedici a mancare: `voto_mio` e `durata_partita` sono state applicate il
-   2026-09-02 e verificate contro il database vero. Il codice degrada come
-   deve -- `SCHEDE.problema()` dice quale migrazione manca, le misure restano
-   in `localStorage` e le copertine nella cartella personale -- ma finche' non
-   si incolla `supabase/migrations/20260902120000_schede_bgg.sql` nell'SQL
-   editor, niente viene condiviso. E' l'unica cosa che questa macchina non puo'
-   fare da sola: qui non c'e' la CLI di Supabase.
+0. **FATTO il 2026-09-03: `schede_bgg` e' applicata.** Era l'ultima delle
+   sedici a mancare, ed era anche un guasto vero e non solo una funzione
+   spenta -- vedi «La copertina che non si caricava» piu' sopra. Verificata
+   dall'esterno con la sola chiave pubblica: la tabella risponde, e nella
+   cartella condivisa `copertine/bgg/` c'e' un oggetto caricato da un utente
+   normale e leggibile senza chiave.
 1. **Le recensioni sono lorem ipsum.** E' l'unica cosa che tiene il sito
    lontano dall'essere finito: si scrivono dal sito con *la tua recensione*, e
    da li' si pubblicano nel catalogo con la casella in fondo al modulo. Sono
