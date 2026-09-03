@@ -6389,17 +6389,33 @@ function contenutoAzioni(g){
            ? '<button type="button" data-fa="scaffale">' + ICO.scaffale + '<span>' + T('riga.vaiScaffale') + '</span></button>' +
              '<button type="button" data-fa="fuori" class="fuori">' + ICO.fuori + '<span>' + T('riga.togliLib') + '</span></button>'
            : '<button type="button" data-fa="dentro" class="dentro">' + ICO.dentro + '<span>' + T('riga.mettiLib') + '</span></button>') +
-         '';
-  /* CANCELLARE NON STA PIU' QUI.
+         /* ELIMINARE TORNA QUI, ED E' L'UNICA PORTA CHE HA.
 
-     Il menu di una riga si apre scorrendo un elenco, spesso col pollice,
-     e teneva accanto due gesti che si somigliano nel nome e non nelle
-     conseguenze: togliere dallo scaffale, che si disfa in un clic, ed
-     eliminare il gioco, che no. Adesso ne tiene uno solo, e si chiama
-     "rimuovi" perche' e' l'unico rimasto.
+            Era stato tolto perche' il menu di una riga si apre scorrendo
+            un elenco, spesso col pollice, e teneva accanto due gesti che
+            si somigliano nel nome e non nelle conseguenze: togliere
+            dallo scaffale, che si disfa in un clic, ed eliminare il
+            gioco, che no. La nota diceva che eliminare sarebbe rimasto
+            nel piede della scheda -- e li' non c'e' mai arrivato: il
+            `#del` del piede fa "rimuovi dallo scaffale". Risultato:
+            cancellare un gioco dalla collezione non si poteva piu' fare
+            da nessuna parte.
 
-     Eliminare resta, e sta dove le conseguenze si leggono: nel piede
-     della scheda del gioco, rosso e in due tempi. */
+            Le due cose restano vicine, quindi, ma non si somigliano:
+
+            - sta per ULTIMA, come tutto quello che butta via qualcosa in
+              ogni altro piede del sito;
+            - e' ROSSA e in DUE TEMPI -- il primo tocco arma e chiede
+              conferma, il secondo cancella -- e si disarma da sola dopo
+              tre secondi e mezzo se non si conferma. E' lo stesso patto
+              di ogni altro comando che distrugge, e il gestore era
+              rimasto qui ad aspettarla insieme alle sue tre chiavi.
+
+            Lo `<span>` non e' decorazione: e' quello che il gestore
+            riscrive per chiedere "sicuro?" senza rifare il pulsante --
+            rifarlo staccherebbe dal documento il nodo appena toccato. */
+         '<button type="button" data-fa="elimina" class="elimina">' +
+           ICO.cestino + '<span>' + T('riga.eliminaGioco') + '</span></button>';
 }
 
 /* L'elenco si divide in CARTELLE quando non si sta filtrando su un

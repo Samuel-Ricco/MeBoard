@@ -667,10 +667,10 @@ three.js è MIT.
   misure e copertine un fatto sul *gioco* invece che sulla *tua copia*, cioè
   una figura per immagine invece di una per utente. Finché manca, il sito si
   comporta come prima e lo dice;
-- **cancellare un gioco non ha più nessuna porta**, e con lui sono senza porta
-  il modulo di aggiunta a mano e la correzione della scheda. Le funzioni ci
-  sono e gli agganci sono condizionati: manca il posto da cui chiamarle, e il
-  posto naturale è il menu a tre punti dell'elenco;
+- il **modulo di aggiunta a mano** e la **correzione della scheda** non hanno
+  nessuna porta. Le funzioni ci sono e gli agganci sono condizionati: manca il
+  posto da cui chiamarle, e il posto naturale è il menu a tre punti dell'elenco
+  — dove *eliminare un gioco* è già tornato;
 - le **espansioni**: nella scheda di un gioco, quali hai e quali ti mancano, e
   la possibilità di raggrupparle sotto il gioco base. È il lavoro più grosso
   rimasto, e le domande che apre sono di prodotto più che di codice;

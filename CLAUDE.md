@@ -3846,6 +3846,39 @@ dell'anteprima nascosto e' sospeso, e il ciclo di misura resta appeso finche' no
 scade il tempo dello strumento. E' la trappola gia' scritta per il caricamento,
 che si ripresenta a chi misura invece che a chi anima. Si usa `setTimeout`.
 
+### Eliminare un gioco: tolto, dimenticato, rimesso
+
+La nota di prima diceva che cancellare era uscito dal menu della riga per un
+motivo buono -- quel menu si apre scorrendo un elenco, spesso col pollice, e
+teneva accanto due gesti che si somigliano nel nome e non nelle conseguenze:
+togliere dallo scaffale, che si disfa in un clic, ed eliminare, che no -- e che
+sarebbe rimasto **nel piede della scheda del gioco**.
+
+Li' non c'e' mai arrivato. Il `#del` del piede fa «rimuovi dallo scaffale», e il
+risultato e' che per un po' **cancellare un gioco dalla collezione non si poteva
+fare da nessuna parte**: la funzione c'era, il gestore c'era, le tre chiavi del
+dizionario c'erano in tutt'e due le lingue, il CSS di `.elimina.armed` pure. Era
+sparito solo il pulsante.
+
+Adesso e' di nuovo li', e le due cose restano vicine senza somigliarsi:
+
+- sta per **ultima**, come tutto quello che butta via qualcosa in ogni altro
+  piede del sito;
+- e' **rossa e in due tempi** -- il primo tocco arma e chiede «sicuro? tocca
+  ancora», il secondo cancella -- e **si disarma da sola dopo tre secondi e
+  mezzo**. E' lo stesso patto di ogni altro comando che distrugge.
+
+Lo `<span>` dentro al pulsante non e' decorazione: e' quello che il gestore
+riscrive per chiedere conferma **senza rifare il pulsante**. Rifarlo staccherebbe
+dal documento il nodo appena toccato, e il secondo tocco cadrebbe nel vuoto --
+e' la lezione dell'elenco dei gruppi, e qui conta il doppio perche' il secondo
+tocco e' quello che cancella.
+
+**Lezione, e vale per tutte le porte che mancano:** quando si toglie un pulsante
+si toglie un pezzo di catena e si lascia tutto il resto. Prima di riscrivere una
+funzione perche' «non c'e' piu'», si cerca il suo `data-fa` nel gestore: qui
+c'erano gestore, chiavi, icona e stile, e il lavoro era una riga.
+
 ### Quello che il 3D si tiene
 
 I dorsi dei libri e i segnalini dentro i cubi sono passati alla famiglia del
@@ -5770,7 +5803,7 @@ differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
 Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
-`css/style.css` 5.900, `js/app.js` 9.875, `js/suoni.js` 493, `js/tema.js` 584,
+`css/style.css` 5.900, `js/app.js` 9.891, `js/suoni.js` 493, `js/tema.js` 584,
 piu' `js/art.js` 1.346 e `supabase/functions/bgg/index.ts` 291.
 
 ### La sessione del 2026-09-03: il fork e la fustella
@@ -5793,6 +5826,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il wrap | le otto slide rifatte: un inchiostro piatto invece di un gradiente, il contenuto a sinistra, il bollino del periodo, e il PNG ridisegnato per combaciare |
 | l'alone | la vignettatura e tre ombre erano fatte di inchiostro: sul cartone dipingevano un velo chiaro sui bordi dello schermo |
 | le voci e i suoni | venti comandi passati alla voce della fustella, i numeri in mono, e tutti e quindici i suoni rifatti in cartone |
+| eliminare | il gioco si cancella dal menu a tre punti dell'elenco: mancava solo il pulsante, tutto il resto era gia' li' |
 
 **Le lezioni generali** di questa sessione:
 
@@ -6171,13 +6205,12 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
    gioco. E' il lavoro piu' grosso rimasto, e non e' un lavoro di codice: sono
    domande di prodotto -- se un'espansione occupa un cubo, se sparisce dentro
    il gioco base, se si conta nel totale della collezione.
-3. **Cancellare un gioco non ha piu' nessuna porta.** Il menu della riga e il
-   piede della scheda tengono ormai un gesto solo, «rimuovi», e quel gesto e'
-   uscire dallo scaffale. `removeFocused` e' intatta e l'aggancio e'
-   condizionato; il posto naturale per rimetterla e' il menu a tre punti
-   dell'elenco. **Insieme a lei sono senza porta `apriModifica`** (autore,
-   editore, anno, voto, copertina) **e il modulo di aggiunta a mano**
-   (`openAdd`), che ha perso il suo «+» dalla collezione.
+3. **Cancellare un gioco: FATTO il 2026-09-03**, ed e' tornato dove le note
+   dicevano che sarebbe stato il suo posto -- il menu a tre punti dell'elenco.
+   Restano senza porta **`apriModifica`** (autore, editore, anno, voto,
+   copertina) **e il modulo di aggiunta a mano** (`openAdd`), che ha perso il
+   suo «+» dalla collezione. Per tutt'e due il posto naturale e' lo stesso
+   menu, ed e' adesso un posto che esiste.
 4. **Manca l'indice unico su `(proprietario, nome)`** delle librerie. Il
    divieto dei nomi doppi vive in `store.js` e regge; l'indice sarebbe la
    garanzia, e adesso che i doppioni non ci sono piu' la migrazione passerebbe.
