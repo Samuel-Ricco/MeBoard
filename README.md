@@ -72,7 +72,7 @@ metafora scritta a posteriori: è la regola con cui si decide come è fatta ogni
 cosa, e da lì scendono la tavolozza, la tipografia, le forme e il gesto di
 premere.
 
-**Due materiali.** Il *cartone* (`#16130f`, il fondo di serie) e la *carta*
+**Due materiali.** Il *cartone* (`#0a0806`, il fondo di serie) e la *carta*
 (`#efe3cd`). Non sono un tema chiaro e uno scuro: sono i due lati della stessa
 plancia, e il sito li usa **tutti e due insieme** — la recensione è un foglio di
 carta appoggiato sul cartone. Nel foglio non si rovesciano solo il testo e il

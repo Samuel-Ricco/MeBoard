@@ -3254,7 +3254,7 @@ regola vecchia cancellata in silenzio è una regola che qualcuno riscriverà.
 
 ### Due materiali, e il sito li usa tutti e due insieme
 
-Il *cartone* (`--bg #16130f`, il fondo di serie) e la *carta* (`#efe3cd`). Non
+Il *cartone* (`--bg #0a0806`, il fondo di serie) e la *carta* (`#efe3cd`). Non
 sono un tema chiaro e uno scuro fra cui scegliere: sono i due lati della stessa
 plancia. La scelta nel profilo dice **su quale dei due è stampato il sito**, e i
 nomi dei due sono `cartone` e `carta`.
@@ -3270,13 +3270,28 @@ Le otto tinte del cartone, e tutto il resto derivato come sempre:
 
 | | |
 |---|---|
-| `--bg` `#16130f` | cartone bagnato: la stanza |
-| `--card` `#241f18` | cartone tagliato: i pannelli |
+| `--bg` `#0a0806` | cartone bagnato: la stanza |
+| `--card` `#1c1813` | cartone tagliato: i pannelli |
 | `--ink` `#efe3cd` | carta cruda: il testo, **e il blocco pieno** |
 | `--ink-soft` `#a2937c` | carta in ombra: il testo secondario |
 | `--sage` `#6d6252` · `--sand` `#b8a184` | superfici quiete |
 | `--wood` `#b0824c` | il legno dello scaffale |
 | `--accent` `#f0b429` | ocra |
+
+**Il nero è sceso di tre quarti.** Era `#16130f`, un marrone molto scuro che a
+schermo si legge come marrone e non come nero: la plancia sembrava fotografata
+di sera invece che stampata. Adesso il fondo sta a `#0a0806` (L\* da 6,0 a 2,3) e
+il caldo resta come traccia invece che come tinta. **Lo scalino fra fondo e
+scheda è rimasto quello**: il cartone tagliato è sceso insieme al fondo, e il
+rapporto di contrasto fra i due era 1,13 ed è 1,13 — è quel gradino a far
+leggere un pannello come un pezzo staccato, e abbassare solo il fondo avrebbe
+comprato un nero che nessuno guarda da solo rompendo il verso della plancia.
+
+E **l'ombra è dovuta passare al nero pieno**. L'ombra della fustella è uno scarto
+solido e si vede perché è *più scura* di quello su cui cade; al 55% cadeva a un
+passo dal fondo nuovo e i pannelli smettevano di sembrare appoggiati. Sotto il
+nero non c'è niente da prendere, quindi si prende tutto: `0.78` sul cartone,
+`0.34` sulla carta, dove di spazio verso il buio ce n'è quanto se ne vuole.
 
 **Il pieno di un comando è `--ink` su `--card`, non una tinta.** È la cosa più
 utile di questa tavolozza: il blocco di carta è il materiale *rovesciato*, quindi
@@ -3780,6 +3795,57 @@ E tutto quello che si CONTA e' passato al mono con le cifre a larghezza fissa:
 i giorni del calendario, i punti del podio, le percentuali del winrate, i
 punteggi di una partita. Il nome di chi ha vinto no -- quello e' una parola, e
 le parole sulla plancia sono punzonate.
+
+### Quattro cose piccole, e una che era rotta da sempre
+
+**Le medaglie del tavolo erano scritte e non si vedevano.** Le classi
+`oro`/`argento`/`bronzo` c'erano, il podio sotto le mostrava giuste, e le quattro
+corone accanto ai nomi erano tutte dello stesso inchiostro. Motivo:
+`#partitalayer button:not(.primario):not(.secondario):not(.distruttivo)` pesa un
+id, tre classi e un elemento, **esattamente quanto**
+`#partitalayer .pa-chi li .corona.oro` -- e la fustella quella regola l'ha
+riscritta piu' in basso nel foglio, quindi a parita' di peso vinceva la copia
+nuova.
+
+La cura di prima era «le medaglie stanno in fondo al foglio». Ha retto finche' il
+foglio non e' cresciuto. **Stare in fondo non e' un peso: e' una scommessa su chi
+scrive dopo.** Adesso vincono e basta: `#pa-chi` *e'* un id -- l'elenco lo porta
+gia' addosso -- e due id battono un id piu' tre `:not()` in qualunque ordine.
+
+E **dal quarto posto in giu' la corona non c'e'**. Disegnata al 18% accanto a tre
+metalli non si leggeva come «nessuna medaglia», si leggeva come una medaglia
+sbiadita. Sparisce solo *quando ce ne sono* (`segnaMedaglie` mette la classe):
+senza punti a schermo la corona e' ancora l'unico modo di dire chi ha vinto, e
+quella porta non si chiude.
+
+**La collezione si apre in ordine alfabetico.** Il separatore a lettera era
+scritto da tempo e non l'aveva mai visto nessuno, perche' vale solo in ordine
+alfabetico e l'ordine di partenza era la data di aggiunta. Una collezione si
+guarda per CERCARE un gioco, e chi cerca un gioco sa come si chiama; l'ordine di
+aggiunta serve solo a chi si ricorda *quando* l'ha messo.
+
+**I due voti stanno affiancati.** In colonna, e a meta' misura, il voto proprio
+si leggeva come una postilla di quello di BoardGameGeek -- ed e' l'unico dei due
+che riguardi chi sta guardando. Stessa misura, ocra, con la fustella tratteggiata
+in mezzo: e' la forma che la riga aperta dell'elenco usa gia' per la stessa
+coppia. Su schermo stretto vanno a capo le **misure**, non i voti.
+
+Li' e' saltato fuori che **`hidden` perdeva contro `display:flex`**: `[hidden]`
+e' una regola del browser, senza classi, e `.score{display:flex}` la batte. Un
+gioco non ancora votato mostrava un «/10 tuo» vuoto -- e col nuovo accostamento
+anche un filo tratteggiato che non separava niente.
+
+**«Carica altro» nella ricerca del catalogo.** Il tetto della ricerca su BGG era
+a dodici risultati, cioe' mezza pagina delle ventiquattro che l'elenco mostra:
+quel pulsante non compariva mai, e chi cercava una parola comune vedeva una
+pagina e credeva che fosse tutto. Il tetto e' salito a duecento in tutt'e due i
+proxy, ma **la funzione remota si aggiorna solo con un rilascio**, quindi il
+client si rincalza da solo: prima i risultati di BGG nel suo ordine di
+pertinenza, poi quelli dell'indice in casa che BGG non ha nominato, senza
+doppioni -- e la chiave del confronto e' l'**id BGG**, che e' lo stesso numero in
+tutte e due le fonti, non il titolo, che nelle due si scrive con sottotitoli
+diversi. Il pulsante dice anche cosa fa: sfogliando CHIEDE una pagina nuova,
+cercando SCOPRE righe gia' arrivate.
 
 ### Le due finestrelle disegnate da qualcun altro
 
@@ -6000,6 +6066,11 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | le voci e i suoni | venti comandi passati alla voce della fustella e i numeri in mono. I quindici suoni sono stati rifatti due volte: prima in cartone, poi -- perche' il cartone suonava vecchio -- **intonati** su una pentatonica, con l'aria in alto e una coda di stanza |
 | le due finestrelle | il colore e il giorno non passano piu' dal selettore del sistema: `js/scegli.js` disegna una carta dei colori e un calendario, e il campo vero resta nascosto a tenere il valore |
 | eliminare | il gioco si cancella dal menu a tre punti dell'elenco: mancava solo il pulsante, tutto il resto era gia' li' |
+| il nero | `#16130f` era un marrone scuro e si leggeva come marrone: sceso a `#0a0806`, con lo stesso scalino verso la scheda e l'ombra al nero pieno |
+| le medaglie | oro, argento e bronzo erano scritti e non si vedevano: la catena dei comandi dei pannelli, riscritta piu' in basso, vinceva sul pari peso. Adesso vincono col doppio id, e dal quarto posto la corona non c'e' |
+| l'ordine di partenza | la collezione si apre in **ordine alfabetico**, che accende anche i separatori a lettera scritti da tempo e mai visti |
+| i due voti | affiancati e della stessa misura, con la fustella in mezzo: in colonna il proprio si leggeva come una postilla di quello di BGG |
+| carica altro | la ricerca del catalogo si sfoglia davvero: il tetto di BGG e' salito a 200 e il client rincalza dall'indice in casa, senza aspettare un rilascio |
 
 **Le lezioni generali** di questa sessione:
 
