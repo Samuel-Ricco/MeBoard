@@ -43,8 +43,8 @@
      `--bg` deve restare uguale allo sfondo della scena 3D (SFONDO in
      js/app.js, che lo chiede a TEMA): e' la stessa tinta a tenere
      insieme il caricamento, il cancello e il mondo dietro. */
-  --bg:#16130f;          /* cartone bagnato: la stanza */
-  --card:#241f18;        /* cartone tagliato: i pannelli */
+  --bg:#0a0806;          /* cartone bagnato: la stanza */
+  --card:#1c1813;        /* cartone tagliato: i pannelli */
   --ink:#efe3cd;         /* carta cruda: il testo, e il blocco pieno */
   --ink-soft:#a2937c;    /* carta in ombra: il testo secondario */
   --sage:#6d6252;        /* superfici quiete */
@@ -58,27 +58,27 @@
      si vedrebbe un filo verde oliva su un fondo lilla. Cosi' invece
      basta `rgba(var(--ink-rgb), .06)`. */
   --ink-rgb:239,227,205;
-  --card-rgb:36,31,24;
-  --bg-rgb:22,19,15;
+  --card-rgb:28,24,19;
+  --bg-rgb:10,8,6;
   --accent-rgb:240,180,41;
   --ombra-rgb:0,0,0;
 
   /* Il fondo delle quattro schermate piatte: sta fra la carta e la
      stanza, che e' il colore di una pagina che si legge. */
-  --fondo:#1f1b15;
+  --fondo:#16130f;
   --accent-su:#f2bd43;   /* l'accento premuto */
   /* QUELLO CHE SI SCRIVE SOPRA UN INCHIOSTRO. Sopra l'ocra ci va il
      cartone, sopra il rosso ci va la carta: non e' una scelta, e' un
      conto, e sta in `sopra()` dentro js/tema.js. */
-  --su-accent:#241f18;
+  --su-accent:#1c1813;
 
   /* I TRE INCHIOSTRI DA STAMPA. Non sono la tavolozza: sono i colori
      con cui la plancia e' stampata, e li adatta al materiale
      `stampa()`. Il rosso resta il segnale di quello che distrugge e il
      filetto delle barre -- non diventa mai l'accento. */
-  --rosso:#e9634f;       --su-rosso:#241f18;   --rosso-rgb:233,99,79;
-  --ocra:#f0b429;        --su-ocra:#241f18;
-  --verde:#2f9e6b;       --su-verde:#241f18;
+  --rosso:#e9634f;       --su-rosso:#1c1813;   --rosso-rgb:233,99,79;
+  --ocra:#f0b429;        --su-ocra:#1c1813;
+  --verde:#2f9e6b;       --su-verde:#1c1813;
 
   /* ORO, ARGENTO, BRONZO. Sono le uniche tinte del sito che non vengono
      dalla tavolozza ne' cambiano col materiale, ed e' voluto: una
@@ -94,9 +94,9 @@
   --argento:#8d949c;
   --bronzo:#a2683c;
 
-  --velo:rgba(33,28,22,.82);        /* la testata: cartone velato */
-  --velo-lieve:rgba(33,28,22,.55);  /* sulla scena, dove non scorre niente */
-  --velo-pieno:rgba(33,28,22,.94);  /* con la stanza in penombra */
+  --velo:rgba(24,20,16,.82);        /* la testata: cartone velato */
+  --velo-lieve:rgba(24,20,16,.55);  /* sulla scena, dove non scorre niente */
+  --velo-pieno:rgba(24,20,16,.94);  /* con la stanza in penombra */
   /* Il filo e' TRATTEGGIATO come le fustelle di una plancia, e un
      tratteggio tenue non si vede: sono buchi in un segno gia' debole.
      Sta a .26 e non a .14, che era il valore di un filo pieno. */
@@ -107,13 +107,13 @@
      che galleggia, che e' l'opposto di quello che deve sembrare.
      Stessa cosa a due altezze: 3 px un pezzo appoggiato, 6 px un
      pannello che sta sopra a tutto. */
-  --shadow:6px 6px 0 rgba(0,0,0,.55);
-  --ombra-lieve:3px 3px 0 rgba(0,0,0,.45);
+  --shadow:6px 6px 0 rgba(0,0,0,.78);
+  --ombra-lieve:3px 3px 0 rgba(0,0,0,.64);
   /* La stessa ombra per chi ha il taglio: `clip-path` ritaglia la
      `box-shadow`, `drop-shadow` no -- segue la sagoma ritagliata.
      `--posa-giu` e' quella del pezzo premuto, che si e' quasi posato. */
-  --posa:drop-shadow(3px 3px 0 rgba(var(--ombra-rgb),.45));
-  --posa-giu:drop-shadow(1px 1px 0 rgba(var(--ombra-rgb),.45));
+  --posa:drop-shadow(3px 3px 0 rgba(var(--ombra-rgb),.64));
+  --posa-giu:drop-shadow(1px 1px 0 rgba(var(--ombra-rgb),.64));
 
   /* NIENTE RAGGI. I tre nomi restano perche' novantasei regole li
      chiamano, e cambiare il valore in un posto solo e' esattamente il
@@ -4916,7 +4916,7 @@ body.wrap-su #wrap{display:flex}
 #wrap-x{
   position:absolute; top:20px; right:20px; z-index:2;
   width:32px; height:32px; border:0; border-radius:0; cursor:pointer;
-  background:#efe3cd; color:#16130f; font-size:18px; line-height:1;
+  background:#efe3cd; color:#0a0806; font-size:18px; line-height:1;
   box-shadow:3px 3px 0 rgba(0,0,0,.28);
 }
 #wrap-x:active{transform:translate(2px,2px); box-shadow:1px 1px 0 rgba(0,0,0,.28)}
@@ -4947,7 +4947,7 @@ body.wrap-su #wrap{display:flex}
    a numeri: carta su ocra fa 1,5 a 1, cioe' un numero da centoventi
    pixel che non si vede. */
 .wrap-slide{
-  --sl-carta:#efe3cd; --sl-cartone:#16130f;
+  --sl-carta:#efe3cd; --sl-cartone:#0a0806;
   --sl-rosso:#e23d28; --sl-ocra:#f0b429; --sl-verde:#2f9e6b;
   flex:0 0 100%; scroll-snap-align:start;
   display:flex; flex-direction:column; align-items:stretch;

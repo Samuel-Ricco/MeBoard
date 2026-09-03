@@ -64,9 +64,25 @@ const BASI = [
        cruda non e' qui fra le superfici: e' l'INCHIOSTRO, ed e' per
        questo che il blocco pieno di un comando si scrive
        `background:var(--ink); color:var(--card)` e si rovescia da solo
-       quando si passa all'altro materiale. */
+       quando si passa all'altro materiale.
+
+       IL NERO E' SCESO DI TRE QUARTI. Era #16130f, un marrone molto
+       scuro che a schermo si legge come marrone e non come nero: su un
+       pannello acceso in una stanza illuminata la sfumatura calda si
+       vede benissimo, e la plancia sembrava fotografata di sera invece
+       che stampata. Adesso il fondo sta a #0a0806, un terzo della
+       chiarezza di prima (L* da 6,0 a 2,3), e il caldo resta come
+       traccia invece che come tinta.
+
+       LO SCALINO FRA I DUE E' RIMASTO QUELLO. Il cartone tagliato scende
+       insieme al fondo -- da #241f18 a #1c1813 -- e non perche' sia
+       simmetrico: il rapporto di contrasto fra i due era 1,13 e adesso
+       e' 1,13. E' quel gradino a far leggere un pannello come un pezzo
+       staccato dal fondo, e abbassando solo il fondo si sarebbe rotto
+       il verso della plancia per guadagnare un nero che nessuno guarda
+       da solo. */
     v: 'scuro', n: 'tema.cartone',
-    c: { bg:'#16130f', card:'#241f18', ink:'#efe3cd', inkSoft:'#a2937c',
+    c: { bg:'#0a0806', card:'#1c1813', ink:'#efe3cd', inkSoft:'#a2937c',
          sage:'#6d6252', sand:'#b8a184', wood:'#b0824c', accent:'#f0b429',
          woodDark:'#6b4d2b' }
   },
@@ -75,7 +91,7 @@ const BASI = [
        guardata dall'altra parte, con il fondo appena piu' sporco della
        carta cruda perche' i blocchi ci si stacchino sopra. */
     v: 'chiaro', n: 'tema.carta',
-    c: { bg:'#d9c9aa', card:'#efe3cd', ink:'#16130f', inkSoft:'#6b5f4c',
+    c: { bg:'#d9c9aa', card:'#efe3cd', ink:'#0a0806', inkSoft:'#6b5f4c',
          sage:'#a0906f', sand:'#c9b394', wood:'#7f5528', accent:'#f0b429',
          woodDark:'#54371a' }
   }
@@ -349,8 +365,20 @@ function scrivi(s, c, pre){
      un pezzo appoggiato (3 px), `--shadow` e' un pannello che sta sopra
      a tutto (6 px). Il gesto di premere le consuma, e quello sta in
      fondo al foglio di stile con gli altri comandi. */
+  /* SU UN FONDO QUASI NERO L'OMBRA DEVE ESSERE NERA PIENA.
+
+     L'ombra della fustella e' uno scarto pieno, e si vede perche' e'
+     PIU' SCURA di quello su cui cade. Sul cartone stava al 55% di nero,
+     che sul vecchio #16130f lasciava un gradino netto; sul nuovo fondo
+     lo stesso 55% cade a un passo dal fondo stesso e i pannelli
+     smettono di sembrare appoggiati.
+
+     Sotto il nero non c'e' niente da prendere, quindi si prende tutto
+     quello che c'e': 0,78 sul cartone. Sulla carta resta 0,34 -- li' di
+     spazio verso il buio ce n'e' quanto se ne vuole, e un'ombra piu'
+     pesante sarebbe solo una macchia. */
   const ombT = chiaro ? inkT : '0,0,0';
-  const f = chiaro ? .34 : .55;
+  const f = chiaro ? .34 : .78;
   v('ombra-rgb', ombT);
   v('shadow', '6px 6px 0 rgba(' + ombT + ',' + f.toFixed(2) + ')');
   v('ombra-lieve', '3px 3px 0 rgba(' + ombT + ',' + (f * .82).toFixed(2) + ')');

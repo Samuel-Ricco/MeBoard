@@ -534,7 +534,7 @@ function slab(w, h, d, mat, x, y, z){
    Conta solo nei primi fotogrammi: subito dopo `applicaLuce()` mette lo
    sfondo del colore del MURO, che e' del profilo e non della
    tavolozza. */
-const SFONDO_DEF = 0x16130f;
+const SFONDO_DEF = 0x0a0806;
 function sfondoOra(){
   if (typeof TEMA === 'undefined') return SFONDO_DEF;
   try { return new THREE.Color(TEMA.tinte().bg).getHex(); }
@@ -7526,7 +7526,7 @@ function salvaSlide(){
    esce dal sito e deve leggersi uguale per tutti, qualunque materiale
    abbia scelto chi l'ha fatta. */
 const SLIDE_INK = {
-  carta: '#efe3cd', cartone: '#16130f',
+  carta: '#efe3cd', cartone: '#0a0806',
   rosso: '#e23d28', ocra: '#f0b429', verde: '#2f9e6b'
 };
 /* Su un inchiostro scuro si stampa chiaro, su uno chiaro si stampa
