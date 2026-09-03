@@ -3911,6 +3911,42 @@ un admin ci scriveva eccome, ma non c'entrava l'essere admin. Se un giorno si
 tocca quella funzione: un `42501` sullo storage e un `42501` su una tabella non
 vogliono dire la stessa cosa.
 
+### Quattro cose viste a schermo, e cosa insegnano
+
+**L'anello del winrate spariva nel suo riquadro.** `.wr-carica` e' scritto
+`stroke:var(--accent)` -- giusto ovunque, perche' il winrate e' un dato che
+conta -- ma quel riquadro l'accento ce l'ha come FONDO: era ocra su ocra.
+Restava visibile solo il filo vuoto, carta al 13% su ocra, cioe' l'arco
+spezzato che si vedeva. Adesso l'anello prende `currentColor`, che e' il colore
+del testo del riquadro: fa la cosa giusta anche il giorno in cui quel riquadro
+cambiera' tinta. **Regola generale: un colore che vale ovunque non vale sopra a
+se stesso.**
+
+**«Annulla» era una parola grigia in minuscolo**, e non era un caso isolato:
+dentro `#profilo`, `#partitalayer`, `#gruppilayer` e `#recelayer` la regola di
+contorno `#profilo button, ...` pesa un id piu' un elemento, cioe' **piu' di
+`button.secondario`**, che di id non ne ha. Li' dentro i tre livelli perdevano
+voce e bordo. `.primario` se la cavava solo perche' qualcuno gli aveva gia'
+riscritto una regola con l'id.
+
+E' la **quarta volta** che questa catena morde in questo giro -- pastiglie della
+lingua, piede della recensione, titoli del profilo, e adesso i tre livelli. Vale
+la pena dirla una volta per tutte: **dentro quei quattro pannelli, qualunque
+regola su un pulsante va scritta con l'id davanti.**
+
+**Il mio voto era rosso.** Nel disegno «7.0 tuo» sta in rosso e li' funziona,
+perche' quella plancia il rosso lo usa come tinta e basta. Qui no: **il rosso e'
+il segnale di quello che distrugge** e in tutto il sito non vuol dire altro --
+un voto stampato in rosso sotto a quello di BGG si legge come un avviso. Adesso
+e' ocra, che e' la tinta di quello che e' tuo, ed e' gia' quella che usa la
+stessa coppia di voti nella riga aperta dell'elenco. Due posti, una regola.
+
+**Il riquadro attorno alle misure** non era dei riquadri: `.specs` e' una
+griglia fatta di fondo, `gap:1px` e cornice -- i fili fra le caselle sono il
+fondo che si vede attraverso i vuoti. Tolti i riquadri restavano il fondo e la
+cornice, cioe' una scatola vuota attorno a due righe di didascalia. Va spento
+tutto il pezzo insieme: fondo, bordo, griglia e gap.
+
 ### Quello che il 3D si tiene
 
 I dorsi dei libri e i segnalini dentro i cubi sono passati alla famiglia del

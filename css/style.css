@@ -5361,6 +5361,55 @@ input::placeholder, textarea::placeholder{
   border-color:transparent; clip-path:var(--fustella);
 }
 
+/* --- I TRE LIVELLI DENTRO I PANNELLI CON UN ID --------------------
+   «annulla» era una parola grigia in minuscolo accanto a un blocco
+   pieno, e non e' un caso isolato: dentro `#profilo`, `#partitalayer`,
+   `#gruppilayer` e `#recelayer` c'e' una regola di contorno
+
+     #profilo button, #partitalayer button, ... { font-weight:500;
+       letter-spacing:0; text-transform:none; border:0 }
+
+   che pesa un id piu' un elemento -- **piu' di `button.secondario`**, che
+   di id non ne ha. Risultato: dentro quei quattro pannelli i tre livelli
+   perdevano la voce e il bordo, e restavano il fondo e l'imbottitura.
+   `.primario` se la cavava perche' qualcuno gli aveva riscritto una
+   regola con l'id; gli altri due no.
+
+   La cura e' quella gia' scritta due volte in questo foglio: **si
+   ripete la catena con lo stesso peso**. Un id piu' una classe batte un
+   id piu' un elemento. */
+#profilo .primario, #partitalayer .primario, #gruppilayer .primario, #recelayer .primario{
+  font-family:var(--ff); font-weight:900; font-size:12px;
+  letter-spacing:.1em; text-transform:uppercase;
+  background:var(--ink); color:var(--card);
+  border:0; border-radius:0; padding:13px 20px;
+  clip-path:var(--fustella); filter:var(--posa);
+}
+#profilo .primario:hover, #partitalayer .primario:hover,
+#gruppilayer .primario:hover, #recelayer .primario:hover{
+  background:var(--accent); color:var(--su-accent);
+}
+#profilo .secondario, #partitalayer .secondario, #gruppilayer .secondario, #recelayer .secondario{
+  font-family:var(--ff); font-weight:900; font-size:12px;
+  letter-spacing:.1em; text-transform:uppercase;
+  background:none; color:var(--ink);
+  border:1px dashed var(--line); border-radius:0; padding:12px 20px;
+}
+#profilo .secondario:hover, #partitalayer .secondario:hover,
+#gruppilayer .secondario:hover, #recelayer .secondario:hover{
+  background:rgba(var(--ink-rgb),.08); border-color:var(--ink); color:var(--ink);
+}
+#profilo .distruttivo, #partitalayer .distruttivo, #gruppilayer .distruttivo, #recelayer .distruttivo{
+  font-family:var(--ff); font-weight:900; font-size:12px;
+  letter-spacing:.1em; text-transform:uppercase;
+  background:none; color:var(--rosso);
+  border:1px dashed rgba(var(--rosso-rgb),.7); border-radius:0; padding:12px 18px;
+}
+#profilo .distruttivo.armed, #partitalayer .distruttivo.armed,
+#gruppilayer .distruttivo.armed, #recelayer .distruttivo.armed{
+  background:var(--rosso); color:var(--su-rosso); border-color:transparent;
+}
+
 /* --- il piede della recensione -------------------------------------
    Sta su carta, quindi il tratteggio ci si vede benissimo: qui i
    comandi sono fili, e il solo pieno e' il chiudi in alto a destra. */
@@ -5515,7 +5564,17 @@ input::placeholder, textarea::placeholder{
   font-family:var(--ff); font-weight:900; font-size:9.5px;
   letter-spacing:.14em; text-transform:uppercase; color:rgba(var(--ink-rgb),.55);
 }
-.pan-riga .score.mio b{font-size:clamp(24px,7vw,30px); color:var(--rosso)}
+/* IL MIO VOTO E' OCRA, NON ROSSO. Nel disegno «7.0 tuo» sta in rosso, e
+   li' funziona perche' quella plancia il rosso lo usa come tinta e
+   basta. Qui no: **il rosso e' il segnale di quello che distrugge**, e
+   in tutto il sito non vuol dire altro. Un voto stampato in rosso sotto
+   a quello di BGG si legge come un avviso.
+
+   L'ocra e' la tinta di quello che e' TUO e di quello che conta, ed e'
+   gia' quella che usa la stessa coppia di voti nella riga aperta
+   dell'elenco (`.riga-info .voto > span.mio`). Due posti, una regola. */
+.pan-riga .score.mio b{font-size:clamp(24px,7vw,30px); color:var(--accent)}
+.pan-riga .score.mio small{color:var(--accent); opacity:.85}
 .pan-riga .score.mio i{font-size:13px; padding-bottom:4px}
 
 /* LE MISURE NON SONO TRE RIQUADRI. Erano tre caselle grigie in fila --
@@ -5653,6 +5712,12 @@ input::placeholder, textarea::placeholder{
       qui che lasciarlo al caso della larghezza. */
 .pan-riga .specs{
   background:none; flex:none; white-space:nowrap; align-self:flex-end;
+  /* Anche il filo se ne va, per la stessa ragione del fondo: la
+     griglia di `.specs` e' fatta di fondo, `gap:1px` e cornice, ed e'
+     tutto un pezzo solo. Restava il rettangolo tratteggiato attorno a
+     due righe di didascalia, che nel disegno non c'e' -- li' le misure
+     sono testo allineato a destra e basta. */
+  border:0; display:block; grid-template-columns:none; gap:0;
 }
 .pan-riga .specs li{white-space:nowrap}
 .pan-riga .voti{
@@ -5745,6 +5810,17 @@ input::placeholder, textarea::placeholder{
 #par-somma .par-wr:disabled{background:var(--ink); color:var(--card)}
 #par-somma .par-wr:disabled b, #par-somma .par-wr:disabled span{color:var(--card)}
 #par-somma .par-wr .wr-anello{width:30px; height:30px}
+/* L'ANELLO SPARIVA DENTRO IL SUO RIQUADRO. `.wr-carica` e' scritto
+   `stroke:var(--accent)` -- giusto ovunque, perche' il winrate e' un
+   dato che conta -- ma questo riquadro l'accento ce l'ha come FONDO: era
+   ocra su ocra. Restava visibile solo il filo vuoto, carta al 13% su
+   ocra, cioe' l'arco spezzato che si vedeva.
+
+   Qui l'anello prende il colore del testo del riquadro, qualunque sia:
+   `currentColor` fa da solo la cosa giusta anche il giorno in cui
+   quel riquadro cambiera' tinta. */
+#par-somma .par-wr .wr-carica{stroke:currentColor}
+#par-somma .par-wr .wr-vuoto{stroke:currentColor; opacity:.24}
 
 /* --- IL PROFILO, i dettagli del disegno ---------------------------- */
 /* Il codice amico e' una cosa da leggere ad alta voce a qualcuno:
