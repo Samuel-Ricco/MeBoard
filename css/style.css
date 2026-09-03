@@ -261,8 +261,8 @@ body.cerca-par #par-q-x{display:block}
 .gruppi{display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 0}
 .gruppi:empty{display:none}
 .gruppi button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:rgba(var(--ink-rgb),.06); border:0; padding:6px 9px; border-radius:var(--r-s);
 }
 .gruppi button:hover{color:var(--ink); border-color:var(--accent)}
@@ -347,8 +347,8 @@ body.visita .visita-only{display:inline-flex !important}
 .cat-azioni .fuori:hover{color:var(--wood); border-color:var(--wood)}
 .scegli-lib{display:flex; flex-wrap:wrap; gap:5px; max-width:190px}
 .scegli-lib button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--card);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--card);
   background:var(--accent); border:0; padding:6px 8px; border-radius:var(--r-s);
 }
 .scegli-lib button:hover{background:var(--ink); border-color:var(--ink)}
@@ -373,8 +373,8 @@ body.visita .visita-only{display:inline-flex !important}
   margin:14px 0 0; border-bottom:1px dashed var(--line);
 }
 .viste button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:rgba(var(--ink-rgb),.06); border:0; padding:11px 6px 12px; border-radius:var(--r-s);
 }
 .viste button:hover{color:var(--ink)}
@@ -766,8 +766,8 @@ body.sez-catalogo #catalogo{display:block}
 }
 #cat-q:focus{outline:none; border-color:var(--accent)}
 .cat-cerca button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--card); background:var(--accent);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--card); background:var(--accent);
   border:0; padding:0 16px; border-radius:var(--r-s);
 }
 .cat-cerca button:hover{background:var(--ink); border-color:var(--ink)}
@@ -856,8 +856,8 @@ body.sez-catalogo #catalogo{display:block}
 .cat-azioni .desidero:hover{color:var(--accent); background:rgba(var(--accent-rgb),.10)}
 .cat-azioni .desidero[aria-pressed="true"]{color:var(--accent)}
 .cat-azioni button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; white-space:nowrap;
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; white-space:nowrap;
   color:var(--ink-soft); background:var(--card); border:0; padding:8px 11px; border-radius:var(--r-s);
 }
 .cat-azioni button:hover{color:var(--ink); border-color:var(--accent)}
@@ -894,8 +894,8 @@ body.sez-catalogo #catalogo{display:block}
 
 .cat-fondo{margin:26px 0 0; text-align:center}
 #cat-piu{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:var(--card); border:0; padding:12px 26px; border-radius:var(--r-s);
 }
 #cat-piu:hover{color:var(--ink); border-color:var(--accent)}
@@ -972,8 +972,8 @@ body.sez-partite #partite{display:block}
   border:1px dashed var(--line); box-shadow:var(--shadow);
 }
 #pro-cambia, .pro-lin{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:rgba(var(--ink-rgb),.06); border:0; border-bottom:1px dashed var(--line); padding:3px 0; border-radius:var(--r-s);
 }
 #pro-cambia:hover, .pro-lin:hover{color:var(--accent); border-color:var(--accent)}
@@ -992,8 +992,8 @@ body.sez-partite #partite{display:block}
   background:var(--card); border:1px dashed var(--line); padding:4px 12px 2px;
 }
 #pro-copia{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:var(--card); border:0; padding:7px 11px; border-radius:var(--r-s);
 }
 #pro-copia:hover{color:var(--ink); border-color:var(--accent)}
@@ -1020,14 +1020,14 @@ body.sez-partite #partite{display:block}
 .pastiglie button.on{outline:2px solid var(--accent); outline-offset:1px}
 .pro-lab-fondo{display:flex; gap:10px; margin:18px 0 0}
 #lab-salva, #ami-go, #nick-ok{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--card);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--card);
   background:var(--accent); border:0; padding:11px 18px; border-radius:var(--r-s);
 }
 #lab-salva:hover, #ami-go:hover, #nick-ok:hover{background:var(--ink); border-color:var(--ink)}
 #lab-annulla{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:var(--card); border:0; padding:11px 18px; border-radius:var(--r-s);
 }
 #lab-annulla:hover{color:var(--ink); border-color:var(--accent)}
@@ -1070,8 +1070,8 @@ body.sez-partite #partite{display:block}
 .pro-gente .chi span{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft)}
 .pro-gente .fa{display:flex; gap:7px; flex:none}
 .pro-gente button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; white-space:nowrap;
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; white-space:nowrap;
   color:var(--ink-soft); background:var(--card); border:0; padding:7px 10px; border-radius:var(--r-s);
 }
 .pro-gente button:hover{color:var(--ink); border-color:var(--accent)}
@@ -1145,8 +1145,8 @@ body.sez-partite #partite{display:block}
 .mia-nota{margin:0 0 16px; font-size:12.5px; line-height:1.6; color:var(--ink-soft)}
 .mia-nota b{color:var(--ink); font-weight:500}
 #mia-salva{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--card);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--card);
   background:var(--accent); border:0; padding:11px 18px; border-radius:var(--r-s);
 }
 #mia-salva:hover{background:var(--ink); border-color:var(--ink)}
@@ -1172,22 +1172,22 @@ body.sez-partite #partite{display:block}
 }
 .pa-chi .pos:focus{outline:none; border-color:var(--accent)}
 .pa-chi button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; white-space:nowrap;
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; white-space:nowrap;
   color:var(--ink-soft); background:var(--card); border:0; padding:7px 9px; border-radius:var(--r-s);
 }
 .pa-chi button:hover{color:var(--ink); border-color:var(--accent)}
 .pa-chi button.vince.on{background:var(--accent); color:var(--card); border-color:var(--accent)}
 .pa-chi button.via:hover{color:var(--wood); border-color:var(--wood)}
 .pa-foot #pa-salva{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--card);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--card);
   background:var(--accent); border:0; padding:11px 18px; border-radius:var(--r-s);
 }
 .pa-foot #pa-salva:hover{background:var(--ink); border-color:var(--ink)}
 .pa-foot #pa-togli{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--wood);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--wood);
   background:none; border:1px solid rgba(var(--accent-rgb),.5); padding:10px 14px; border-radius:var(--r-s);
 }
 .pa-foot #pa-togli:hover{background:var(--wood); color:var(--card); border-color:var(--wood)}
@@ -1301,8 +1301,8 @@ body.vista #vista{opacity:1; visibility:visible; transform:none; transition-dela
 /* il "+" e' sceso qui dalla testata: si aggiunge un gioco da dove si
    guarda la collezione, che e' anche da dove ci si accorge che manca */
 .aggiungi{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--accent);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--accent);
   background:none; border:1px dashed var(--accent); padding:6px 10px; border-radius:var(--r-s);
 }
 .aggiungi:hover{background:var(--accent); color:var(--card); border-style:solid}
@@ -1369,8 +1369,8 @@ body.arreda #stanza{opacity:1; visibility:visible; transform:none; transition-de
 }
 #st-msg{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:rgba(var(--ink-rgb),.45)}
 #st-reset{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--ink-soft);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--ink-soft);
   background:rgba(var(--ink-rgb),.06); border:0; padding:7px 10px; border-radius:var(--r-s);
 }
 #st-reset:hover{color:var(--wood); border-color:var(--wood)}
@@ -1430,8 +1430,8 @@ body.mobili #mobili{opacity:1; visibility:visible; transform:translate(-50%,0); 
 #mobili-lista button.ok:disabled:hover{color:var(--ink-soft); background:none; border-color:var(--line)}
 #mobili-msg{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(var(--ink-rgb),.45)}
 #mobili-piu{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; color:var(--card);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; color:var(--card);
   background:var(--accent); border:0; padding:8px 12px; border-radius:var(--r-s);
 }
 #mobili-piu:hover{background:var(--ink); border-color:var(--ink)}
@@ -1774,15 +1774,15 @@ body.visita #p-fuori{display:none !important}
 }
 .add-search input:focus{outline:none; border-color:var(--accent)}
 .add-search button, .add-form button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; background:var(--accent); color:var(--card);
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; background:var(--accent); color:var(--card);
   border:0; padding:11px 16px; border-radius:var(--r-s);
 }
 .add-search button:hover, .add-form button:hover{background:var(--ink)}
 .add-msg{margin:12px 0 0; font-size:12.5px; line-height:1.6; color:var(--ink-soft)}
 .add-msg:empty{margin:0}
 .add-msg.warn{color:var(--wood)}
-.add-msg code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px;
+.add-msg code{font-family:var(--ff-mono); font-size:12px;
   background:rgba(var(--ink-rgb),.07); padding:2px 5px; color:var(--ink)}
 
 #add-res{list-style:none; margin:14px 0 0; padding:0; max-height:38vh; overflow:auto}
@@ -1831,8 +1831,8 @@ body.visita #p-fuori{display:none !important}
   padding:7px 9px; font-size:12px; cursor:pointer; color:var(--ink-soft); border-radius:var(--r-s);
 }
 .add-form input[type=file]::file-selector-button{
-  font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
-  text-transform:none; cursor:pointer; margin-right:10px;
+  font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase; cursor:pointer; margin-right:10px;
   background:rgba(var(--accent-rgb),.12); color:var(--accent);
   border:0; padding:6px 10px; border-radius:var(--r-s);
 }
@@ -5849,3 +5849,52 @@ input::placeholder, textarea::placeholder{
    numero, dove la didascalia e' la prima cosa dopo la testata. */
 .wrap-n, .wrap-s:first-of-type{margin-top:auto}
 .wrap-slide > *{width:100%; max-width:520px; margin-left:auto; margin-right:auto}
+
+/* ===================================================================
+   LE ULTIME VOCI
+
+   Quello che parlava ancora la lingua di prima. Venti comandi sono
+   stati riscritti alla fonte -- erano `--ff-text` a peso 700, senza
+   spaziatura e senza maiuscolo, cioe' la voce giusta per un sito dove
+   la gerarchia la faceva il peso. Qui restano i pezzi che quella
+   riscrittura non poteva raggiungere: i pannelli con il loro id, e
+   tutto quello che e' un NUMERO e stava scritto come una parola.
+   =================================================================== */
+
+/* --- i due pannelli che si erano scritti la regola in casa ---------
+   `#stanza` e `#mobili` non erano nelle liste della sezione «I
+   COMANDI», e i loro pulsanti sono rimasti indietro. Qui si cambia solo
+   la VOCE -- famiglia, peso, spaziatura, maiuscolo -- e non il colore:
+   dentro c'e' chi ha un fondo suo per un motivo (le tinte, i faretti),
+   e uniformare anche quello vorrebbe dire cancellare la differenza fra
+   un comando e un campione di colore. */
+#stanza button, #mobili button, #wrap button, #gruppilayer summary, #stanza summary{
+  font-family:var(--ff); font-weight:900; letter-spacing:.09em;
+  text-transform:uppercase;
+}
+/* La ruota e i bollini delle tinte non hanno testo: la spaziatura su un
+   quadrato di colore non fa niente, ma il maiuscolo su un `title` si'. */
+#stanza .pastiglie button, #profilo .tav-acc{letter-spacing:0}
+
+/* --- il piede del pannello di amministrazione ---------------------- */
+.add-foot button{font-weight:900; text-transform:uppercase; font-size:10.5px}
+
+/* --- TUTTO QUELLO CHE SI CONTA VA IN MONO -------------------------
+   La regola e' gia' scritta in fondo alla sezione dei comandi -- «le
+   cifre si battono a macchina» -- e questi erano rimasti fuori dalla
+   lista: i giorni del calendario, i punti del podio, le percentuali del
+   winrate, i punteggi di una partita. Sono numeri che si INCOLONNANO,
+   quindi vogliono anche le cifre a larghezza fissa. */
+.cal-g b, .pod-punti, .wr-lista b, .gio-chi, .pa-punti input, .cal-oggi{
+  font-family:var(--ff-mono); font-variant-numeric:tabular-nums;
+}
+.cal-g b{font-weight:600; letter-spacing:.02em}
+.gio-chi{font-size:12px; letter-spacing:.02em}
+/* Il nome di chi ha vinto resta una PAROLA, e sulla plancia le parole
+   sono punzonate: il mono qui direbbe che anche lui e' un dato. */
+.gio-chi .vince, .gio-chi i{
+  font-family:var(--ff); font-weight:900; letter-spacing:.04em; text-transform:uppercase;
+}
+.pod-nome, .wr-lista span{
+  font-family:var(--ff); font-weight:900; letter-spacing:.02em; text-transform:uppercase;
+}

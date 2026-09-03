@@ -140,6 +140,12 @@ Vale anche per i **suoni**: non c'è nessun file audio, e non ce ne sarà nessun
 Come il legno e il cartone sono disegnati su canvas, il tonfo della scatola è
 sintetizzato con Web Audio — un rumore filtrato e due sinusoidi per volta.
 
+E il materiale è il cartone, come per tutto il resto: una plancia punzonata non
+risuona, fa un colpo secco e finisce. I quindici suoni sono costruiti su quattro
+mattoni — il colpo secco, la carta che scorre, **il punzone** (il pezzo che si
+stacca, trenta millisecondi: è il tocco, ed è il suono di questo sito) e lo
+strappo, che serve a una cosa sola, quello che distrugge, ed è l'unico che dura.
+
 L'eccezione è il **catalogo**, e non poteva essere altrimenti: le miniature dei
 centomila titoli arrivano da BoardGameGeek. Un catalogo così non si committa, e
 senza rete semplicemente non c'è — mentre la tua libreria continua a esserci.

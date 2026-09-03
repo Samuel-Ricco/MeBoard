@@ -3749,6 +3749,103 @@ un font, `js/art.js` e la parte canvas di `js/app.js` vanno guardate a mano.
 Con loro se n'e' andata `mescolaEsa()`, che serviva a fare il secondo capo del
 gradiente: i gradienti non ci sono piu' e quello era il suo unico chiamante.
 
+### Le ultime voci: venti comandi parlavano ancora la lingua di prima
+
+La sezione «I COMANDI» dice di essere l'unico posto che decide com'e' fatto un
+pulsante, e non lo era: **venti regole** scrivevano ancora
+`font-family:var(--ff-text); font-size:13px; font-weight:700; letter-spacing:0;
+text-transform:none` -- la voce giusta per un sito dove la gerarchia la faceva il
+peso, e sbagliata su una plancia dove i comandi sono punzonati. Erano i pulsanti
+interni dei pannelli, che le liste della sezione non nominano.
+
+**Come si trovano tutte in un colpo:** non a occhio, ma cercando quella terzina
+di dichiarazioni. E' una firma, e chi copia lo stile del vicino la copia intera.
+Riscriverle e' una sostituzione sola, con il corpo a **0,885** di quello di prima
+-- un maiuscolo tracciato occupa piu' larghezza a parita' di punti, e undici e
+mezzo pesa quanto tredici in minuscolo.
+
+Restano fuori apposta:
+
+- `#stanza` e `#mobili`, che prendono solo la **voce** e non il colore: dentro
+  c'e' chi ha un fondo suo per un motivo -- le tinte, i faretti -- e uniformare
+  anche quello cancellerebbe la differenza fra un comando e un campione di
+  colore;
+- la **calcolatrice**, che resta com'e' per la ragione gia' scritta: e' l'unico
+  posto del sito dove un pulsante non e' una parola;
+- il testo di servizio -- la descrizione delle porte del cancello, i risultati
+  della ricerca dell'admin -- che e' testo e non comandi.
+
+E tutto quello che si CONTA e' passato al mono con le cifre a larghezza fissa:
+i giorni del calendario, i punti del podio, le percentuali del winrate, i
+punteggi di una partita. Il nome di chi ha vinto no -- quello e' una parola, e
+le parole sulla plancia sono punzonate.
+
+### Il suono: il cartone non e' legno
+
+I mattoni erano tarati su una libreria di rovere -- un colpo con un corpo di
+sinusoide che **risuona**, uno strofinio caldo, una nota morbida. Su una plancia
+di cartone punzonato non c'e' niente che risuoni: il cartone e' **smorzato**, fa
+un colpo secco e finisce li'. E quello che si sente davvero, su una plancia, e'
+uno solo -- **il pezzo che si stacca**.
+
+Quindi i mattoni sono quattro e non tre:
+
+| | |
+|---|---|
+| `batti` | il colpo secco: il contatto, e un corpo che muore in meta' tempo |
+| `sfrega` | carta su carta -- banda piu' alta e piu' stretta del vecchio strofinio |
+| `scatto` | **il punzone**: la fibra che cede piu' il pezzo che si stacca, trenta millisecondi |
+| `strappo` | il cartone che cede: l'unico suono che dura, e serve a quello che distrugge |
+
+Piu' **una sordina sull'uscita**, un passabasso a 6.500 Hz: il cartone in alto e'
+sordo, e tagliare li' una volta sola fa piu' per la coerenza che tarare dieci
+volte lo stesso passabanda. E' la stessa idea del rumore bianco costruito una
+volta e riusato da tutti.
+
+**I nomi delle voci non sono cambiati** -- `gioca(nome)` li chiama da mezzo sito,
+e sono i GESTI, che sono gli stessi. E' cambiato di che materiale sono fatti.
+
+Il punzone e' il tocco, meta' della conferma, e l'inizio di quasi tutto quello
+che succede sulla scena. Lo strappo e' `via`, ed e' l'unica cosa del sito che
+dura: un tonfo dice «fatto», uno strappo dice «non torna indietro», che e'
+esattamente la differenza fra togliere una cosa dallo scaffale e cancellarla.
+
+### La forza sulla carta non e' il volume nell'orecchio
+
+La lezione di questo giro, e vale per ogni suono che verra' dopo.
+
+`tocco` era stato scritto a forza `.05`, cioe' lo stesso numero delle voci
+vicine. Misurato sull'uscita usciva a **0,093 di picco** -- piu' forte del mobile
+su cui ci si ferma scorrendo, dell'avviso e del coperchio -- mentre la regola
+scritta due righe sopra dice che e' il suono piu' frequente del sito e quindi il
+piu' basso di tutti.
+
+Il motivo e' che il punzone e' **corto e alto**, e a parita' di numero si sente
+molto piu' di un tonfo lungo e basso. Sceso a `.022` sta a 0,017, che e' dove
+deve stare.
+
+**Come si misura**, che e' l'unico modo di saperlo: si aggancia il primo
+`createGain` creato dal contesto -- quello e' `master` -- prima che parta il
+primo suono, ci si attacca un `AnalyserNode` come rubinetto (non tocca l'uscita)
+e si campiona il picco mentre la voce suona. La gerarchia misurata adesso e':
+
+| | picco | coda |
+|---|---|---|
+| tocco | 0,017 | 47 ms |
+| apre, spento, acceso, nota, mobile | 0,011 - 0,029 | 47 - 94 ms |
+| serra, avviso, presa | 0,037 - 0,041 | 50 - 135 ms |
+| coperchio, conferma, esce, chiude | 0,054 - 0,067 | 149 - 266 ms |
+| **posa** | 0,088 | 94 ms |
+| **via** | 0,037 | **343 ms** |
+
+Il tocco e' il piu' basso, `posa` e' il piu' pieno -- ed e' giusto, e' l'unico
+che conferma che una cosa e' andata dove volevi -- e `via` e' l'unico che dura.
+
+**E il campionamento non si fa con `requestAnimationFrame`**: col pannello
+dell'anteprima nascosto e' sospeso, e il ciclo di misura resta appeso finche' non
+scade il tempo dello strumento. E' la trappola gia' scritta per il caricamento,
+che si ripresenta a chi misura invece che a chi anima. Si usa `setTimeout`.
+
 ### Quello che il 3D si tiene
 
 I dorsi dei libri e i segnalini dentro i cubi sono passati alla famiglia del
@@ -5673,8 +5770,8 @@ differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
 Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
-`css/style.css` 5.851, `js/app.js` 9.875, `js/tema.js` 584, `js/art.js` 1.346,
-piu' `supabase/functions/bgg/index.ts` 291.
+`css/style.css` 5.900, `js/app.js` 9.875, `js/suoni.js` 493, `js/tema.js` 584,
+piu' `js/art.js` 1.346 e `supabase/functions/bgg/index.ts` 291.
 
 ### La sessione del 2026-09-03: il fork e la fustella
 
@@ -5695,6 +5792,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il terzo giro | le **righe** del catalogo e della collezione, il winrate come terzo riquadro, e i titoli del profilo -- piu' la cache dell'anteprima capita fino in fondo |
 | il wrap | le otto slide rifatte: un inchiostro piatto invece di un gradiente, il contenuto a sinistra, il bollino del periodo, e il PNG ridisegnato per combaciare |
 | l'alone | la vignettatura e tre ombre erano fatte di inchiostro: sul cartone dipingevano un velo chiaro sui bordi dello schermo |
+| le voci e i suoni | venti comandi passati alla voce della fustella, i numeri in mono, e tutti e quindici i suoni rifatti in cartone |
 
 **Le lezioni generali** di questa sessione:
 
