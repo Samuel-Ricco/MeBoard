@@ -115,6 +115,14 @@ giusta; qui a distinguere un comando da un'etichetta c'è il *materiale*, e il
 maiuscolo torna a essere quello che è su una plancia — il modo in cui ci si
 scrive sopra.
 
+**Il wrap** e' otto slide a schermo pieno, una per domanda, e ognuna e' stampata
+su uno dei tre inchiostri: fondo piatto con la trama del cartone, il numero
+grande a sinistra, la didascalia nell'altro colore, il periodo timbrato in un
+angolo. Si salvano come PNG 1080x1350 — e il file si **ridisegna** su canvas
+invece di fotografare la pagina, quindi la tabella dei tre toni e' scritta due
+volte, nel foglio di stile e in `js/app.js`: chi ne aggiunge uno lo aggiunge in
+due posti.
+
 **Come la fustella si vede, schermata per schermata.** Ogni sezione apre con
 l'occhiello e un numero grande — *106.694 titoli*, *14 giochi / 11 in vetrina* —
 perche' quello e' la risposta alla domanda per cui uno l'ha aperta. Le due o tre

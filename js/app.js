@@ -7105,6 +7105,14 @@ function minTesto(min){
 
    Chi non ha il suo dato lo dice invece di mostrare uno zero. */
 function slideWrap(){
+  const sl = slideWrapGrezze();
+  /* Il periodo lo porta ogni slide, e lo porta uguale: e' una proprieta'
+     del wrap, non della singola domanda. Attaccarlo qui evita di
+     ripeterlo otto volte nella tabella qui sotto. */
+  return sl.map(function(x){ x.anno = sl.anno; return x; });
+}
+
+function slideWrapGrezze(){
   const tutte = PARTITE.tutte();
   const ore = oreGiocate(tutte);
   const w = PARTITE.winrate(tutte);
@@ -7146,7 +7154,21 @@ function slideWrap(){
     return { k: g.titolo, v: g.n };
   });
 
-  return [
+  /* QUANDO. Nel disegno accanto all'occhiello c'e' l'anno, ed e' giusto
+     che ci sia: un wrap e' il riassunto di un periodo, e senza dirlo
+     quei numeri non hanno un quando. Ma il wrap di questo sito NON e'
+     di un anno solo -- e' tutto quello che hai segnato -- quindi si
+     scrive il periodo vero: un anno se le partite stanno tutte dentro
+     uno, e i due estremi se no. Scriverci "2026" e basta sarebbe un
+     numero inventato, che e' la cosa che questa sezione non fa. */
+  const anni = tutte.map(function(p){ return String(p.giocata_il || '').slice(0, 4); })
+    .filter(function(a){ return a.length === 4; }).sort();
+  const anno = anni.length
+    ? (anni[0] === anni[anni.length - 1] ? anni[0]
+       : anni[0] + '\u2013' + anni[anni.length - 1].slice(2))
+    : '';
+
+  const fuori = [
     /* Le barre solo da TRE mesi in su. Con uno o due, quella strisciata
        non e' un grafico: e' un rettangolo che riempie la larghezza e non
        dice niente. Sotto la soglia si mostrano le righe, che con pochi
@@ -7215,6 +7237,8 @@ function slideWrap(){
                    { k: TP('wrap.contate'), v: tav.quante } ] }
       : { t: 'wrap.tavolo', n: null, s: TP('wrap.vuoto'), tono: 7 }
   ];
+  fuori.anno = anno;
+  return fuori;
 }
 
 function disegnaWrap(){
@@ -7235,19 +7259,34 @@ function disegnaWrap(){
          scala e non serve, perche' quello che si legge e' la FORMA --
          quando si e' giocato tanto e quando niente. */
       const top = Math.max.apply(null, x.barre.map(function(b){ return b.v; })) || 1;
+      /* Il mese piu' pieno si stampa PIENO: e' il dato che si cercava
+         aprendo questo grafico, e nel disegno e' l'unica barra di un
+         altro colore. `top` marca la prima che arriva al massimo -- se
+         due mesi sono pari, e' quello prima in ordine di tempo. */
+      let fatto = false;
       sotto = '<ul class="wrap-barre">' + x.barre.map(function(b){
-        return '<li><i style="height:' + Math.max(6, Math.round(b.v * 100 / top)) + '%"></i>' +
+        const suo = !fatto && b.v === top;
+        if (suo) fatto = true;
+        return '<li' + (suo ? ' class="top"' : '') + '>' +
+               '<i style="height:' + Math.max(6, Math.round(b.v * 100 / top)) + '%"></i>' +
                '<span>' + esc(b.k) + '</span></li>';
       }).join('') + '</ul>';
     }
+    const nick = PARTITE.mioNome();
     return '<article class="wrap-slide tono' + x.tono + '" data-i="' + i + '">' +
-      '<p class="wrap-t">' + T(x.t) + '</p>' +
+      /* Che cos'e' a sinistra, quando a destra: e' la testata di una
+         slide stampata, e il quando e' un bollino timbrato. */
+      '<div class="wrap-testa">' +
+        '<p class="wrap-t">' + T(x.t) + '</p>' +
+        (x.anno ? '<span class="wrap-anno">' + esc(x.anno) + '</span>' : '') +
+      '</div>' +
       (x.n !== null
         ? '<p class="wrap-n' + (x.testo ? ' testo' : '') + '">' + esc(x.n) + '</p>'
         : '') +
       (x.s ? '<p class="wrap-s">' + esc(x.s) + '</p>' : '') +
       sotto +
-      '<p class="wrap-firma">il dado <i>&egrave;</i> trap</p>' +
+      '<p class="wrap-firma">Me<i>Board</i>' +
+        (nick ? ' &middot; ' + esc(nick) : '') + '</p>' +
     '</article>';
   }).join('');
   q('#wrap-punti').innerHTML = sl.map(function(x, i){
@@ -7294,86 +7333,139 @@ function chiudiWrap(){
 function salvaSlide(){
   const sl = slideWrap()[wrapOra];
   if (!sl) return;
-  const W = 1080, H = 1350;
+  const W = 1080, H = 1350, M = 96;      // margine: un dodicesimo del lato
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const x = c.getContext('2d');
 
-  const css = getComputedStyle(document.documentElement);
-  const acc = css.getPropertyValue('--accent').trim() || '#f0b429';
-  const carta = css.getPropertyValue('--card').trim() || '#241f18';
-  const ink = css.getPropertyValue('--ink').trim() || '#efe3cd';
+  /* LE TINTE SONO QUELLE DEL FOGLIO DI STILE, non quelle del tema: la
+     tabella qui sotto e' la stessa cosa scritta in `.wrap-slide.tonoN`,
+     e le due vanno tenute insieme. Se si aggiunge un tono, si aggiunge
+     in due posti -- ed e' voluto: una slide si disegna due volte, una
+     per lo schermo e una per il file, e non c'e' modo di rasterizzare
+     dell'HTML senza una libreria che peserebbe piu' di tutto il sito. */
+  const T3 = SLIDE_TONI[sl.tono % SLIDE_TONI.length];
+  const bg = SLIDE_INK[T3.bg], forte = SLIDE_INK[T3.forte], tenue = SLIDE_INK[T3.tenue];
 
-  /* Il fondo e' l'accento, non il fondo del sito: una slide che si
-     pubblica deve reggere da sola, fuori dalla pagina che la conteneva. */
-  const g = x.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, acc);
-  g.addColorStop(1, mescolaEsa(acc, ink, .45));
-  x.fillStyle = g;
+  x.fillStyle = bg;
   x.fillRect(0, 0, W, H);
 
-  x.textAlign = 'center';
-  x.fillStyle = carta;
-
-  x.font = '500 40px ' + FONT_SLIDE;
-  x.globalAlpha = .82;
-  x.fillText(TP(sl.t).toUpperCase(), W/2, 300);
-  x.globalAlpha = 1;
-
-  if (sl.n !== null){
-    /* Un titolo lungo va a capo; un numero no -- e a un numero il capo
-       non serve mai. */
-    if (sl.testo) testoACapo(x, sl.n, W/2, 560, W - 160, 96, '600 92px ' + FONT_SLIDE);
-    else { x.font = '600 210px ' + FONT_SLIDE; x.fillText(sl.n, W/2, 640); }
+  /* La trama del cartone, a quarantacinque gradi come nel sito. Le
+     righe si tirano lungo la diagonale e coprono tutto il quadro: il
+     passo e' quello del CSS moltiplicato per la scala del file. */
+  x.save();
+  x.strokeStyle = 'rgba(0,0,0,.10)';
+  x.lineWidth = 14 * 2.77;
+  const passo = 28 * 2.77;
+  for (let d = -H; d < W + H; d += passo){
+    x.beginPath(); x.moveTo(d, 0); x.lineTo(d + H, H); x.stroke();
   }
+  x.restore();
+
+  x.textAlign = 'left';
+  let y = M + 40;
+
+  /* la testata: l'occhiello e il bollino del periodo */
+  x.font = '900 30px ' + FONT_SLIDE;
+  x.fillStyle = forte;
+  x.globalAlpha = .8;
+  x.fillText(spaziato(TP(sl.t).toUpperCase()), M, y);
+  x.globalAlpha = 1;
+  if (sl.anno){
+    const et = spaziato(togliEntita(sl.anno).toUpperCase());
+    x.font = '900 28px ' + FONT_SLIDE;
+    const lw = x.measureText(et).width;
+    x.fillStyle = forte;
+    x.fillRect(W - M - lw - 36, y - 30, lw + 36, 46);
+    x.fillStyle = bg;
+    x.textAlign = 'right';
+    x.fillText(et, W - M - 18, y);
+    x.textAlign = 'left';
+  }
+
+  /* IL NUMERO. A sinistra e grande: e' il motivo per cui una slide
+     esiste. Un titolo va a capo, un numero mai. */
+  if (sl.n !== null){
+    x.fillStyle = forte;
+    if (sl.testo){
+      y = testoACapo(x, sl.n, M, y + 130, W - M * 2, 116, '900 108px ' + FONT_SLIDE) || y + 130;
+    } else {
+      x.font = '900 330px ' + FONT_SLIDE;
+      y = y + 300;
+      x.fillText(togliEntita(sl.n), M, y);
+    }
+  }
+
+  /* LA DIDASCALIA, nell'altro colore e in maiuscolo: e' la parola che
+     dice di cosa sono quei numeri. */
   if (sl.s){
-    x.font = '400 42px ' + FONT_SLIDE;
-    x.globalAlpha = .86;
-    testoACapo(x, sl.s, W/2, sl.n === null ? 560 : 800, W - 200, 56, '400 42px ' + FONT_SLIDE);
-    x.globalAlpha = 1;
+    x.fillStyle = tenue;
+    y = testoACapo(x, String(sl.s).toUpperCase(), M, y + 66, W - M * 2, 62,
+                   '900 56px ' + FONT_SLIDE) || y + 66;
   }
 
   /* IL DETTAGLIO VA NELL'IMMAGINE. Senza, la slide che si pubblica
-     sarebbe piu' povera di quella che si e' guardata -- e sarebbe la
-     meta' vuota, per giunta. */
+     sarebbe piu' povera di quella che si e' guardata. */
   if (sl.righe && sl.righe.length){
-    let y = 960;
+    y += 60;
     sl.righe.slice(0, 3).forEach(function(r){
-      x.globalAlpha = .12;
-      arrotondato(x, 120, y - 46, W - 240, 74, 22);
-      x.fill();
+      x.fillStyle = 'rgba(0,0,0,.20)';
+      x.fillRect(M, y - 44, W - M * 2, 76);
+      x.fillStyle = forte;
+      x.textAlign = 'left';
+      x.font = '900 34px ' + FONT_SLIDE;
+      x.fillText(spaziato(togliEntita(r.k).toUpperCase()), M + 26, y);
+      x.textAlign = 'right';
+      x.font = '600 32px ' + FONT_SLIDE_MONO;
+      x.fillText(togliEntita(String(r.v)), W - M - 26, y);
+      x.textAlign = 'left';
+      y += 88;
+    });
+  } else if (sl.barre && sl.barre.length){
+    y += 40;
+    const b = sl.barre, larg = (W - M * 2) / b.length, ALT = 250;
+    const top = Math.max.apply(null, b.map(function(z){ return z.v; })) || 1;
+    let fatto = false;
+    b.forEach(function(z, i){
+      const h = Math.max(10, Math.round(z.v * ALT / top));
+      const bx = M + i * larg, suo = !fatto && z.v === top;
+      if (suo) fatto = true;
+      x.fillStyle = forte;
+      x.globalAlpha = suo ? 1 : .42;
+      x.fillRect(bx + 3, y + ALT - h, larg - 6, h);
+      x.globalAlpha = 1;
+      x.fillStyle = tenue;
+      x.globalAlpha = suo ? 1 : .62;
+      x.font = '600 24px ' + FONT_SLIDE_MONO;
+      x.textAlign = 'center';
+      x.fillText(togliEntita(z.k), bx + larg / 2, y + ALT + 40);
       x.globalAlpha = 1;
       x.textAlign = 'left';
-      x.font = '400 34px ' + FONT_SLIDE;
-      x.globalAlpha = .8;
-      x.fillText(togliEntita(r.k), 156, y);
-      x.globalAlpha = 1;
-      x.textAlign = 'right';
-      x.font = '600 34px ' + FONT_SLIDE;
-      x.fillText(togliEntita(String(r.v)), W - 156, y);
-      y += 92;
-    });
-    x.textAlign = 'center';
-  } else if (sl.barre && sl.barre.length){
-    const b = sl.barre, larg = (W - 240) / b.length;
-    const top = Math.max.apply(null, b.map(function(z){ return z.v; })) || 1;
-    b.forEach(function(z, i){
-      const h = Math.max(10, Math.round(z.v * 240 / top));
-      const bx = 120 + i * larg;
-      x.globalAlpha = .34;
-      arrotondato(x, bx + larg * .18, 1090 - h, larg * .64, h, 10);
-      x.fill();
-      x.globalAlpha = .75;
-      x.font = '400 22px ' + FONT_SLIDE;
-      x.fillText(togliEntita(z.k), bx + larg / 2, 1136);
-      x.globalAlpha = 1;
     });
   }
 
-  x.font = '500 36px ' + FONT_SLIDE;
-  x.globalAlpha = .7;
-  x.fillText('il dado e\u2019 trap', W/2, H - 90);
+  /* LA FIRMA, in fondo: `Me` nel tenue e `Board` nel forte, come in
+     testata al sito. Accanto il nick, che e' di chi ha giocato quelle
+     partite -- una slide senza un nome e' la slide di nessuno. */
+  const nick = PARTITE.mioNome();
+  x.font = '900 30px ' + FONT_SLIDE;
+  x.textAlign = 'left';
+  x.globalAlpha = .72;
+  x.fillStyle = tenue;
+  const me = spaziato('ME');
+  x.fillText(me, M, H - M);
+  const wMe = x.measureText(me).width;
   x.globalAlpha = 1;
+  x.fillStyle = forte;
+  const board = spaziato('BOARD');
+  x.fillText(board, M + wMe, H - M);
+  if (nick){
+    x.globalAlpha = .72;
+    x.fillStyle = tenue;
+    x.fillText(spaziato(' \u00b7 ' + togliEntita(nick).toUpperCase()),
+               M + wMe + x.measureText(board).width, H - M);
+    x.globalAlpha = 1;
+  }
 
   const a = document.createElement('a');
   a.download = 'meboard-wrap-' + (wrapOra + 1) + '.png';
@@ -7382,7 +7474,38 @@ function salvaSlide(){
   flash(TP('wrap.salvata'));
 }
 
-const FONT_SLIDE = "'Poppins', system-ui, sans-serif";
+/* LE TINTE DI UNA SLIDE, gemelle di quelle in `.wrap-slide.tonoN`. Sono
+   i valori CRUDI della fustella e non passano da `stampa()`: una slide
+   esce dal sito e deve leggersi uguale per tutti, qualunque materiale
+   abbia scelto chi l'ha fatta. */
+const SLIDE_INK = {
+  carta: '#efe3cd', cartone: '#16130f',
+  rosso: '#e23d28', ocra: '#f0b429', verde: '#2f9e6b'
+};
+/* Su un inchiostro scuro si stampa chiaro, su uno chiaro si stampa
+   scuro: non e' una preferenza, e' un conto. Carta su ocra fa 1,5 a 1. */
+const SLIDE_TONI = [
+  { bg: 'rosso', forte: 'carta',   tenue: 'cartone' },
+  { bg: 'ocra',  forte: 'cartone', tenue: 'cartone' },
+  { bg: 'verde', forte: 'cartone', tenue: 'cartone' },
+  { bg: 'rosso', forte: 'carta',   tenue: 'cartone' },
+  { bg: 'ocra',  forte: 'cartone', tenue: 'cartone' },
+  { bg: 'verde', forte: 'cartone', tenue: 'cartone' },
+  { bg: 'rosso', forte: 'carta',   tenue: 'cartone' },
+  { bg: 'ocra',  forte: 'cartone', tenue: 'cartone' }
+];
+
+/* Il canvas non ha `letter-spacing` prima di Chrome 99 e le etichette
+   della fustella sono tutte spaziate: si infila uno spazio fino fra le
+   lettere, che e' quello che fa `ART.spaced` per i titoli delle
+   scatole. Su una maiuscola tracciata la differenza fra una crenatura
+   vera e questa non si vede. */
+function spaziato(t){
+  return String(t).split('').join('\u2009');
+}
+
+const FONT_SLIDE = "'Archivo', system-ui, sans-serif";
+const FONT_SLIDE_MONO = "'Plex Mono', ui-monospace, monospace";
 
 /* Un rettangolo con gli angoli tondi. `roundRect` non c'e' su tutti i
    browser che questo sito prende ancora, e sono sei righe. */
@@ -7405,16 +7528,6 @@ function togliEntita(t){
     .replace(/&amp;/g, '&');
 }
 
-function mescolaEsa(a, b, p){
-  const r = function(h){ h = h.replace('#',''); return [
-    parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)]; };
-  const u = r(a), v = r(b);
-  return '#' + [0,1,2].map(function(i){
-    const n = Math.round(u[i] + (v[i]-u[i])*p);
-    return (n<16?'0':'') + n.toString(16);
-  }).join('');
-}
-
 /* Il testo lungo va a capo da solo: una slide con un titolo che esce
    dal bordo e' una slide che non si pubblica. */
 function testoACapo(x, testo, cx, y, larg, passo, font){
@@ -7428,7 +7541,13 @@ function testoACapo(x, testo, cx, y, larg, passo, font){
     else riga = prova;
   });
   if (riga) righe.push(riga);
-  righe.slice(0, 4).forEach(function(r, i){ x.fillText(r, cx, y + i * passo); });
+  const messe = righe.slice(0, 4);
+  messe.forEach(function(r, i){ x.fillText(r, cx, y + i * passo); });
+  /* Torna la BASE DELL'ULTIMA RIGA scritta, che e' quello che serve a
+     chi deve mettere qualcosa sotto. Prima non tornava niente e chi
+     chiamava doveva indovinare l'altezza: con una didascalia di due
+     righe il blocco dopo le finiva addosso. */
+  return y + (messe.length - 1) * passo;
 }
 
 function bindWrap(){

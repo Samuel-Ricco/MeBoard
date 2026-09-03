@@ -3642,6 +3642,84 @@ pulsante dentro `#profilo`, `#partitalayer`, `#gruppilayer` o `#recelayer` deve
 ricopiarsi quella catena, e in questo giro e' servita tre volte -- le pastiglie
 della lingua, il piede della recensione, questi titoli.
 
+### Il wrap: una slide e' roba stampata, e se ne va da sola
+
+Le otto slide erano **otto gradienti diagonali** fra due tinte del tema, il
+contenuto centrato in mezzo e la firma fuori dal flusso. Adesso sono quello che
+il disegno mostra: un **inchiostro piatto** con la trama del cartone, il
+contenuto appoggiato a sinistra e la firma in fondo.
+
+**Tre inchiostri che girano, non otto sfumature.** Su una plancia stampata una
+sfumatura non esiste, e otto varianti di niente sono meno riconoscibili di tre
+colori che tornano. L'ordine dei toni in `slideWrap()` e' `0,1,2,3,4,6,5,7`, che
+con rosso/ocra/verde da' *rosso, ocra, verde, rosso, ocra, rosso, verde, ocra*:
+nessuna slide sta accanto a una del suo colore.
+
+**Le tinte di una slide sono quelle della STAMPA, non quelle del tema.** Una
+slide esce dal sito -- si salva come immagine e si manda a qualcuno -- quindi
+non puo' dipendere da che materiale ha scelto chi l'ha fatta: sono i valori
+crudi della fustella e **non passano da `stampa()`**. Per ogni tono si
+dichiarano tre cose:
+
+| | |
+|---|---|
+| `--sl-bg` | l'inchiostro su cui e' stampata |
+| `--sl-forte` | quello che si legge grande: il numero, i valori, le barre |
+| `--sl-tenue` | quello che gli sta accanto: didascalia, firma, etichette |
+
+E quali siano **non e' una scelta libera**: su un inchiostro scuro si stampa
+chiaro, su uno chiaro si stampa scuro. Il rosso e' scuro (carta sopra), l'ocra e
+il verde sono chiari (cartone sopra). Misurato: **carta su ocra fa 1,5 a 1**,
+cioe' un numero da centoventi pixel che non si vede.
+
+**LA TABELLA DEI TONI E' SCRITTA DUE VOLTE, ED E' VOLUTO.** Sta in
+`.wrap-slide.tonoN` nel foglio di stile e in `SLIDE_TONI` in `js/app.js`, perche'
+una slide si disegna due volte: una per lo schermo e una per il file PNG, e non
+c'e' modo di rasterizzare dell'HTML senza una libreria che peserebbe piu' di
+tutto il resto del sito. **Chi aggiunge un tono lo aggiunge in due posti.**
+
+**L'anno e' un bollino, e dice il periodo VERO.** Nel disegno accanto
+all'occhiello c'e' `2026`, e ci vuole: un wrap e' il riassunto di un periodo, e
+senza dirlo quei numeri non hanno un quando. Ma il wrap di questo sito non e' di
+un anno solo, e' tutto quello che hai segnato -- quindi si scrive un anno se le
+partite ci stanno tutte dentro, e i due estremi (`2024-26`) se no. Scriverci
+`2026` fisso sarebbe un numero inventato, che e' la cosa che questa sezione non
+fa.
+
+Ed e' un **bollino** e non una scritta colorata: su tre inchiostri diversi un
+colore d'accento che si legga su tutti non esiste, mentre un blocco del proprio
+`forte` con il fondo scritto sopra si legge sempre. Stessa ragione per il mese
+piu' pieno delle barre, che si stampa **pieno** mentre gli altri stanno al 42%:
+e' l'opacita' a fare il lavoro che nel disegno fa l'ocra.
+
+**Due `auto` e non tre.** `margin-top:auto` sul numero e sulla firma dividono lo
+spazio libero in due e lasciano il contenuto in mezzo; aggiungendone uno anche
+sotto al dettaglio, il blocco finiva a un terzo dell'altezza. Prima ce n'era uno
+solo, sulla firma, e tutto il resto si accatastava in cima -- su uno schermo alto
+restava mezza slide di rosso vuoto.
+
+**Il bollino finiva sotto la croce**, che sta sopra la testata in assoluto: si
+leggeva `2` invece di `2026`. La testata gli lascia il posto con un
+`padding-right`.
+
+### Due cose che la rinomina non aveva visto
+
+Il wrap e' stato l'ultimo posto in cui il nome vecchio e il font vecchio erano
+ancora al loro posto, e non e' un caso: **stavano dentro il codice del canvas.**
+
+- `FONT_SLIDE` era ancora `'Poppins'`. Il font non e' piu' nel repo, quindi il
+  PNG usciva col sans di sistema -- e nessuno se ne accorgeva guardando lo
+  schermo, dove il CSS diceva Archivo.
+- La firma della slide, sia nel DOM sia sul canvas, diceva ancora *il dado e'
+  trap*.
+
+La lezione: **una rinomina che cerca stringhe nel markup e nel dizionario non
+trova quello che sta dentro una funzione di disegno.** Quando si cambia un nome o
+un font, `js/art.js` e la parte canvas di `js/app.js` vanno guardate a mano.
+
+Con loro se n'e' andata `mescolaEsa()`, che serviva a fare il secondo capo del
+gradiente: i gradienti non ci sono piu' e quello era il suo unico chiamante.
+
 ### Quello che il 3D si tiene
 
 I dorsi dei libri e i segnalini dentro i cubi sono passati alla famiglia del
@@ -5566,7 +5644,7 @@ differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
 Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
-`css/style.css` 5.677, `js/app.js` 9.756, `js/tema.js` 584, `js/art.js` 1.346,
+`css/style.css` 5.834, `js/app.js` 9.875, `js/tema.js` 584, `js/art.js` 1.346,
 piu' `supabase/functions/bgg/index.ts` 291.
 
 ### La sessione del 2026-09-03: il fork e la fustella
@@ -5586,6 +5664,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | i comandi | il livello «tinto» diventa **tratteggiato**, e i pulsanti che non erano nelle liste sono stati riscritti con il loro peso |
 | il secondo giro | il **contatore grande** in testa alle schermate, il binario a **segmenti**, le viste come blocchi, la scheda del gioco rifatta riga per riga, e il rosso tratteggiato di quello che aggiunge |
 | il terzo giro | le **righe** del catalogo e della collezione, il winrate come terzo riquadro, e i titoli del profilo -- piu' la cache dell'anteprima capita fino in fondo |
+| il wrap | le otto slide rifatte: un inchiostro piatto invece di un gradiente, il contenuto a sinistra, il bollino del periodo, e il PNG ridisegnato per combaciare |
 
 **Le lezioni generali** di questa sessione:
 

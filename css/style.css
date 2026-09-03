@@ -4837,11 +4837,16 @@ body.sez-profilo #pro-apri{background:var(--accent); color:var(--card)}
   flex-direction:column; background:var(--fondo);
 }
 body.wrap-su #wrap{display:flex}
+/* La croce e' di CARTA e non dell'accento: sta su una slide, che ha un
+   fondo suo di tre colori diversi, e l'ocra su una slide ocra non si
+   vede. La carta si vede su tutti e tre. */
 #wrap-x{
-  position:absolute; top:14px; right:14px; z-index:2;
-  width:34px; height:34px; border:0; border-radius:0; cursor:pointer;
-  background:var(--accent); color:var(--card); font-size:20px; line-height:1;
+  position:absolute; top:20px; right:20px; z-index:2;
+  width:32px; height:32px; border:0; border-radius:0; cursor:pointer;
+  background:#efe3cd; color:#16130f; font-size:18px; line-height:1;
+  box-shadow:3px 3px 0 rgba(0,0,0,.28);
 }
+#wrap-x:active{transform:translate(2px,2px); box-shadow:1px 1px 0 rgba(0,0,0,.28)}
 @media (pointer:coarse){ #wrap-x{width:40px; height:40px} }
 
 /* Il mazzo scorre in orizzontale e si aggancia: una slide per schermata,
@@ -4851,90 +4856,177 @@ body.wrap-su #wrap{display:flex}
   scroll-snap-type:x mandatory; scrollbar-width:none;
 }
 .wrap-deck::-webkit-scrollbar{display:none}
-.wrap-slide{
-  flex:0 0 100%; scroll-snap-align:start;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:10px; padding:56px 26px 74px; text-align:center; color:var(--card);
-  position:relative;
-}
-/* Sei toni dallo stesso accento: la slide cambia colore scorrendo, e
-   sono tutti parenti perche' vengono tutti da li'. Il fondo non e'
-   quello del sito -- una slide che si pubblica si porta il proprio. */
-.wrap-slide.tono0{background:linear-gradient(160deg, var(--accent), var(--accent-su))}
-.wrap-slide.tono1{background:linear-gradient(160deg, var(--wood), var(--accent-su))}
-.wrap-slide.tono2{background:linear-gradient(160deg, var(--accent-su), var(--ink))}
-.wrap-slide.tono3{background:linear-gradient(160deg, var(--ink-soft), var(--wood))}
-.wrap-slide.tono4{background:linear-gradient(160deg, var(--accent), var(--ink))}
-.wrap-slide.tono5{background:linear-gradient(160deg, var(--ink), var(--accent-su))}
-.wrap-slide.tono6{background:linear-gradient(160deg, var(--wood), var(--ink))}
-.wrap-slide.tono7{background:linear-gradient(160deg, var(--accent-su), var(--ink-soft))}
+/* LE TINTE DI UNA SLIDE SONO QUELLE DELLA STAMPA, e non quelle del
+   tema. Una slide esce dal sito -- si salva come immagine e si manda a
+   qualcuno -- quindi non puo' dipendere da che materiale ha scelto chi
+   l'ha fatta: deve leggersi uguale per tutti. Sono i valori crudi della
+   fustella, non passati da `stampa()`.
 
-.wrap-t{
-  margin:0; font-size:12.5px; letter-spacing:.10em; text-transform:uppercase;
-  opacity:.82;
+   Per ogni tono si dichiarano tre cose e basta:
+
+     --sl-bg      l'inchiostro su cui e' stampata
+     --sl-forte   quello che si legge grande: il numero, i valori
+     --sl-tenue   quello che gli sta accanto: didascalia, firma
+
+   E quali siano NON e' una scelta libera: su un inchiostro scuro si
+   stampa chiaro, su uno chiaro si stampa scuro. Il rosso e' scuro
+   (carta sopra), l'ocra e il verde sono chiari (cartone sopra). Provato
+   a numeri: carta su ocra fa 1,5 a 1, cioe' un numero da centoventi
+   pixel che non si vede. */
+.wrap-slide{
+  --sl-carta:#efe3cd; --sl-cartone:#16130f;
+  --sl-rosso:#e23d28; --sl-ocra:#f0b429; --sl-verde:#2f9e6b;
+  flex:0 0 100%; scroll-snap-align:start;
+  display:flex; flex-direction:column; align-items:stretch;
+  gap:0; padding:28px 20px 0; text-align:left;
+  position:relative; overflow:hidden;
+  background:var(--sl-bg); color:var(--sl-forte);
 }
+/* TRE INCHIOSTRI CHE GIRANO, e non otto sfumature. Erano otto gradienti
+   diagonali fra due tinte del tema: belli, e fuori posto -- su una
+   plancia stampata una sfumatura non esiste, e otto varianti di niente
+   sono meno riconoscibili di tre colori che tornano.
+
+   Nessuna slide sta accanto a una del suo stesso colore: l'ordine dei
+   toni in `slideWrap()` e' 0,1,2,3,4,6,5,7, che con questi tre da'
+   rosso, ocra, verde, rosso, ocra, rosso, verde, ocra. */
+.wrap-slide.tono0, .wrap-slide.tono3, .wrap-slide.tono6{
+  --sl-bg:var(--sl-rosso); --sl-forte:var(--sl-carta); --sl-tenue:var(--sl-cartone);
+}
+.wrap-slide.tono1, .wrap-slide.tono4, .wrap-slide.tono7{
+  --sl-bg:var(--sl-ocra); --sl-forte:var(--sl-cartone); --sl-tenue:var(--sl-cartone);
+}
+.wrap-slide.tono2, .wrap-slide.tono5{
+  --sl-bg:var(--sl-verde); --sl-forte:var(--sl-cartone); --sl-tenue:var(--sl-cartone);
+}
+/* La trama del cartone anche qui, e piu' marcata che nel sito: una
+   slide e' tutta fondo, e su quattordici pixel di passo si legge come
+   una superficie stampata invece che come un rettangolo di colore. */
+.wrap-slide::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(135deg,
+    rgba(0,0,0,.10) 0 14px, transparent 14px 28px);
+}
+.wrap-slide > *{position:relative}
+
+/* LA TESTATA DELLA SLIDE: che cos'e' a sinistra, quando a destra.
+   L'anno e' un BOLLINO e non una scritta colorata: su tre inchiostri
+   diversi un colore d'accento che si legga su tutti non esiste, e un
+   blocco del proprio `forte` con il fondo scritto sopra si legge
+   sempre. E' anche la forma giusta -- una data timbrata. */
+.wrap-testa{
+  display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  margin:0;
+}
+.wrap-t{
+  margin:0; font-family:var(--ff); font-weight:900; font-size:10px;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--sl-forte);
+  opacity:.8;
+}
+.wrap-anno{
+  flex:none; font-family:var(--ff); font-weight:900; font-size:10px;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--sl-bg); background:var(--sl-forte); padding:4px 7px;
+  font-variant-numeric:tabular-nums;
+}
+
+/* IL NUMERO, che e' il motivo per cui esiste una slide. A sinistra e
+   grande quanto la larghezza consente: centrato in mezzo alla slide
+   sembrava una citazione, appoggiato a sinistra sembra stampato. */
 .wrap-n{
-  margin:0; font-family:var(--ff-display); font-weight:900; text-transform:uppercase;
-  font-size:clamp(52px, 18vw, 108px); line-height:1; letter-spacing:-.03em;
+  margin:14px 0 0; font-family:var(--ff-display); font-weight:900;
+  text-transform:uppercase;
+  font-size:clamp(72px, 30vw, 132px); line-height:.78; letter-spacing:-.06em;
+  color:var(--sl-forte); font-variant-numeric:tabular-nums;
 }
 /* Un titolo non e' un numero: sta piu' piccolo e va a capo, se no
    "Deep Regrets: Lamentable Tentacles" non ci sta in nessuna
    larghezza. */
 .wrap-n.testo{
-  font-size:clamp(28px, 8.4vw, 52px); line-height:1.1; max-width:16ch;
-  letter-spacing:-.01em;
+  font-size:clamp(34px, 11vw, 60px); line-height:.92; letter-spacing:-.03em;
+  max-width:18ch;
 }
-.wrap-s{margin:4px 0 0; font-size:15px; opacity:.88; max-width:26ch; line-height:1.5}
+/* LA DIDASCALIA E' IN SCURO, e non e' il numero in piccolo: e' la
+   parola che dice di cosa sono quei numeri, e sull'inchiostro si stampa
+   con l'altro colore. Era quindici pixel al 88% di opacita', cioe' una
+   nota a pie' di numero. */
+.wrap-s{
+  margin:8px 0 0; font-family:var(--ff-display); font-weight:900;
+  font-size:clamp(17px,5.4vw,24px); line-height:.98; letter-spacing:-.02em;
+  text-transform:uppercase; color:var(--sl-tenue); max-width:22ch;
+}
 
 /* IL DETTAGLIO: due o tre righe di contorno sotto il numero grande. Un
    numero solo su un fondo colorato e' un manifesto, non un wrap --
    quello che si guarda davvero e' cosa c'e' intorno a quel numero.
 
-   Le righe hanno un fondo appena accennato: sono dentro la slide, non
-   sopra, e un riquadro con il suo bordo le staccherebbe da lei. */
+   Le righe sono blocchi di ombra sull'inchiostro -- il nero al venti per
+   cento -- non pastiglie chiare con gli angoli tondi: quelle
+   galleggiavano sopra la slide invece di starci dentro. */
 .wrap-righe{
-  list-style:none; margin:22px 0 0; padding:0;
-  width:100%; max-width:360px; display:flex; flex-direction:column; gap:7px;
+  list-style:none; margin:20px 0 0; padding:0;
+  width:100%; display:flex; flex-direction:column; gap:5px;
 }
 .wrap-righe li{
-  display:flex; align-items:center; justify-content:space-between; gap:14px;
-  padding:10px 15px; border-radius:var(--r-s);
-  background:rgba(255,255,255,.13); font-size:13.5px; text-align:left;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:9px 12px; border-radius:0;
+  background:rgba(0,0,0,.20); text-align:left;
 }
-.wrap-righe li span{opacity:.86; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.wrap-righe li span{
+  flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--ff); font-weight:900; font-size:13px;
+  letter-spacing:.02em; text-transform:uppercase; color:var(--sl-forte);
+}
 .wrap-righe li b{
-  flex:none; font-family:var(--ff-display); font-weight:900; text-transform:uppercase; font-size:15px; letter-spacing:.02em;
+  flex:none; font-family:var(--ff-mono); font-weight:600; font-size:12px;
+  letter-spacing:.02em; text-transform:none; color:var(--sl-forte);
   font-variant-numeric:tabular-nums;
 }
 
 /* LE BARRE, un mese per barra. Sono in proporzione al mese piu' pieno e
    non hanno una scala: quello che si legge e' la FORMA -- quando si e'
    giocato tanto e quando niente -- e una scala numerata direbbe una
-   precisione che qui non serve a nessuno. */
+   precisione che qui non serve a nessuno.
+
+   Il mese piu' pieno si stampa PIENO e gli altri in trasparenza: e' il
+   dato che si cercava guardando questo grafico, e nel disegno e' l'unica
+   barra di un altro colore. Qui e' la stessa cosa detta con l'opacita',
+   che funziona su tutti e tre gli inchiostri -- un colore d'accento che
+   si veda su rosso, ocra e verde non esiste. */
 .wrap-barre{
-  list-style:none; margin:26px 0 0; padding:0;
-  width:100%; max-width:400px; height:132px;
-  display:flex; align-items:flex-end; gap:5px;
+  list-style:none; margin:20px 0 0; padding:0;
+  width:100%; height:96px;
+  display:flex; align-items:flex-end; gap:4px;
 }
 .wrap-barre li{
   flex:1; min-width:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:flex-end; height:100%; gap:6px;
+  align-items:center; justify-content:flex-end; height:100%; gap:5px;
 }
 .wrap-barre i{
-  width:100%; border-radius:0; background:rgba(255,255,255,.34);
-  display:block;
+  width:100%; border-radius:0; display:block;
+  background:var(--sl-forte); opacity:.42;
 }
+.wrap-barre li.top i{opacity:1}
 .wrap-barre span{
-  font-size:10px; letter-spacing:.03em; opacity:.72; white-space:nowrap;
+  font-family:var(--ff-mono); font-weight:600; font-size:8.5px;
+  letter-spacing:.02em; white-space:nowrap; color:var(--sl-tenue); opacity:.62;
 }
-/* La firma sta in fondo, ma FUORI dal flusso: con `margin-top:auto`
-   spingeva tutto il resto contro il bordo di sopra invece di lasciarlo
-   in mezzo, che e' il contrario di quello che serve a una slide. */
+.wrap-barre li.top span{opacity:1}
+
+/* LA FIRMA sta in fondo e spinge in su tutto il resto (`margin:auto 0 0`):
+   e' quello che tiene il contenuto attaccato alla testata invece di
+   centrarlo, ed e' il contrario di come stava prima -- fuori dal flusso,
+   con il contenuto in mezzo alla slide.
+
+   Il marchio si stampa con i due colori come in testata: `Me` nel
+   tenue, `Board` nel forte. */
 .wrap-firma{
-  position:absolute; left:0; right:0; bottom:26px; margin:0;
-  font-family:var(--ff-display); font-weight:900; text-transform:uppercase; letter-spacing:.02em; font-size:13px; opacity:.62;
+  margin:auto 0 0; padding:14px 0 0;
+  font-family:var(--ff); font-weight:900; font-size:11px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--sl-tenue);
+  opacity:.72;
 }
-.wrap-firma i{font-style:normal; opacity:.85}
+.wrap-firma i{font-style:normal; color:var(--sl-forte); opacity:1}
 
 .wrap-piede{
   flex:none; display:flex; align-items:center; gap:10px;
@@ -5675,3 +5767,68 @@ input::placeholder, textarea::placeholder{
    titolo: a ventiquattro pixel accanto a una parola da venti era il
    pezzo piu' grande della riga. */
 .pro-tit::after{font-family:var(--ff); font-weight:900; font-size:18px; color:var(--ink-soft)}
+
+/* --- IL PIEDE DEL MAZZO -------------------------------------------
+   Nel disegno il piede sta DENTRO la slide, sul suo rosso. Qui e' una
+   barra sola per otto slide, quindi sta fuori dal mazzo: le si da' il
+   cartone nudo, che e' il bordo della plancia -- una carta chiara sotto
+   otto slide di tre colori diversi sarebbe una fascia che non appartiene
+   a nessuna di loro.
+
+   Le frecce e i punti restano quello che sono nel disegno: blocchi di
+   carta e quadratini, non pastiglie. */
+.wrap-piede{
+  background:var(--bg); border-top:1px dashed var(--line);
+  padding:14px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.wrap-frec{
+  width:auto; height:auto; padding:10px 12px; border-radius:0;
+  background:rgba(var(--ink-rgb),.10); color:var(--ink);
+  font-family:var(--ff); font-weight:900; font-size:16px; line-height:1;
+}
+.wrap-frec:hover{background:var(--ink); color:var(--card)}
+.wrap-frec:active{transform:translate(2px,2px)}
+.wrap-frec:disabled{opacity:.3; pointer-events:none}
+.wrap-punti{gap:5px; flex:0 1 auto; margin:0 4px}
+.wrap-punti i{
+  width:9px; height:9px; border-radius:0;
+  background:rgba(var(--ink-rgb),.26); transition:background .18s var(--ease);
+}
+/* Il punto acceso non cresce: su una plancia un pezzo non si gonfia,
+   cambia inchiostro. Lo `scale(1.25)` su un quadrato da nove pixel
+   lasciava anche un bordo sfocato. */
+.wrap-punti i.on{background:var(--ink); transform:none}
+/* Salvare e' l'azione di questa schermata: blocco pieno, angolo
+   tagliato, e sta in fondo a destra come ogni azione di ogni piede. */
+#wrap-salva{
+  margin-left:auto;
+  font-family:var(--ff); font-weight:900; font-size:10px;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--card); background:var(--ink); border:0; border-radius:0;
+  padding:11px 13px; cursor:pointer;
+  clip-path:var(--fustella); filter:var(--posa);
+}
+#wrap-salva:hover{background:var(--accent); color:var(--su-accent)}
+#wrap-salva:active{transform:translate(2px,2px); filter:var(--posa-giu)}
+
+/* La testata della slide lascia il posto alla croce, che sta sopra di
+   lei in assoluto: senza, il bollino dell'anno finiva sotto e si
+   leggeva "2" invece di "2026". */
+.wrap-testa{padding-right:44px}
+
+/* IL CONTENUTO STA IN MEZZO, LA FIRMA IN FONDO. Con un `auto` solo --
+   quello della firma -- tutto il resto si accatastava in cima e su uno
+   schermo alto restava mezza slide di rosso vuoto. Con due, lo spazio
+   libero si divide sopra e sotto al contenuto: la testata resta in
+   cima, la firma in fondo, e i numeri stanno dove li si guarda.
+
+   E la colonna ha un tetto: una slide e' fatta per uscire dal sito in
+   formato ritratto, e un numero tirato su duemila pixel di larghezza
+   non e' piu' una slide, e' un'insegna. */
+/* DUE `auto` E NON TRE. Uno sopra al numero e uno sopra alla firma
+   dividono lo spazio libero in due e lasciano il contenuto in mezzo;
+   aggiungendone uno anche sotto al dettaglio, il blocco finiva a un
+   terzo dell'altezza. `:first-of-type` prende il caso della slide senza
+   numero, dove la didascalia e' la prima cosa dopo la testata. */
+.wrap-n, .wrap-s:first-of-type{margin-top:auto}
+.wrap-slide > *{width:100%; max-width:520px; margin-left:auto; margin-right:auto}
