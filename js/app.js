@@ -4653,12 +4653,25 @@ function rigaCatalogo(v, i){
      ranking -- ma arrivano il posto in classifica e la media dei voti,
      che su un elenco ordinato per classifica sono proprio l'informazione
      che uno cerca. Meglio quelli di una riga vuota. */
-  const daBgg = [];
-  if (v.rank)     daBgg.push('BGG <b>#' + esc(v.rank) + '</b>');
-  if (v.bggScore) daBgg.push('<b>' + esc(v.bggScore) + '</b>/10');
-  const chi = [v.designer, v.publisher].filter(Boolean).map(esc).join(' &middot; ') ||
-              daBgg.join(' &middot; ');
-  const spec = [[v.players, T('spec.giocatori')], [v.time, T('spec.minuti')], [v.year, T('spec.anno')]]
+  /* IL POSTO IN CLASSIFICA STA SOPRA AL TITOLO, non in mezzo ai dati.
+     Su un elenco ordinato per classifica il numero e' l'unica cosa che
+     dice *perche'* quella riga sta li', e infilato fra autore ed
+     editore -- dove stava -- lo si leggeva come un dato in piu'.
+     Adesso apre la riga, in ocra, accanto al bollo di chi e' stato
+     recensito: due etichette sulla stessa riga, poi il titolo. */
+  const alto = [];
+  if (v.rank) alto.push('<b class="cat-rank">#' + esc(v.rank) + '</b>');
+  if (rec)    alto.push('<i class="bollo">' + T('cat.recensito') + '</i>');
+
+  /* Autore ed editore. L'anno non e' loro: e' una misura, e sta con le
+     misure -- dal dump di BGG spesso e' l'unica cosa che arriva, e da
+     sola faceva da riga dell'autore. */
+  const chi = [v.designer, v.publisher].filter(Boolean).map(esc).join(' &middot; ');
+
+  /* Le misure, tutte battute a macchina: il voto di BGG apre la fila
+     perche' su una riga di catalogo e' il dato che si confronta. */
+  const spec = [[v.bggScore, T('rec.votoBgg')], [v.players, T('spec.giocatori')],
+                [v.time, T('spec.minuti')], [v.year, T('spec.anno')]]
     .filter(function(x){ return x[0]; })
     .map(function(x){ return '<li><b>' + esc(x[0]) + '</b>' + x[1] + '</li>'; }).join('');
 
@@ -4673,7 +4686,8 @@ function rigaCatalogo(v, i){
       : '<span class="senza">' + esc(String(v.title || '?').trim().slice(0, 1).toUpperCase()) + '</span>') +
     '</div>' +
     '<div class="cat-dati">' +
-      '<h3>' + esc(v.title) + (rec ? '<i class="bollo">recensito</i>' : '') + '</h3>' +
+      (alto.length ? '<div class="cat-alto">' + alto.join('') + '</div>' : '') +
+      '<h3>' + esc(v.title) + '</h3>' +
       (chi  ? '<p class="cat-chi">' + chi + '</p>' : '') +
       (spec ? '<ul class="cat-spec">' + spec + '</ul>' : '') +
     '</div>' +
@@ -6286,9 +6300,22 @@ function scaffaleRiga(g){
     ? LIB.librerie().filter(function(x){ return x.id === g.libreria; })[0]
     : null;
   const che = L ? TP('riga.suScaffale', {n: L.nome}) : TP('riga.fuoriScaffale');
-  return '<span class="riga-scaffale' + (L ? ' su' : '') + '"' +
-         ' title="' + esc(che) + '" aria-label="' + esc(che) + '">' +
-         ICO.scaffale + '</span>';
+  /* DA COLONNA A PAROLA, ed e' un dietrofront con un motivo.
+
+     La nota di prima diceva: e' una COLONNA e non un segno accanto al
+     titolo, perche' scorrendo va trovata sempre nello stesso punto.
+     Vero -- e il prezzo era che quella colonna diceva solo *se* un
+     gioco e' in vetrina, mentre DOVE stava nel `title`, cioe' andava
+     cercato fermandosi sopra ogni riga.
+
+     Sotto il titolo la parola dice tutte e due le cose, e sta comunque
+     sempre nello stesso punto: e' la seconda riga di ogni riga. Il
+     posto fisso ce l'ha ancora, e adesso ci sta scritto anche il nome
+     del mobile. */
+  return '<span class="riga-dove' + (L ? ' su' : '') + '"' +
+         ' title="' + esc(che) + '">' +
+         (L ? T('riga.dove', {n: esc(L.nome)}) : T('riga.soloColl')) +
+         '</span>';
 }
 
 function rigaMia(g){
@@ -6302,12 +6329,13 @@ function rigaMia(g){
        gioco, e a fondo riga si leggeva come un terzo comando in fila
        col menu invece che come un interruttore su quel titolo. */
     '<span class="riga-tit">' +
-      '<h3 class="riga-nome">' + esc(g.title) + '</h3>' +
+      '<span class="riga-testo">' +
+        '<h3 class="riga-nome">' + esc(g.title) + '</h3>' +
+        /* Dov'e' il gioco: seconda riga, sempre la' */
+        scaffaleRiga(g) +
+      '</span>' +
       stellaRiga(g) +
     '</span>' +
-    /* Una colonna sua, non un segno accanto al titolo: la si legge
-       scorrendo, e scorrendo va trovata sempre nello stesso punto. */
-    scaffaleRiga(g) +
     /* Il tasto e le sue azioni stanno nello stesso involucro: la
        finestrella si ancora al PULSANTE, non alla riga -- se no, con le
        informazioni aperte sotto, uscirebbe mezzo schermo piu' in giu'
@@ -8012,7 +8040,11 @@ function disegnaSommaPartite(tutte, quantiGiochi){
   el.innerHTML = voci.map(function(v){
     return '<div class="par-dato"><b>' + v[0] + '</b><span>' + v[1] + '</span></div>';
   }).join('') +
-  '<button type="button" id="par-wr-apri" class="par-dato largo par-wr"' +
+  /* Il riquadro del winrate e' larghe come gli altri due, non il doppio:
+     nel disegno sono tre pezzi della stessa misura in fila, e quello
+     che si tocca si distingue per il COLORE -- ocra -- non per la
+     larghezza. */
+  '<button type="button" id="par-wr-apri" class="par-dato par-wr"' +
     (muto ? ' disabled' : '') +
     ' aria-expanded="' + (state.wrAperto && !muto ? 'true' : 'false') + '"' +
     ' aria-controls="par-wr" title="' + esc(perche) + '">' +

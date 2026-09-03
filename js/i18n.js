@@ -185,6 +185,7 @@ it: {
   /* --- il catalogo --- */
   'cat.aria':           'catalogo dei giochi',
   'cat.occhiello':      'il catalogo',
+  'cat.recensito':      'recensito',
   'cat.cercaPh':        'cerca un gioco&hellip;',
   'cat.cercaAria':      'cerca nel catalogo',
   'cat.cerca':          'cerca',
@@ -495,6 +496,12 @@ it: {
   'par.cercaPh':        'cerca un gioco o una persona&hellip;',
   'par.cercaAria':      'cerca fra le partite',
   'par.nessunaPer':     'nessuna partita per &laquo;{q}&raquo;',
+  /* LA RIGA DICE DOV'E' IL GIOCO, e lo dice con una parola. Era un'icona
+     in una colonna sua, e il nome del mobile stava nel `title`: cioe'
+     scorrendo si vedeva CHE e' in vetrina ma non DOVE, e per saperlo
+     bisognava fermarsi sopra. */
+  'riga.dove':          'in vetrina &middot; {n}',
+  'riga.soloColl':      'solo in collezione',
   'riga.suScaffale':    'sullo scaffale, in {n}',
   'riga.fuoriScaffale': 'in collezione, ma non sullo scaffale',
   'par.serata':         'partita',
@@ -862,6 +869,7 @@ en: {
 
   'cat.aria':           'catalogue of games',
   'cat.occhiello':      'the catalogue',
+  'cat.recensito':      'reviewed',
   'cat.cercaPh':        'find a game&hellip;',
   'cat.cercaAria':      'search the catalogue',
   'cat.cerca':          'search',
@@ -1146,6 +1154,8 @@ en: {
   'par.cercaPh':        'search a game or a person&hellip;',
   'par.cercaAria':      'search among the plays',
   'par.nessunaPer':     'no plays for &laquo;{q}&raquo;',
+  'riga.dove':          'on show &middot; {n}',
+  'riga.soloColl':      'collection only',
   'riga.suScaffale':    'on the shelf, in {n}',
   'riga.fuoriScaffale': 'in the collection, but not on a shelf',
   'par.serata':         'play',

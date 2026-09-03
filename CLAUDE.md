@@ -3574,12 +3574,73 @@ trappole, e vale la pena averle scritte:
    l'ombra di un blocco pieno. Quando una regola ne perde un'altra, quello che
    la vincitrice non dichiara resta.
 
-E la trappola dell'ambiente, ripresentata per l'ennesima volta: **il browser
-dell'anteprima tiene in cache il CSS**. Due giri di verifica sono stati fatti su
-un foglio vecchio, con le regole nuove sul disco e servite dal server. Il
-controllo che smaschera il caso e' confrontare `getComputedStyle` con quello che
-il file contiene davvero; la cura e' riscrivere l'`href` del `<link>` con un
-`?v=` diverso.
+### La cache dell'anteprima tiene anche l'HTML, e questo cambia la cura
+
+La trappola era gia' scritta per il CSS e per i `.js`. Quello che in questo giro
+si e' capito, dopo averci perso tre verifiche di fila, e' **quanto in profondita'
+arrivi**:
+
+1. Il **CSS** si rimedia riscrivendo l'`href` del `<link>` con un `?v=` diverso:
+   quello funziona subito, dal vivo.
+2. I **`.js`** no: sono gia' eseguiti, e un `href` nuovo non li rifa. Serve
+   ricaricare la pagina.
+3. **Ma ricaricare la stessa URL non basta**, ed e' questo il punto: viene
+   servito anche l'**HTML** dalla cache, cioe' la pagina vecchia con i vecchi
+   `<script src="js/app.js">`. Mettere un `?v=` sui tag nel file non serve a
+   niente, perche' quel file non viene riletto. Chiudere e riaprire la scheda
+   non basta.
+
+**La cura e' cambiare l'URL DELLA PAGINA**: `http://localhost:8124/?r=901`. Da
+li' l'HTML e' nuovo, e con lui i `src` dei suoi script.
+
+Il controllo che smaschera il caso in un colpo:
+`performance.getEntriesByType('resource')` — se `app.js` ha `transferSize: 0`,
+sta girando la copia vecchia, e il nome della risorsa dice anche **quale** URL
+e' stata caricata davvero. Confrontare `getComputedStyle` (o l'HTML generato)
+con quello che il file contiene davvero e' l'altra meta' del controllo.
+
+### Le righe: prima perche' sta li', poi cos'e'
+
+**Il catalogo.** Il posto in classifica apriva la riga dei dati, fra autore ed
+editore, e li' si leggeva come un dato in piu'. Su un elenco ordinato per
+classifica quel numero e' invece l'unica cosa che dice **perche'** quella riga
+sta li', e adesso apre la riga: `.cat-alto` tiene il `#1` in ocra accanto al
+bollo verde di chi e' stato recensito, e sotto viene il titolo. Il bollo era
+dentro all'`<h3>`, e con un titolo lungo andava a capo da solo in mezzo alle
+parole.
+
+Le misure sono tutte in una fila mono, e **il voto di BGG le apre**: su una riga
+di catalogo e' il dato che si confronta. L'anno e' scivolato con loro -- e' una
+misura, non un autore -- e prima, quando dal dump non arrivava altro, faceva da
+riga dell'autore per conto suo.
+
+**La collezione.** La colonna con l'icona dello scaffale e' diventata la
+**seconda riga** di ogni riga, in mono e in ocra quando il gioco e' in mostra.
+E' un dietrofront, e il motivo e' che la nota di prima aveva ragione a meta':
+diceva «una colonna, non un segno accanto al titolo, perche' scorrendo va
+trovata sempre nello stesso punto», e il prezzo era che quella colonna diceva
+solo **se** un gioco e' in vetrina — mentre **dove** stava nel `title`, cioe'
+andava cercato fermandosi sopra ogni riga. Sotto il titolo la parola dice tutte
+e due le cose e il posto fisso ce l'ha ancora: e' sempre la seconda riga.
+
+**Le partite.** Il riquadro del winrate era largo il doppio degli altri due
+(`.largo`) e sotto a due riquadri di carta sembrava una fascia. Adesso sono tre
+pezzi della stessa misura, e quello che si tocca si distingue per il **colore**
+-- ocra -- non per la larghezza.
+
+**Il profilo.** Il codice amico e' una cosa da leggere ad alta voce a qualcuno:
+grande, spaziato e centrato, come un codice stampato su un biglietto. I titoli
+delle due tendine sono **nomi** e non comandi -- niente fondo tinto, un filo
+tratteggiato sopra -- e il conto accanto e' una cifra in mono ocra: due mani
+diverse sulla stessa riga.
+
+E per la terza volta la stessa lezione di peso: `.pro-tit` era rimasta a undici
+pixel perche' `#profilo button:not(.primario):not(.secondario):not(.distruttivo)`
+pesa un id e tre classi, e una classe sola non ci arriva vicino. **La catena si
+ripete per intero, piu' la propria classe.** Chi scrive una regola per un
+pulsante dentro `#profilo`, `#partitalayer`, `#gruppilayer` o `#recelayer` deve
+ricopiarsi quella catena, e in questo giro e' servita tre volte -- le pastiglie
+della lingua, il piede della recensione, questi titoli.
 
 ### Quello che il 3D si tiene
 
@@ -5505,7 +5566,7 @@ differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
 Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
-`css/style.css` 5.589, `js/app.js` 9.712, `js/tema.js` 584, `js/art.js` 1.346,
+`css/style.css` 5.677, `js/app.js` 9.756, `js/tema.js` 584, `js/art.js` 1.346,
 piu' `supabase/functions/bgg/index.ts` 291.
 
 ### La sessione del 2026-09-03: il fork e la fustella
@@ -5524,6 +5585,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | la tipografia | Poppins esce, entrano **Archivo variabile** e **IBM Plex Mono**; maiuscolo sui comandi, cifre in mono |
 | i comandi | il livello «tinto» diventa **tratteggiato**, e i pulsanti che non erano nelle liste sono stati riscritti con il loro peso |
 | il secondo giro | il **contatore grande** in testa alle schermate, il binario a **segmenti**, le viste come blocchi, la scheda del gioco rifatta riga per riga, e il rosso tratteggiato di quello che aggiunge |
+| il terzo giro | le **righe** del catalogo e della collezione, il winrate come terzo riquadro, e i titoli del profilo -- piu' la cache dell'anteprima capita fino in fondo |
 
 **Le lezioni generali** di questa sessione:
 

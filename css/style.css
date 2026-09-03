@@ -480,7 +480,7 @@ body.cella-su #cella{display:flex}
    faccio" -- e mescolarle voleva dire che per leggere due righe di
    recensione ti trovavi davanti quattro pulsanti. */
 .righe.compatta > li{
-  grid-template-columns:52px 1fr auto auto; align-items:center; gap:14px; padding:11px 0;
+  grid-template-columns:52px 1fr auto; align-items:center; gap:14px; padding:11px 0;
 }
 /* SULLO SCAFFALE, O SOLO IN COLLEZIONE.
 
@@ -489,24 +489,34 @@ body.cella-su #cella{display:flex}
    -- per sapere dove stesse un gioco bisognava aprire il menu della sua
    riga, una per una.
 
-   E' una COLONNA e non un segno accanto al titolo: la si legge
-   scorrendo, e scorrendo va trovata sempre nello stesso punto. Accanto
-   al nome ballerebbe con la lunghezza del titolo, che e' il contrario
-   di quello che serve.
+   ERA UNA COLONNA CON UN'ICONA, e la nota diceva: non un segno accanto
+   al titolo, perche' scorrendo va trovato sempre nello stesso punto.
+   Giusto -- e il prezzo era che quell'icona diceva solo *se* un gioco e'
+   in vetrina, mentre DOVE stava nel `title`, cioe' andava cercato
+   fermandosi sopra ogni riga.
 
-   Ed e' un SEGNO, non un comando: mettere e togliere si fa dal menu,
+   Adesso e' la SECONDA RIGA di ogni riga: dice tutte e due le cose, e
+   il posto fisso ce l'ha ancora -- e' sempre sotto al titolo. Battuta a
+   macchina, come tutto quello che e' un dato, e in ocra quando il gioco
+   e' in mostra.
+
+   Resta un SEGNO e non un comando: mettere e togliere si fa dal menu,
    che e' anche l'unico posto in cui si sceglie IN QUALE mobile quando
-   ce n'e' piu' di uno. Un'icona che si accende sotto il dito
-   prometterebbe un gesto che qui non c'e'. */
-.riga-scaffale{
-  flex:none; display:block; padding:7px; line-height:0; color:rgba(var(--ink-rgb),.18);
+   ce n'e' piu' di uno. */
+.riga-dove{
+  display:block; margin-top:3px;
+  font-family:var(--ff-mono); font-weight:600; font-size:9.5px;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:rgba(var(--ink-rgb),.42);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.riga-scaffale.su{color:var(--accent)}
-/* Il titolo e la sua stella in una cella sola: la stella e' di quel
-   gioco, e in una colonna sua si leggeva come un comando in fila col
-   menu. `min-width:0` perche' un titolo lungo deve stringere, non
-   spingere fuori la stella. */
-.riga-tit{display:flex; align-items:center; gap:4px; min-width:0}
+.riga-dove.su{color:var(--accent)}
+/* Il titolo, la sua riga di sotto e la stella in una cella sola: la
+   stella e' di quel gioco, e in una colonna sua si leggeva come un
+   comando in fila col menu. `min-width:0` perche' un titolo lungo deve
+   stringere, non spingere fuori la stella. */
+.riga-tit{display:flex; align-items:center; gap:6px; min-width:0}
+.riga-testo{display:block; min-width:0; flex:1 1 auto}
 .righe.compatta > li:hover .riga-nome{color:var(--accent)}
 .righe.compatta .cat-cop{width:52px; cursor:pointer}
 .riga-nome{
@@ -5587,3 +5597,81 @@ input::placeholder, textarea::placeholder{
    sembrava un'intestazione verde sopra alla schermata; nel disegno e'
    un blocco della misura della sua parola, in fila con gli altri. */
 .par-wrap{display:inline-block; width:auto; padding:11px 14px}
+
+/* --- LA RIGA DEL CATALOGO, come nel disegno ------------------------
+   Due etichette sulla riga di sopra -- il posto in classifica e il
+   bollo di chi e' stato recensito -- poi il titolo grande, poi chi
+   l'ha fatto, poi le misure battute a macchina. In quest'ordine perche'
+   e' l'ordine in cui si guarda una riga di un elenco ordinato: prima
+   *perche'* sta li', poi *cos'e'*. */
+.cat-alto{display:flex; align-items:baseline; gap:8px; margin:0 0 5px}
+.cat-rank{
+  font-family:var(--ff); font-weight:900; font-size:11px;
+  letter-spacing:.04em; color:var(--accent); font-variant-numeric:tabular-nums;
+}
+/* Il bollo non sta piu' dentro al titolo: era una pastiglia in mezzo a
+   una riga di testo, e con un titolo lungo finiva a capo da sola. */
+.cat-alto .bollo{
+  font-family:var(--ff); font-style:normal; font-weight:900; font-size:9px;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--su-verde); background:var(--verde); padding:4px 6px;
+}
+.cat-dati h3{font-size:clamp(19px,5.6vw,24px); line-height:.92; letter-spacing:-.03em}
+.cat-chi{margin:6px 0 0}
+.cat-spec{margin:9px 0 0}
+
+/* --- IL WINRATE E' UN RIQUADRO COME GLI ALTRI DUE ------------------
+   Tre pezzi della stessa misura in fila, e quello che si tocca si
+   distingue per il colore -- ocra, come tutto quello che si sceglie --
+   non per la larghezza. Era largo il doppio, e sotto ai due riquadri
+   di carta sembrava una fascia. */
+#par-somma .par-wr{
+  flex:1 1 120px;
+  background:var(--accent); color:var(--su-accent);
+}
+#par-somma .par-wr b{color:var(--su-accent)}
+#par-somma .par-wr span{color:var(--su-accent); opacity:.72}
+#par-somma .par-wr:hover{background:var(--accent-su)}
+#par-somma .par-wr[aria-expanded="true"]{background:var(--accent-su)}
+#par-somma .par-wr:disabled{background:var(--ink); color:var(--card)}
+#par-somma .par-wr:disabled b, #par-somma .par-wr:disabled span{color:var(--card)}
+#par-somma .par-wr .wr-anello{width:30px; height:30px}
+
+/* --- IL PROFILO, i dettagli del disegno ---------------------------- */
+/* Il codice amico e' una cosa da leggere ad alta voce a qualcuno:
+   grande, spaziato e centrato, come un codice stampato su un biglietto. */
+.pro-cod b, #pro-codice{
+  font-family:var(--ff); font-weight:900; font-size:clamp(20px,6vw,26px);
+  letter-spacing:.14em; text-align:center; padding:10px 12px;
+  color:var(--ink); background:rgba(var(--ink-rgb),.08); border-radius:0;
+  font-variant-numeric:tabular-nums;
+}
+/* I titoli delle due sezioni sono nomi, e il conto accanto e' una cifra:
+   due mani diverse sulla stessa riga, come su una plancia. E sono NOMI,
+   non comandi: il fondo tinto se ne va e resta un filo tratteggiato
+   sopra, che e' il modo in cui la plancia divide due blocchi.
+
+   Il peso va scritto per intero. `#profilo button:not(.primario)
+   :not(.secondario):not(.distruttivo)` pesa un id e tre classi e li
+   aveva portati a undici pixel come tutti gli altri pulsanti della
+   schermata: `.pro-tit` da sola non ci arriva nemmeno vicino. Stessa
+   catena, piu' la classe -- e' la lezione gia' scritta per le pastiglie
+   della lingua e per il piede della recensione. */
+#profilo button.pro-tit:not(.primario):not(.secondario):not(.distruttivo){
+  font-family:var(--ff); font-weight:900; font-size:20px;
+  letter-spacing:-.02em; text-transform:uppercase; color:var(--ink);
+  background:none; border:0; border-top:1px dashed var(--line);
+  padding:18px 0; border-radius:0;
+}
+#profilo button.pro-tit:not(.primario):hover{
+  background:none; color:var(--accent); border-top-color:var(--line);
+}
+.pro-tit .quanti{
+  font-family:var(--ff-mono); font-weight:600; font-size:9.5px;
+  letter-spacing:.14em; color:var(--accent); text-transform:uppercase;
+  font-variant-numeric:tabular-nums;
+}
+/* Il segno che apre resta il `+` in fondo a destra, e cresce con il
+   titolo: a ventiquattro pixel accanto a una parola da venti era il
+   pezzo piu' grande della riga. */
+.pro-tit::after{font-family:var(--ff); font-weight:900; font-size:18px; color:var(--ink-soft)}
