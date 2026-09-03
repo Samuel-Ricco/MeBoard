@@ -137,14 +137,16 @@ le copertine stanno nel repo: staccata la rete, la libreria si apre lo stesso,
 con l'ultima copia salvata. È una scelta, non una svista.
 
 Vale anche per i **suoni**: non c'è nessun file audio, e non ce ne sarà nessuno.
-Come il legno e il cartone sono disegnati su canvas, il tonfo della scatola è
-sintetizzato con Web Audio — un rumore filtrato e due sinusoidi per volta.
+Come il legno e il cartone sono disegnati su canvas, i quindici suoni del sito
+sono sintetizzati con Web Audio.
 
-E il materiale è il cartone, come per tutto il resto: una plancia punzonata non
-risuona, fa un colpo secco e finisce. I quindici suoni sono costruiti su quattro
-mattoni — il colpo secco, la carta che scorre, **il punzone** (il pezzo che si
-stacca, trenta millisecondi: è il tocco, ed è il suono di questo sito) e lo
-strappo, che serve a una cosa sola, quello che distrugge, ed è l'unico che dura.
+E sono **intonati**: ogni voce è una nota di una pentatonica di DO, quindi due
+suoni che capitano insieme non possono stonare fra loro. Un corpo di sinusoide
+con un filo di ottava sopra, una scheggia di rumore davanti che dice *quando* è
+successo, e una coda di 320 millisecondi presa al 16% — poco, ma è quella che
+toglie a un suono sintetico l'aria di provino. Il tocco è il più corto e il più
+basso di tutti perché è quello che si sente cento volte più spesso; l'unico che
+è fuori scala apposta è l'avviso, perché deve mettere a disagio.
 
 L'eccezione è il **catalogo**, e non poteva essere altrimenti: le miniature dei
 centomila titoli arrivano da BoardGameGeek. Un catalogo così non si committa, e

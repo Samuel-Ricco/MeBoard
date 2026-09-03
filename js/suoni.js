@@ -5,20 +5,49 @@
    quello che vale per le superfici: legno, cartone, parquet e facce
    dei dadi sono DISEGNATI da codice su canvas, non scaricati. Qui e'
    lo stesso -- non c'e' nessun file audio nel repo, e non ce ne
-   sara' nessuno: i suoni si SINTETIZZANO con Web Audio, un rumore
-   filtrato e due sinusoidi per volta.
+   sara' nessuno: i suoni si SINTETIZZANO con Web Audio.
 
-   IL MATERIALE E' IL CARTONE, e non e' un dettaglio di gusto: e' la
-   stessa scelta della pelle del sito. Una plancia punzonata non
-   risuona -- fa un colpo secco e finisce -- e il suo suono
-   caratteristico e' uno solo, il PEZZO CHE SI STACCA. Tutta
-   l'interfaccia e' costruita su quello.
+   Non e' un vincolo che ci si porta dietro, e' quello che serve. Una
+   manciata di .mp3 anche corti pesa piu' di tutto il resto del sito
+   messo insieme, va scaricata prima di potersi sentire, e a rete
+   staccata la libreria deve continuare a funzionare. Un suono
+   d'interfaccia dura quaranta millisecondi: farne un file e' come
+   scaricare un'immagine per disegnare un quadrato.
 
-   Non e' solo coerenza. Una manciata di .mp3 anche corti pesa piu' di
-   tutto il resto del sito messo insieme, e a rete staccata la libreria
-   deve continuare a funzionare -- compreso il tonfo della scatola che
-   torna sullo scaffale.
+   -----------------------------------------------------------------
+   COM'E' FATTO IL SUONO DI QUESTO SITO
 
+   Prima era CARTONE: colpi secchi, smorzati, un punzone che stacca il
+   pezzo dalla plancia. Era coerente con la pelle e suonava vecchio --
+   un'interfaccia che imita un materiale sordo si sente sorda. Adesso
+   e' costruito come si costruisce oggi il suono di un'applicazione, e
+   sono quattro scelte:
+
+   1. E' INTONATO. Ogni voce e' una nota di una pentatonica di DO, non
+      un rumore: due suoni che capitano vicini non possono stonare fra
+      loro, perche' sono dello stesso accordo. E' il motivo per cui il
+      suono di un telefono non stanca dopo il decimo tocco.
+
+   2. E' PULITO. Il corpo e' una sinusoide con un filo di ottava sopra
+      -- l'ottava e' quello che fa "digitale" invece che "sinusoide
+      nuda" -- e il rumore serve solo come SCHEGGIA D'ATTACCO, il
+      millesimo di secondo che dice "e' successo adesso".
+
+   3. HA ARIA. Il vecchio taglio a 6.500 Hz smorzava tutto per imitare
+      il cartone; qui c'e' una campana alta appena aperta, che e' la
+      differenza fra un suono nella stanza e un suono dentro una
+      scatola.
+
+   4. HA UNO SPAZIO. Una coda di trecentoventi millisecondi, costruita
+      a mano come rumore che si spegne, presa in mandata al 16%. Poco,
+      e non e' un effetto: e' quello che toglie a un suono sintetico
+      l'aria di provino. Asciutto suona come un beep del 1998.
+
+   TUTTO SU QUATTRO MATTONI: `blip` (la nota), `aria` (il fruscio in
+   banda che si sposta), `punta` (la scheggia d'attacco), `peso` (il
+   corpo basso). Ogni voce e' due o tre di questi, sfalsati.
+
+   -----------------------------------------------------------------
    DUE FAMIGLIE. La SCENA ha sei suoni -- la scatola che esce, il
    coperchio che si alza, quella che torna a posto, quella che si
    prende in mano, quella che si posa in un cubo, il mobile su cui ci
@@ -39,6 +68,35 @@
    primo gesto e' la scelta al cancello, e da li' in poi c'e' suono.
    Nessuno si ritrova un sito che parla da solo appena aperto.
 
+   -----------------------------------------------------------------
+   LA FORZA SULLA CARTA NON E' IL VOLUME NELL'ORECCHIO, e questa e' la
+   lezione che vale per ogni suono che verra' dopo: due voci scritte
+   con lo stesso numero escono a picchi diversi, perche' una nota corta
+   e alta si sente molto piu' di un tonfo lungo e basso. I numeri qui
+   sotto sono MISURATI sull'uscita a volume 1, non stimati.
+
+   Come si misura: si aggancia il primo `createBiquadFilter` creato dal
+   contesto -- quello e' la campana alta, cioe' l'ultimo nodo prima
+   dell'uscita, e prende anche la coda -- ci si attacca un
+   `AnalyserNode` come rubinetto (non tocca il segnale) e si campiona
+   il picco mentre la voce suona. Il campionamento NON si fa con
+   `requestAnimationFrame`: col pannello dell'anteprima nascosto e'
+   sospeso, e il ciclo resta appeso. Si usa `setTimeout`.
+
+     tocco                       0,017   61 ms
+     apre, mobile                0,022   71-121
+     spento, serra, acceso       0,027-0,032
+     coperchio, nota             0,037-0,041
+     conferma, presa, avviso     0,049-0,054
+     esce, chiude                0,058-0,070
+     posa                        0,099  164 ms
+     via                         0,104  289 ms
+
+   Il tocco e' il piu' basso e il piu' corto perche' e' quello che si
+   sente cento volte piu' spesso di ogni altro. `posa` e' il piu' pieno
+   -- e' l'unico che conferma che una cosa e' andata dove volevi -- e
+   `via` e' il piu' pesante e il piu' lungo.
+
    Se Web Audio non c'e', `gioca()` non fa niente e non lo dice: un
    suono che manca non e' un guasto.
    =============================================================== */
@@ -54,10 +112,10 @@ const CHIAVE = 'meboard-suono';
 const VOL_DEF = .6;
 
 let ctx = null;
-let master = null;
+let master = null;                 // il volume: tutte le voci passano di qui
 let rumore = null;                 // un secondo di rumore bianco, riusato
 let vol = leggi();
-let spento = false;                // Web Audio non c'e': si smette di provarci
+let niente = false;                // Web Audio non c'e': si smette di provarci
 const ultimo = Object.create(null);
 
 function leggi(){
@@ -76,35 +134,77 @@ function scrivi(){
   try { localStorage.setItem(CHIAVE, String(vol)); } catch (e) {}
 }
 
+/* LA CODA, costruita a mano.
+
+   Un riverbero e' una convoluzione con la risposta all'impulso di un
+   posto, e una risposta all'impulso e' -- semplificando quanto basta --
+   rumore che si spegne. Trecentoventi millisecondi e una curva ripida:
+   non e' una sala, e' quel filo di stanza che separa un suono
+   registrato da un suono generato.
+
+   Si costruisce una volta e la tiene il convolutore: e' la stessa idea
+   del rumore bianco riusato da tutte le voci e di `comune()` per le
+   geometrie. */
+function coda(c, durata, curva){
+  const n = Math.floor(c.sampleRate * durata);
+  const buf = c.createBuffer(2, n, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++){
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < n; i++){
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, curva);
+    }
+  }
+  return buf;
+}
+
 /* Il contesto nasce al primo suono chiesto, non al caricamento: chi
    apre il sito per guardare la propria libreria e non tocca niente non
    ha nessun motivo di avere una scheda audio accesa. */
 function assicura(){
-  if (spento) return null;
+  if (niente) return null;
   if (!ctx){
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC){ spento = true; return null; }
+    if (!AC){ niente = true; return null; }
     try {
       ctx = new AC();
+
+      /* LA CATENA, e la costruiscono tutte le voci insieme:
+
+           voci -> master -> secco -----------------\
+                          -> mandata -> eco -> alto -> uscita
+
+         `master` e' il volume. `alto` e' una campana alta appena
+         aperta: due decibel e mezzo sopra i 3 kHz, quanto basta perche'
+         una sinusoide corta smetta di sembrare ovattata senza diventare
+         stridula. Ed e' l'ULTIMO nodo, cosi' prende anche la coda: uno
+         spazio piu' scuro del suono che lo genera si sente come un
+         velo. */
       master = ctx.createGain();
       master.gain.value = vol;
-      /* UN FILTRO SOLO PER TUTTI, che e' il materiale.
 
-         Il cartone in alto e' SORDO: non ha il vetro di un clic di
-         sistema ne' lo squillo del metallo. Tagliare li' una volta
-         sola, sull'uscita, fa piu' per la coerenza che tarare dieci
-         volte lo stesso passabanda -- ed e' la stessa idea del
-         `comune()` delle geometrie e del rumore bianco riusato.
+      const alto = ctx.createBiquadFilter();
+      alto.type = 'highshelf';
+      alto.frequency.value = 3200;
+      alto.gain.value = 2.5;
 
-         6.500 Hz e' il punto in cui una scheggia di rumore smette di
-         sembrare vetro e comincia a sembrare fibra. */
-      const sordina = ctx.createBiquadFilter();
-      sordina.type = 'lowpass';
-      sordina.frequency.value = 6500;
-      sordina.Q.value = .7;
-      master.connect(sordina);
-      sordina.connect(ctx.destination);
-    } catch (e){ spento = true; ctx = null; return null; }
+      const secco = ctx.createGain();
+      secco.gain.value = 1;
+
+      const eco = ctx.createConvolver();
+      eco.buffer = coda(ctx, .32, 2.6);
+      const mandata = ctx.createGain();
+      /* Sedici per cento. Piu' su, ogni tocco lascia un alone e
+         scorrendo un elenco si impasta; piu' giu' non si sente la
+         differenza con l'asciutto, e allora tanto vale non averlo. */
+      mandata.gain.value = .16;
+
+      master.connect(secco);
+      master.connect(mandata);
+      mandata.connect(eco);
+      eco.connect(alto);
+      secco.connect(alto);
+      alto.connect(ctx.destination);
+    } catch (e){ niente = true; ctx = null; return null; }
   }
   /* Sospeso e' lo stato normale finche' non c'e' stato un gesto vero.
      Si prova a ogni suono: costa niente e il primo che passa dopo il
@@ -124,168 +224,101 @@ function bufRumore(c){
   return rumore;
 }
 
-/* Una busta che parte subito e si spegne: `exponentialRamp` non
-   arriva mai a zero, quindi si scende a un valore minuscolo e poi si
-   ferma il nodo. */
+/* Una busta che parte e si spegne: `exponentialRamp` non arriva mai a
+   zero, quindi si scende a un valore minuscolo e poi si ferma il nodo.
+   L'attacco non e' mai istantaneo -- un gradino su una sinusoide fa un
+   clic, e quel clic e' il rumore piu' vecchio che ci sia. */
 function busta(g, t, picco, attacco, durata){
   g.gain.setValueAtTime(.0001, t);
   g.gain.exponentialRampToValueAtTime(Math.max(.0002, picco), t + attacco);
   g.gain.exponentialRampToValueAtTime(.0001, t + durata);
 }
 
-/* IL CARTONE NON E' LEGNO, E NON SUONA COME IL LEGNO.
+/* --- i quattro mattoni ------------------------------------------ */
 
-   I mattoni di prima erano tarati su una libreria di rovere: un colpo
-   con un corpo di sinusoide che RISUONA, uno strofinio caldo, una nota
-   morbida dentro un passabasso. Su una plancia di cartone punzonato non
-   c'e' niente che risuoni. Il cartone e' SMORZATO -- fa un colpo secco
-   e finisce li' -- e quello che si sente davvero, su una plancia, e'
-   uno solo: il PEZZO CHE SI STACCA.
+/* LA NOTA. Una sinusoide che si posa sulla sua altezza da un filo
+   sopra -- non ci arriva dal nulla, ci CADE, ed e' quello che la fa
+   sembrare suonata invece che accesa -- piu' un'ottava tenue sopra.
 
-   Quindi i mattoni sono quattro e non tre:
-
-     batti     il colpo secco: contatto, e un corpo che muore subito
-     sfrega    carta che scorre su carta, non cartone su legno
-     scatto    IL PUNZONE: il pezzo che esce dalla fustella
-     strappo   il cartone che cede: quello che distrugge
-
-   e tutti passano da un filtro comune che toglie il vetro dall'acuto,
-   perche' il cartone in alto e' sordo.
-   =============================================================== */
-
-/* IL COLPO SECCO. Due cose insieme, come prima, ma con le proporzioni
-   rovesciate: il rumore -- il CONTATTO -- e' la parte che si sente, e
-   la sinusoide sotto e' solo il tonfo del materiale, tenuta corta
-   perche' un foglio di cartone non ha una cassa armonica.
-
-   Il passabanda sta piu' in alto e piu' stretto di prima: un colpo su
-   cartone e' piu' vicino a un battito di dita su una scatola che a una
-   nocca su una tavola. */
-function batti(c, t, corpo, forza, durata){
-  const s = c.createBufferSource();
-  s.buffer = bufRumore(c);
-  s.playbackRate.value = .9 + Math.random() * .3;
-  const bp = c.createBiquadFilter();
-  bp.type = 'bandpass';
-  bp.frequency.value = corpo * 14;
-  bp.Q.value = .8;
-  const gn = c.createGain();
-  busta(gn, t, forza * .8, .0015, .028);
-  s.connect(bp); bp.connect(gn); gn.connect(master);
-  s.start(t); s.stop(t + .05);
-
-  /* Il corpo dura la META' di quanto durava: e' la differenza fra un
-     ripiano di rovere che continua a vibrare e una scatola che no. */
+   L'ottava non e' un abbellimento: una sinusoide sola, a queste
+   durate, si sente come un test dell'udito. Al 18% diventa un timbro. */
+function blip(c, t, hz, forza, durata, tipo){
   const o = c.createOscillator();
-  o.type = 'sine';
-  o.frequency.setValueAtTime(corpo * 1.35, t);
-  o.frequency.exponentialRampToValueAtTime(corpo * .82, t + durata * .5);
-  const go = c.createGain();
-  busta(go, t, forza * .55, .002, durata * .55);
-  o.connect(go); go.connect(master);
-  o.start(t); o.stop(t + durata + .02);
+  o.type = tipo || 'sine';
+  o.frequency.setValueAtTime(hz * 1.035, t);
+  o.frequency.exponentialRampToValueAtTime(hz, t + Math.min(.05, durata * .45));
+  const g = c.createGain();
+  busta(g, t, forza, .005, durata);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + durata + .04);
+
+  const h = c.createOscillator();
+  h.type = 'sine';
+  h.frequency.setValueAtTime(hz * 2, t);
+  const gh = c.createGain();
+  busta(gh, t, forza * .18, .004, durata * .55);
+  h.connect(gh); gh.connect(master);
+  h.start(t); h.stop(t + durata + .04);
 }
 
-/* CARTA CHE SCORRE SU CARTA. Era uno strofinio caldo dentro un
-   passabanda largo; qui la banda e' piu' alta e piu' stretta, e sopra
-   c'e' un filo di frizione in acuto -- e' quella la differenza fra il
-   cartoncino e il legno. Anche questo piu' corto: la carta scorre e si
-   ferma, non slitta. */
-function sfrega(c, t, f0, f1, forza, durata){
+/* IL FRUSCIO IN BANDA CHE SI SPOSTA. Serve dove qualcosa scorre: una
+   scatola che esce, un pannello che si apre. La direzione della banda
+   e' la direzione del gesto, e si sente anche senza guardare. */
+function aria(c, t, f0, f1, forza, durata, q){
   const s = c.createBufferSource();
   s.buffer = bufRumore(c);
-  s.playbackRate.value = .95 + Math.random() * .25;
+  s.playbackRate.value = .9 + Math.random() * .2;
   const bp = c.createBiquadFilter();
   bp.type = 'bandpass';
+  bp.Q.value = q || 1.1;
   bp.frequency.setValueAtTime(f0, t);
   bp.frequency.exponentialRampToValueAtTime(f1, t + durata);
-  bp.Q.value = 1.6;
-  const gn = c.createGain();
-  busta(gn, t, forza, durata * .22, durata);
-  s.connect(bp); bp.connect(gn); gn.connect(master);
-  s.start(t); s.stop(t + durata + .02);
+  const g = c.createGain();
+  busta(g, t, forza, durata * .25, durata);
+  s.connect(bp); bp.connect(g); g.connect(master);
+  s.start(t); s.stop(t + durata + .04);
 }
 
-/* IL PUNZONE, che e' il suono di questo sito.
-
-   Un pezzo che esce dalla fustella fa due cose in venti millisecondi:
-   la fibra cede -- una scheggia di rumore altissima e cortissima -- e
-   il pezzo si stacca, che e' un piccolo scatto intonato che scende.
-   Messi insieme fanno il "toc" secco di una plancia nuova.
-
-   E' il mattone piu' usato dell'interfaccia: e' il tocco, e' meta'
-   della conferma, ed e' l'inizio di quasi tutto quello che succede
-   sulla scena. Per questo e' anche il piu' corto -- trenta millisecondi
-   in tutto -- e il piu' silenzioso a parita' di forza. */
-function scatto(c, t, alt, forza){
+/* LA SCHEGGIA D'ATTACCO. Dodici millisecondi di rumore alto: da sola
+   non e' niente, ma davanti a una nota e' quello che dice esattamente
+   QUANDO e' successo. Senza, le note sembrano accendersi. */
+function punta(c, t, forza){
   const s = c.createBufferSource();
   s.buffer = bufRumore(c);
-  s.playbackRate.value = 1.1 + Math.random() * .3;
   const hp = c.createBiquadFilter();
   hp.type = 'highpass';
-  hp.frequency.value = alt * 2.2;
-  const gn = c.createGain();
-  busta(gn, t, forza * .7, .001, .012);
-  s.connect(hp); hp.connect(gn); gn.connect(master);
-  s.start(t); s.stop(t + .03);
-
-  const o = c.createOscillator();
-  o.type = 'triangle';
-  o.frequency.setValueAtTime(alt * 1.5, t);
-  o.frequency.exponentialRampToValueAtTime(alt * .7, t + .02);
-  const go = c.createGain();
-  busta(go, t, forza, .001, .022);
-  o.connect(go); go.connect(master);
-  o.start(t); o.stop(t + .04);
-}
-
-/* IL CARTONE CHE CEDE. Serve a una cosa sola -- quello che distrugge --
-   e non e' un colpo: e' un rumore che DURA e che sale, con la banda che
-   si apre mentre la fibra si apre. Un tonfo dice "fatto"; uno strappo
-   dice "non torna indietro", che e' esattamente la differenza fra
-   togliere una cosa dallo scaffale e cancellarla. */
-function strappo(c, t, forza, durata){
-  const s = c.createBufferSource();
-  s.buffer = bufRumore(c);
-  s.playbackRate.value = .55 + Math.random() * .15;
-  const bp = c.createBiquadFilter();
-  bp.type = 'bandpass';
-  bp.frequency.setValueAtTime(320, t);
-  bp.frequency.exponentialRampToValueAtTime(1800, t + durata);
-  bp.Q.value = .7;
-  const gn = c.createGain();
-  /* Non una busta liscia: lo strappo e' fatto di fibre che cedono una
-     dopo l'altra, e a orecchio la differenza fra un fruscio e uno
-     strappo e' tutta li'. Tre gradini bastano. */
-  gn.gain.setValueAtTime(.0001, t);
-  gn.gain.exponentialRampToValueAtTime(forza, t + .006);
-  gn.gain.exponentialRampToValueAtTime(forza * .45, t + durata * .35);
-  gn.gain.exponentialRampToValueAtTime(forza * .8, t + durata * .55);
-  gn.gain.exponentialRampToValueAtTime(.0001, t + durata);
-  s.connect(bp); bp.connect(gn); gn.connect(master);
-  s.start(t); s.stop(t + durata + .02);
-}
-
-/* LA NOTA, che qui e' un TIMBRO e non un canto.
-
-   Serve dove non c'e' un oggetto che ne tocca un altro ma un cambio di
-   stato, e a dirne il verso e' l'altezza: sale accendendo, scende
-   spegnendo. Era una nota morbida e lunga; adesso e' meta' piu' corta e
-   passa da un passabasso piu' chiuso, cosi' sta sotto al punzone invece
-   di cantarci sopra. Su una plancia niente canta. */
-function tono(c, t, f0, f1, forza, durata){
-  const o = c.createOscillator();
-  o.type = 'triangle';
-  o.frequency.setValueAtTime(f0, t);
-  o.frequency.exponentialRampToValueAtTime(f1, t + durata * .7);
-  const lp = c.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 1700;
+  hp.frequency.value = 2600;
   const g = c.createGain();
-  busta(g, t, forza, .004, durata);
-  o.connect(lp); lp.connect(g); g.connect(master);
-  o.start(t); o.stop(t + durata + .02);
+  busta(g, t, forza, .001, .012);
+  s.connect(hp); hp.connect(g); g.connect(master);
+  s.start(t); s.stop(t + .04);
 }
+
+/* IL CORPO BASSO. E' peso, non nota: scende mentre suona, come tutto
+   quello che tocca terra. Serve a tre cose sole -- una scatola che si
+   posa, una che si chiude, quello che si cancella -- e sono le tre in
+   cui qualcosa ha una massa. */
+function peso(c, t, hz, forza, durata){
+  const o = c.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(hz * 1.7, t);
+  o.frequency.exponentialRampToValueAtTime(hz * .72, t + durata * .6);
+  const g = c.createGain();
+  busta(g, t, forza, .006, durata);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + durata + .04);
+}
+
+/* LA SCALA. Pentatonica di DO, ed e' tutta la teoria che serve: fra
+   queste cinque note non esistono intervalli che stonano, quindi due
+   suoni che capitano insieme -- un tocco mentre un pannello si apre --
+   non possono fare una dissonanza. L'unica nota fuori scala di tutto
+   il sito e' dichiarata dove serve, e serve a mettere a disagio. */
+const N = {
+  sol2: 196.00, do3: 261.63, mi3: 329.63, sol3: 392.00,
+  la3:  440.00, do4: 523.25, re4: 587.33, mi4: 659.25,
+  sol4: 783.99, la4: 880.00, do5: 1046.50, re5: 1174.66, mi5: 1318.51
+};
 
 /* I SUONI.
 
@@ -295,109 +328,116 @@ function tono(c, t, f0, f1, forza, durata){
    e quello che si sente spesso va tenuto sotto o diventa l'unica cosa
    che si sente.
 
-   I nomi non sono cambiati: li chiama `gioca(nome)` da mezzo sito, e
-   sono i GESTI, che sono gli stessi. E' cambiato di che materiale sono
+   I nomi non cambiano mai: li chiama `gioca(nome)` da mezzo sito, e
+   sono i GESTI, che sono gli stessi da sempre. Cambia di che cosa sono
    fatti. */
 const VOCI = {
-  /* La scatola esce dallo scaffale: si stacca, e poi striscia. Il
-     distacco adesso e' un punzone e non un colpo -- e' lo stesso gesto
-     di un pezzo che esce dalla plancia. */
+  /* La scatola esce dallo scaffale: la scheggia del distacco, il
+     fruscio che sale mentre scorre fuori, e una nota bassa sotto. */
   esce: function(c, t){
-    scatto(c, t, 300, .10);
-    sfrega(c, t + .015, 1400, 620, .13, .26);
+    punta(c, t, .040);
+    aria(c, t + .008, 900, 2600, .038, .20, 1.4);
+    blip(c, t + .02, N.mi3, .038, .17);
   },
-  /* Il coperchio che si alza. Cartone su cartone: tutto in alto, e
-     corto -- nessuno alza un coperchio piano. */
+  /* Il coperchio che si alza: tutto in alto e corto, e una nota chiara
+     quando e' su. Nessuno alza un coperchio piano. */
   coperchio: function(c, t){
-    sfrega(c, t, 3000, 1900, .11, .13);
-    scatto(c, t + .10, 520, .07);
+    aria(c, t, 2200, 4600, .042, .14, 1.8);
+    blip(c, t + .085, N.la4, .034, .11);
   },
-  /* Torna al suo posto: lo strofinio al contrario, e il tonfo alla
-     fine invece che all'inizio -- e' il momento in cui tocca il fondo
-     del cubo. Smorzato, che e' come tocca il cartone. */
+  /* Torna al suo posto: il fruscio al contrario, e il peso alla fine
+     invece che all'inizio -- e' il momento in cui tocca il fondo. */
   chiude: function(c, t){
-    sfrega(c, t, 700, 1100, .11, .20);
-    batti(c, t + .19, 140, .18, .10);
+    aria(c, t, 2600, 900, .034, .18, 1.2);
+    peso(c, t + .15, 120, .070, .18);
   },
-  /* Presa in mano: solo il distacco, niente corpo. Si alza una
-     scatola, non si posa. */
+  /* Presa in mano: la scheggia e una nota corta, niente corpo. Si alza
+     una scatola, non si posa. */
   presa: function(c, t){
-    scatto(c, t, 380, .055);
+    punta(c, t, .034);
+    blip(c, t, N.sol4, .034, .075);
   },
   /* Posata in un cubo. E' il suono piu' pieno dei sei, ed e' giusto:
      e' l'unico che conferma che una cosa e' andata dove volevi. */
   posa: function(c, t){
-    batti(c, t, 115, .26, .13);
-    sfrega(c, t + .01, 900, 500, .09, .10);
+    peso(c, t, 110, .090, .19);
+    blip(c, t + .008, N.do4, .042, .14);
   },
   /* Fermarsi su un mobile scorrendo. Molto sotto gli altri: succede
-     spesso, e un suono che succede spesso va tenuto basso o diventa
-     la cosa che si sente di piu'. */
+     spesso, e un suono che succede spesso va tenuto basso o diventa la
+     cosa che si sente di piu'. */
   mobile: function(c, t){
-    batti(c, t, 90, .09, .08);
+    blip(c, t, N.sol3, .020, .065);
   },
 
   /* --- l'interfaccia ------------------------------------------- */
 
-  /* IL TOCCO E' IL PUNZONE. E' il suono piu' frequente del sito e il
-     piu' corto: trenta millisecondi di fibra che cede. E' anche quello
-     che da' al sito il suo materiale -- se se ne cambia uno solo, si
-     cambia questo, e si cambia tutto il resto con lui. */
+  /* IL TOCCO. E' il suono piu' frequente del sito e quindi il piu'
+     corto e il piu' basso: quarantacinque millisecondi di una nota
+     sola, in alto, senza scheggia e senza corpo. Se se ne cambia uno
+     solo si cambia questo, e si cambia il carattere di tutto il
+     resto. */
   tocco: function(c, t){
-    /* MISURATO, non stimato. A forza .05 il punzone usciva a 0,093 di
-       picco -- piu' forte del mobile su cui ci si ferma, dell'avviso e
-       del coperchio -- e la regola qui sopra dice il contrario. Il
-       punzone e' corto e alto, e a parita' di numero si sente molto piu'
-       di un tonfo: la forza va letta sull'uscita, non sulla carta. */
-    scatto(c, t, 620, .022);
+    blip(c, t, N.do5, .016, .045);
   },
-  /* Un interruttore che si accende: il punzone piu' un timbro che
-     SALE. L'altezza e' quello che dice il verso, e senza si
-     sentirebbero due accensioni identiche per acceso e spento. */
+  /* Un interruttore che si accende: due note che SALGONO. La direzione
+     e' l'unica cosa che distingue accendere da spegnere, ed e' anche
+     l'unica che si capisce senza averla imparata. */
   acceso: function(c, t){
-    scatto(c, t, 700, .022);
-    tono(c, t + .006, 660, 990, .04, .07);
+    blip(c, t, N.mi4, .026, .07);
+    blip(c, t + .05, N.la4, .028, .12);
   },
-  /* E che si spegne: la stessa cosa al contrario, un filo sotto --
+  /* E che si spegne: le stesse due al contrario, un filo sotto --
      spegnere e' il gesto che toglie, non quello che aggiunge. */
   spento: function(c, t){
-    scatto(c, t, 480, .022);
-    tono(c, t + .006, 740, 460, .035, .08);
+    blip(c, t, N.la4, .026, .07);
+    blip(c, t + .05, N.mi4, .024, .12);
   },
-  /* Qualcosa che si apre: carta che scorre, corta. */
+  /* Qualcosa che si apre: la banda sale, corta. */
   apre: function(c, t){
-    sfrega(c, t, 1300, 2400, .07, .11);
+    aria(c, t, 1200, 3400, .030, .13, 1.6);
+    blip(c, t + .02, N.re4, .020, .10);
   },
-  /* E che si chiude: al contrario, e alla fine si posa. */
+  /* E che si chiude: la banda scende, e si posa su una nota piu' bassa
+     di quella con cui si era aperta. */
   serra: function(c, t){
-    sfrega(c, t, 2200, 1100, .065, .10);
-    scatto(c, t + .085, 340, .05);
+    aria(c, t, 3200, 1100, .030, .12, 1.6);
+    blip(c, t + .04, N.la3, .020, .10);
   },
-  /* Andata: due punzoni che salgono, come due pezzi che entrano nel
-     loro posto. Non e' una fanfara -- e' il rumore di una cosa che si
-     incastra dove doveva. */
+  /* Andata. Tre note della scala che salgono, l'ultima piu' lunga: e'
+     l'unico arpeggio del sito, e sta qui perche' e' l'unico momento in
+     cui una cosa e' andata a buon fine e vale la pena dirlo. Non e' una
+     fanfara -- sono tre note in centosessanta millisecondi. */
   conferma: function(c, t){
-    scatto(c, t, 460, .07);
-    scatto(c, t + .07, 720, .06);
-    tono(c, t + .07, 760, 1140, .04, .09);
+    blip(c, t,        N.do4,  .042, .10);
+    blip(c, t + .075, N.sol4, .042, .13);
+    blip(c, t + .15,  N.do5,  .038, .22);
   },
-  /* Un comando che distrugge si e' armato: un colpo sordo e basso, che
-     e' come suona "attento". Nessun timbro: non c'e' niente da
-     festeggiare, e niente e' ancora successo. */
+  /* Un comando che distrugge si e' armato. E' l'unico suono FUORI
+     SCALA del sito: 233 Hz e' un semitono sotto la nota della scala
+     che gli sta vicino, e a orecchio non torna. E' voluto -- niente e'
+     ancora successo, e il suono deve dire "attento", non "fatto". */
   avviso: function(c, t){
-    batti(c, t, 130, .11, .13);
+    peso(c, t, 155, .055, .15);
+    blip(c, t + .01, 233.08, .022, .17, 'triangle');
   },
-  /* E ha distrutto: il cartone che cede. E' l'unico suono del sito che
-     DURA, ed e' voluto -- e' anche l'unica cosa che non torna
-     indietro. */
+  /* E ha distrutto: la banda precipita da 2.600 a 300 in quattro
+     decimi di secondo, con il peso sotto. E' il suono piu' PIENO
+     dell'interfaccia e quello che dura di piu', ed e' voluto: e' anche
+     l'unica cosa qui dentro che non torna indietro. Un tonfo dice
+     "fatto", questo dice "non torna indietro", che e' esattamente la
+     differenza fra togliere una cosa dallo scaffale e cancellarla. */
   via: function(c, t){
-    strappo(c, t, .13, .30);
-    batti(c, t + .26, 80, .10, .12);
+    aria(c, t, 2600, 300, .060, .40, .8);
+    peso(c, t + .02, 88, .100, .36);
+    blip(c, t + .02, N.sol2, .030, .34, 'triangle');
   },
-  /* Il sito ha qualcosa da dire (il flash). Un timbro solo: serve a
-     far alzare gli occhi, non a spaventare. */
+  /* Il sito ha qualcosa da dire (il flash). Una nota alta con la sua
+     quinta sotto, tenuta: serve a far alzare gli occhi, non a
+     spaventare. */
   nota: function(c, t){
-    tono(c, t, 820, 700, .05, .11);
+    blip(c, t, N.mi5, .032, .20);
+    blip(c, t + .012, N.la4, .016, .26);
   }
 };
 

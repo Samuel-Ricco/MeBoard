@@ -3780,71 +3780,94 @@ i giorni del calendario, i punti del podio, le percentuali del winrate, i
 punteggi di una partita. Il nome di chi ha vinto no -- quello e' una parola, e
 le parole sulla plancia sono punzonate.
 
-### Il suono: il cartone non e' legno
+### Il suono: prima cartone, adesso un'interfaccia
 
-I mattoni erano tarati su una libreria di rovere -- un colpo con un corpo di
-sinusoide che **risuona**, uno strofinio caldo, una nota morbida. Su una plancia
-di cartone punzonato non c'e' niente che risuoni: il cartone e' **smorzato**, fa
-un colpo secco e finisce li'. E quello che si sente davvero, su una plancia, e'
-uno solo -- **il pezzo che si stacca**.
+Il cartone e' durato un giro. Era coerente con la pelle -- colpi secchi,
+smorzati, un punzone che stacca il pezzo dalla plancia, e una sordina a 6.500 Hz
+sull'uscita perche' il cartone in alto e' sordo -- e proprio per questo suonava
+**vecchio**: un'interfaccia che imita un materiale sordo si sente sorda, e la
+sordina che teneva insieme il tutto era anche quella che lo faceva sembrare
+registrato dentro una scatola.
 
-Quindi i mattoni sono quattro e non tre:
+Adesso e' costruito come si costruisce oggi il suono di un'applicazione, e sono
+quattro scelte:
+
+1. **E' intonato.** Ogni voce e' una nota di una **pentatonica di DO**. Fra
+   queste cinque note non esistono intervalli che stonano, quindi due suoni che
+   capitano insieme -- un tocco mentre un pannello si apre -- non possono fare
+   una dissonanza. E' il motivo per cui il suono di un telefono non stanca al
+   decimo tocco. L'unica nota fuori scala di tutto il sito e' `avviso`, ed e'
+   fuori scala **apposta**: 233 Hz, un semitono sotto la nota vicina, perche'
+   deve dire «attento» e non «fatto».
+2. **E' pulito.** Il corpo e' una sinusoide con un filo di **ottava** sopra --
+   l'ottava e' quello che fa «digitale» invece che «sinusoide nuda» -- e il
+   rumore resta solo come scheggia d'attacco.
+3. **Ha aria.** Al posto del passabasso c'e' una **campana alta** appena aperta,
+   +2,5 dB sopra i 3 kHz: e' la differenza fra un suono nella stanza e un suono
+   dentro una scatola.
+4. **Ha uno spazio.** Una coda di 320 ms costruita a mano -- rumore che si
+   spegne su una curva ripida, dentro un `ConvolverNode` -- presa in mandata al
+   **16%**. Poco, e non e' un effetto: e' quello che toglie a un suono sintetico
+   l'aria di provino. Asciutto suona come un beep del 1998. Piu' su, ogni tocco
+   lascia un alone e scorrendo un elenco si impasta.
+
+I mattoni sono sempre quattro, e sono altri quattro:
 
 | | |
 |---|---|
-| `batti` | il colpo secco: il contatto, e un corpo che muore in meta' tempo |
-| `sfrega` | carta su carta -- banda piu' alta e piu' stretta del vecchio strofinio |
-| `scatto` | **il punzone**: la fibra che cede piu' il pezzo che si stacca, trenta millisecondi |
-| `strappo` | il cartone che cede: l'unico suono che dura, e serve a quello che distrugge |
+| `blip` | la nota: si posa sulla sua altezza da un filo sopra, con l'ottava al 18% |
+| `aria` | il fruscio in banda che si sposta -- la direzione della banda e' la direzione del gesto |
+| `punta` | la scheggia d'attacco, dodici millisecondi: dice **quando** e' successo |
+| `peso` | il corpo basso, che scende mentre suona: serve solo dove qualcosa ha una massa |
 
-Piu' **una sordina sull'uscita**, un passabasso a 6.500 Hz: il cartone in alto e'
-sordo, e tagliare li' una volta sola fa piu' per la coerenza che tarare dieci
-volte lo stesso passabanda. E' la stessa idea del rumore bianco costruito una
-volta e riusato da tutti.
+La catena e' `voci -> master -> secco / mandata -> eco -> campana alta -> uscita`.
+La campana e' l'**ultimo** nodo apposta, cosi' prende anche la coda: uno spazio
+piu' scuro del suono che lo genera si sente come un velo.
 
-**I nomi delle voci non sono cambiati** -- `gioca(nome)` li chiama da mezzo sito,
-e sono i GESTI, che sono gli stessi. E' cambiato di che materiale sono fatti.
-
-Il punzone e' il tocco, meta' della conferma, e l'inizio di quasi tutto quello
-che succede sulla scena. Lo strappo e' `via`, ed e' l'unica cosa del sito che
-dura: un tonfo dice «fatto», uno strappo dice «non torna indietro», che e'
-esattamente la differenza fra togliere una cosa dallo scaffale e cancellarla.
+**I nomi delle voci non cambiano mai** -- `gioca(nome)` li chiama da mezzo sito,
+e sono i GESTI, che sono gli stessi da sempre. Cambia di che cosa sono fatti.
 
 ### La forza sulla carta non e' il volume nell'orecchio
 
-La lezione di questo giro, e vale per ogni suono che verra' dopo.
+La lezione che vale per ogni suono che verra' dopo, ed e' sopravvissuta al
+cambio di materiale: **due voci scritte con lo stesso numero escono a picchi
+diversi**, perche' una nota corta e alta si sente molto piu' di un tonfo lungo e
+basso. La forza va letta sull'uscita, non sulla carta.
 
-`tocco` era stato scritto a forza `.05`, cioe' lo stesso numero delle voci
-vicine. Misurato sull'uscita usciva a **0,093 di picco** -- piu' forte del mobile
-su cui ci si ferma scorrendo, dell'avviso e del coperchio -- mentre la regola
-scritta due righe sopra dice che e' il suono piu' frequente del sito e quindi il
-piu' basso di tutti.
-
-Il motivo e' che il punzone e' **corto e alto**, e a parita' di numero si sente
-molto piu' di un tonfo lungo e basso. Sceso a `.022` sta a 0,017, che e' dove
-deve stare.
-
-**Come si misura**, che e' l'unico modo di saperlo: si aggancia il primo
-`createGain` creato dal contesto -- quello e' `master` -- prima che parta il
-primo suono, ci si attacca un `AnalyserNode` come rubinetto (non tocca l'uscita)
-e si campiona il picco mentre la voce suona. La gerarchia misurata adesso e':
+**Come si misura.** Si aggancia il primo `createBiquadFilter` creato dal
+contesto -- quello e' la campana alta, cioe' l'ultimo nodo prima dell'uscita,
+quindi prende anche la coda -- ci si attacca un `AnalyserNode` come rubinetto
+(non tocca il segnale) e si campiona il picco mentre la voce suona, a volume 1.
+Col vecchio impianto il rubinetto andava sul primo `createGain`, che era
+`master`: e' cambiato il nodo, non il metodo.
 
 | | picco | coda |
 |---|---|---|
-| tocco | 0,017 | 47 ms |
-| apre, spento, acceso, nota, mobile | 0,011 - 0,029 | 47 - 94 ms |
-| serra, avviso, presa | 0,037 - 0,041 | 50 - 135 ms |
-| coperchio, conferma, esce, chiude | 0,054 - 0,067 | 149 - 266 ms |
-| **posa** | 0,088 | 94 ms |
-| **via** | 0,037 | **343 ms** |
+| tocco | 0,017 | 61 ms |
+| apre, mobile | 0,022 | 71-121 ms |
+| spento, serra, acceso | 0,027-0,032 | 131-159 ms |
+| coperchio, nota | 0,037-0,041 | 184 ms |
+| conferma, presa, avviso | 0,049-0,054 | 80-309 ms |
+| esce, chiude | 0,058-0,070 | 156-297 ms |
+| **posa** | 0,099 | 164 ms |
+| **via** | 0,104 | 289 ms |
 
-Il tocco e' il piu' basso, `posa` e' il piu' pieno -- ed e' giusto, e' l'unico
-che conferma che una cosa e' andata dove volevi -- e `via` e' l'unico che dura.
+Il tocco e' il piu' basso e il piu' corto perche' e' quello che si sente cento
+volte piu' spesso di ogni altro; `posa` e' il piu' pieno -- e' l'unico che
+conferma che una cosa e' andata dove volevi -- e `via` e' il piu' pesante e il
+piu' lungo, perche' e' l'unica cosa del sito che non torna indietro.
 
 **E il campionamento non si fa con `requestAnimationFrame`**: col pannello
 dell'anteprima nascosto e' sospeso, e il ciclo di misura resta appeso finche' non
 scade il tempo dello strumento. E' la trappola gia' scritta per il caricamento,
 che si ripresenta a chi misura invece che a chi anima. Si usa `setTimeout`.
+
+**E niente file audio, adesso meno che mai.** Il permesso di scaricarne c'era;
+non serviva. Una manciata di .mp3 anche corti pesa piu' di tutto il resto del
+sito messo insieme, va scaricata prima di potersi sentire, e a rete staccata la
+libreria deve continuare a funzionare. Un suono d'interfaccia dura quaranta
+millisecondi: farne un file e' come scaricare un'immagine per disegnare un
+quadrato.
 
 ### Eliminare un gioco: tolto, dimenticato, rimesso
 
@@ -5893,7 +5916,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il terzo giro | le **righe** del catalogo e della collezione, il winrate come terzo riquadro, e i titoli del profilo -- piu' la cache dell'anteprima capita fino in fondo |
 | il wrap | le otto slide rifatte: un inchiostro piatto invece di un gradiente, il contenuto a sinistra, il bollino del periodo, e il PNG ridisegnato per combaciare |
 | l'alone | la vignettatura e tre ombre erano fatte di inchiostro: sul cartone dipingevano un velo chiaro sui bordi dello schermo |
-| le voci e i suoni | venti comandi passati alla voce della fustella, i numeri in mono, e tutti e quindici i suoni rifatti in cartone |
+| le voci e i suoni | venti comandi passati alla voce della fustella e i numeri in mono. I quindici suoni sono stati rifatti due volte: prima in cartone, poi -- perche' il cartone suonava vecchio -- **intonati** su una pentatonica, con l'aria in alto e una coda di stanza |
 | eliminare | il gioco si cancella dal menu a tre punti dell'elenco: mancava solo il pulsante, tutto il resto era gia' li' |
 
 **Le lezioni generali** di questa sessione:
