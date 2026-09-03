@@ -115,6 +115,15 @@ giusta; qui a distinguere un comando da un'etichetta c'è il *materiale*, e il
 maiuscolo torna a essere quello che è su una plancia — il modo in cui ci si
 scrive sopra.
 
+**Come la fustella si vede, schermata per schermata.** Ogni sezione apre con
+l'occhiello e un numero grande — *106.694 titoli*, *14 giochi / 11 in vetrina* —
+perche' quello e' la risposta alla domanda per cui uno l'ha aperta. Le due o tre
+viste di una sezione sono blocchi affiancati, e quella scelta e' un pezzo
+staccato dalla plancia. Il binario delle librerie e' una fila di segmenti con il
+suo `01/03`, non una barra che scorre. E la recensione e' un foglio di carta
+appoggiato sul cartone, con il filetto rosso in cima e la linguetta per
+chiuderlo all'angolo.
+
 **Il sito non carica una sola risorsa esterna.** three.js, supabase-js, i font e
 le copertine stanno nel repo: staccata la rete, la libreria si apre lo stesso,
 con l'ultima copia salvata. È una scelta, non una svista.

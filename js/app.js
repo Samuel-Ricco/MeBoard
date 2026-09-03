@@ -3487,7 +3487,12 @@ function updateRail(){
   const max = maxScroll();
   if (!max) return;                       // niente da scorrere: il binario e' nascosto dal CSS
   const n = max + 1;
-  q('#rail-txt').textContent = (Math.round(state.scroll) + 1) + ' / ' + n;
+  /* Due cifre sempre, come su una plancia: `01/03` e non `1 / 3`. Un
+     numero che cambia larghezza fa saltare la barra accanto a ogni
+     passo, e con `tabular-nums` due posti costano quanto due posti. */
+  const due = function(v){ return (v < 10 ? '0' : '') + v; };
+  q('#rail-txt').innerHTML = due(Math.round(state.scroll) + 1) +
+                             '<i>/' + due(n) + '</i>';
   const t = state.scroll / max;
   const dove = Math.round(state.scroll);
   const su = q('#rail-prima'), giu = q('#rail-dopo');
@@ -3504,11 +3509,23 @@ function updateRail(){
      libreria l'arancione andava a sbattere contro il bordo e sembrava
      tagliato -- e non si capiva piu' se fosse arrivato in fondo o
      fosse finito sotto. */
-  const MARG = 6;                      // per cento, per lato
-  const utile = 100 - MARG * 2;
+  /* IL BINARIO E' FATTO DI SEGMENTI, uno per libreria, e quello dove
+     sei e' stampato in rosso. Non e' piu' un cursore su una corsa: e'
+     una fila di pezzi, che e' come una plancia dice a che punto sei.
+
+     Il margine ai due capi se n'e' andato con la corsa continua --
+     serviva perche' il cursore non andasse a sbattere contro il bordo,
+     e un segmento il bordo ce l'ha per definizione. Il conto della
+     posizione in `vaiA()` e' cambiato di conseguenza: sono lo stesso
+     conto e vanno tenuti insieme.
+
+     Il numero dei segmenti lo disegna il CSS con un gradiente ripetuto,
+     che ha bisogno di sapere quanti sono: glielo si dice qui. */
+  const bar2 = q('.rail-bar');
+  if (bar2) bar2.style.setProperty('--n', n);
   const th = q('#rail-thumb');
-  th.style.width = (utile / n) + '%';
-  th.style.left = (MARG + (state.scroll / n) * utile) + '%';
+  th.style.width = 'calc(' + (100 / n) + '% - var(--rail-gap))';
+  th.style.left = ((state.scroll / n) * 100) + '%';
   th.style.transform = 'none';
 }
 
@@ -3529,13 +3546,12 @@ function bindRail(){
     const max = maxScroll();
     if (!max) return;
     const r = bar.getBoundingClientRect();
-    /* Si mira al CENTRO del cursore, e sulla stessa corsa utile che usa
-       `updateRail` -- margine compreso. Con la corsa piena il cursore
-       si sfilava da sotto il dito proprio ai due capi, che e' dove si
-       va a sbattere piu' spesso. */
-    const MARG = .06, utile = 1 - MARG * 2, n = max + 1;
+    /* Si mira al CENTRO del segmento sotto il dito. */
+    /* Stesso conto di `updateRail`, senza margine: si mira al centro
+       del segmento sotto il dito. */
+    const n = max + 1;
     const p = (e.clientX - r.left) / r.width;
-    state.scrollTo = clamp(((p - MARG) / utile) * n - .5, 0, max);
+    state.scrollTo = clamp(p * n - .5, 0, max);
     state.scroll = state.scrollTo;       // sotto il dito non si insegue, si sta
     updateRail();
     rifaiOmbre();
@@ -4575,6 +4591,17 @@ async function catNota(){
   catMsg(fonte + ' ' + (guaio
     ? T('cat.receGuaio', {e: esc(guaio)})
     : T(n === 1 ? 'cat.receUno' : 'cat.receTanti', {n: n})));
+
+  /* QUANTI TITOLI CI SONO. Il numero e' quello dell'indice in casa, ed
+     e' l'unica delle tre fonti che ne sa un totale: con BGG o Wikidata
+     si cerca, non si sfoglia, e un contatore che non sa contare e'
+     peggio di nessun contatore -- resta vuoto e la testata si stringe
+     sull'occhiello. */
+  const tot = DUMP.quanti();
+  const nn = q('#cat-n');
+  if (nn) nn.innerHTML = tot
+    ? T('cat.totale', {n: tot.toLocaleString(I18N.corrente())})
+    : '';
 }
 
 function disegnaCatalogo(da, a){
@@ -6446,8 +6473,23 @@ function disegnaMia(){
   if (state.soloPreferiti) perche.push(T('mia.fraPreferiti'));
   if (state.vista === 'gruppi' && !gruppi.length){
     q('#mia-msg').innerHTML = T('mia.nessunGruppo');
+    /* Anche qui il contatore va scritto: uscendo prima restava quello
+       del giro precedente, cioe' un numero che non c'entra piu'. */
+    q('#mia-n').innerHTML = T('mia.totale', {
+      n: l.length,
+      parola: T(l.length === 1 ? 'mia.gioco' : 'mia.giochi'),
+      v: inVetrina
+    });
     return;
   }
+  /* Il numero grande dice QUANTI, la riga sotto dice PERCHE' sono
+     quelli -- quale ricerca, quale filtro. Sono due domande, e prima
+     stavano tutte e due nella stessa riga tenue sotto ai comandi. */
+  q('#mia-n').innerHTML = T('mia.totale', {
+    n: l.length,
+    parola: T(l.length === 1 ? 'mia.gioco' : 'mia.giochi'),
+    v: inVetrina
+  });
   q('#mia-msg').innerHTML = l.length
     ? T('mia.riepilogo', {
         n: l.length,

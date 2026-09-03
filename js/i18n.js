@@ -445,6 +445,11 @@ it: {
   'mia.gioco':          'gioco',
   'mia.giochi':         'giochi',
   'mia.riepilogo':      '<b>{n}</b> {parola}{perche}, <b>{v}</b> sugli scaffali. Tocca una riga per la scheda.',
+  /* IL CONTATORE GRANDE. Due righe: quanti sono, e quanti di quelli
+     stanno in vetrina. La seconda e' piu' tenue perche' e' una parte
+     della prima, non un secondo numero. */
+  'mia.totale':         '{n} {parola}<br><i>{v} in vetrina</i>',
+  'cat.totale':         '{n}<br>titoli',
   'mia.niente':         'Niente {perche}.',
   'mia.vuota':          'La libreria &egrave; vuota.',
 
@@ -1101,6 +1106,8 @@ en: {
   'mia.gioco':          'game',
   'mia.giochi':         'games',
   'mia.riepilogo':      '<b>{n}</b> {parola}{perche}, <b>{v}</b> on the shelves. Tap a row for the details.',
+  'mia.totale':         '{n} {parola}<br><i>{v} on show</i>',
+  'cat.totale':         '{n}<br>titles',
   'mia.niente':         'Nothing {perche}.',
   'mia.vuota':          'The collection is empty.',
 

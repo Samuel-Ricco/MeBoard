@@ -3456,6 +3456,131 @@ sono buchi in un segno già debole.
 «questo si tocca» o «questo è scelto adesso», e un marchio non è né l'una né
 l'altra cosa: è stampato, e basta.
 
+### Il contatore e' il titolo della schermata
+
+Ogni schermata piatta apre con l'occhiello e poi con un NUMERO GRANDE:
+`106.694 titoli`, `14 giochi / 11 in vetrina`. E' `<h1 class="testa-n">`, e i
+due che ci sono stanno in `#cat-n` e `#mia-n`.
+
+Prima quel conto stava in una riga di testo tenue sotto ai comandi (`#cat-msg`,
+`#mia-msg`), cioe' era la quarta cosa che si leggeva — ed e' invece la risposta
+alla domanda per cui uno apre quella schermata. **Le due righe restano tutte e
+due**, e non e' un doppione: il numero dice QUANTI, la riga sotto dice PERCHE'
+sono quelli — quale ricerca, quale filtro, da che fonte arrivano le schede.
+
+- Il totale del catalogo e' `DUMP.quanti()`, cioe' l'indice in casa. E' l'unica
+  delle tre fonti che sappia un totale: con BGG o Wikidata si cerca, non si
+  sfoglia. Senza totale il contatore **resta vuoto** (`.testa-n:empty` non
+  occupa spazio) invece di dire un numero che non sa.
+- Nella collezione il conto e' quello della lista **filtrata**, lo stesso che
+  usa `#mia-msg`: se no il numero grande direbbe una cosa e le righe sotto ne
+  mostrerebbero un'altra. Va scritto anche nel ramo «nessun gruppo», che esce
+  prima: dimenticandolo restava il numero del giro precedente.
+- Sull'elenco della collezione l'imbuto resta appeso in alto a destra, e il
+  numero ci finiva sotto: `#mia .testa-n` gli lascia la sua colonna.
+
+### Il binario e' una fila di pezzi
+
+Una barra che scorre dice «sei a un terzo»; una fila di segmenti dice «sei nel
+primo di tre», che e' la domanda vera — le librerie si contano, non si misurano.
+E il numero e' a due cifre, `01/03`: su una plancia i numeri sono stampigliati,
+e con `tabular-nums` due posti costano quanto due posti anche quando uno e' uno.
+
+I segmenti li disegna un **gradiente ripetuto** sulla traccia; quanti siano lo
+dice `updateRail()` scrivendo `--n`, e il vuoto fra l'uno e l'altro e'
+`--rail-gap`. Il segmento dove sei e' `#rail-thumb`, in **rosso**: e' il pezzo
+staccato, e l'ocra qui direbbe «scelto» a tutti e tre.
+
+**Il margine ai due capi se n'e' andato con la corsa continua.** Serviva perche'
+il cursore non andasse a sbattere contro il bordo della traccia, e un segmento
+il bordo ce l'ha per definizione. Attenzione: quel margine era scritto **due
+volte** — in `updateRail()` e in `vaiA()` dentro `bindRail()` — perche' sono lo
+stesso conto letto nei due versi. Toccarne uno solo vuol dire che il cursore
+finisce da una parte e il dito dall'altra.
+
+La pastiglia di carta sotto al binario e' sparita: il binario sta sulla scena
+come tutto il resto che galleggia, e una carta chiara dietro tre blocchi pieni
+e' una superficie di troppo.
+
+### Le viste sono due pezzi, non due parole sottolineate
+
+Il filo che scorreva sotto la voce scelta era il modo giusto di dirlo su
+superfici morbide. Qui la stessa cosa la dice la forma: quella scelta e' un
+pezzo **staccato** — carta, angolo tagliato — e le altre sono ancora attaccate
+alla plancia. L'indicatore (`.viste .ind`) e' nascosto: due segni per la stessa
+cosa sono uno di troppo, e sarebbe rimasto un filo che scorre sotto un blocco
+pieno. Il JS che lo muove puo' restare dov'e', non fa danno.
+
+### Quello che aggiunge una riga e' un taglio segnato
+
+`+ segna una partita` e `lo voglio` hanno la stessa faccia, ed e' una faccia che
+il sito non aveva: **filo rosso tratteggiato**. Non contraddice il rosso di
+quello che distrugge, e' lo stesso segno con il verso opposto — su una plancia
+il tratteggio e' il taglio *segnato e non ancora fatto*, e queste due cose sono
+esattamente questo: una riga che potrebbe esserci e non c'e' ancora. Premuto, il
+taglio e' fatto e il pezzo si stacca (fondo pieno, angolo tagliato).
+
+Il pieno resta a quello che **conferma** — entra, salva, scrivi la tua
+recensione — e il rosso pieno a quello che, premuto la seconda volta, butta via.
+
+### La scheda del gioco, riga per riga
+
+E' la schermata su cui il disegno e' piu' preciso, ed e' quella che ha richiesto
+piu' correzioni:
+
+- **L'occhiello e' VERDE** e non ocra. E' l'unico occhiello del sito che non e'
+  ocra, ed e' voluto: gli altri quattro intitolano una schermata, questo dice
+  che cos'e' il foglio che hai in mano — e una recensione o e' scritta o non
+  c'e', che e' quello che dice il verde.
+- **Il voto e le misure stanno sulla stessa riga.** Erano due blocchi impilati:
+  tre riquadri di misure e sotto i voti, cioe' due fermate dove ne basta una.
+  Adesso `.pan-riga` li tiene insieme — il voto grande a sinistra, le misure
+  come didascalia mono a destra — e chiude con un filo **pieno** da due pixel,
+  l'unico del sito che non e' tratteggiato: non divide due pezzi, chiude un
+  blocco.
+- **Il fondo grigio dietro le misure non era dei riquadri, era del
+  CONTENITORE**: `.specs` ha un fondo e `gap:1px`, ed e' cosi' che si
+  disegnavano i fili fra una casella e l'altra. Tolti i riquadri restava il
+  fondo, cioe' una toppa grigia in mezzo al foglio.
+- **I due voti stanno in colonna.** Affiancati sono troppo larghi per un
+  telefono e uno dei due andava a capo da solo, schiacciando le misure in
+  settantatre pixel: meglio deciderlo qui che lasciarlo al caso della larghezza.
+
+### Il chiudi torna all'angolo
+
+Dietrofront dichiarato, il secondo di questo giro. La nota di prima diceva
+«staccato dall'angolo», e su una superficie morbida era giusto: un pulsante che
+tocca due bordi sembra incastrato. Su una plancia no — la linguetta con cui si
+stacca un pezzo sta proprio sul bordo, e' li' che si preme. Adesso `#close`,
+`#add-x` e `#mia-x` stanno a filo, larghi come una linguetta e non come un
+bollino, e quello della recensione si appoggia sopra al filetto rosso del foglio
+(`#panel #close{top:-6px}`).
+
+### Due lezioni di peso, e una vale per tutte le volte che verra' dopo
+
+Portando il disegno addosso al sito sono ricomparse due volte le stesse due
+trappole, e vale la pena averle scritte:
+
+1. **Un `:not()` con un id dentro PESA un id.**
+   `.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del)` non
+   pesa una classe e un elemento: pesa **due id**, due classi e un elemento. E'
+   piu' di `.pan-foot #p-segna`, ed e' per questo che «segna partita» restava
+   tratteggiato per quanto lo si riscrivesse piu' in basso. La cura non e'
+   aggiungere peso in fondo: e' **escluderlo alla fonte**, in quella stessa
+   regola, come era gia' stato fatto per `#close` e `#del`.
+2. **La cascata va per PROPRIETA', non per regola.** Quella regola tratteggiata
+   nomina fondo, colore e bordo e non nomina `filter`: l'ombra piena della
+   regola perdente passava lo stesso, e a schermo c'era un filo tratteggiato con
+   l'ombra di un blocco pieno. Quando una regola ne perde un'altra, quello che
+   la vincitrice non dichiara resta.
+
+E la trappola dell'ambiente, ripresentata per l'ennesima volta: **il browser
+dell'anteprima tiene in cache il CSS**. Due giri di verifica sono stati fatti su
+un foglio vecchio, con le regole nuove sul disco e servite dal server. Il
+controllo che smaschera il caso e' confrontare `getComputedStyle` con quello che
+il file contiene davvero; la cura e' riscrivere l'`href` del `<link>` con un
+`?v=` diverso.
+
 ### Quello che il 3D si tiene
 
 I dorsi dei libri e i segnalini dentro i cubi sono passati alla famiglia del
@@ -5379,8 +5504,8 @@ BGG lo serve una **edge function**, non piu' solo il proxy locale: e' la
 differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
-Le misure, per sapere in che cosa si mette le mani: `index.html` 1.074 righe,
-`css/style.css` 5.259, `js/app.js` 9.682, `js/tema.js` 584, `js/art.js` 1.346,
+Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
+`css/style.css` 5.589, `js/app.js` 9.712, `js/tema.js` 584, `js/art.js` 1.346,
 piu' `supabase/functions/bgg/index.ts` 291.
 
 ### La sessione del 2026-09-03: il fork e la fustella
@@ -5398,6 +5523,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | le forme | raggi a zero, angolo tagliato a 45 gradi, ombre piene, e il premere che **posa** invece di rimpicciolire |
 | la tipografia | Poppins esce, entrano **Archivo variabile** e **IBM Plex Mono**; maiuscolo sui comandi, cifre in mono |
 | i comandi | il livello «tinto» diventa **tratteggiato**, e i pulsanti che non erano nelle liste sono stati riscritti con il loro peso |
+| il secondo giro | il **contatore grande** in testa alle schermate, il binario a **segmenti**, le viste come blocchi, la scheda del gioco rifatta riga per riga, e il rosso tratteggiato di quello che aggiunge |
 
 **Le lezioni generali** di questa sessione:
 
@@ -5425,11 +5551,20 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
    scritto, quindi usava quello di serie del browser — l'unico colore della
    pagina che non veniva da nessuna parte.
 
-**Cosa NON e' stato fatto, e perche':** le sette schermate del pacchetto di
-design mostrano un **numero grande** in cima a ogni sezione («106.694 titoli»,
-«18 giochi»). E' contenuto nuovo, non una pelle: aggiungerlo vuol dire decidere
-cosa conta e cablarlo, e il patto di questo giro era *struttura, gesti e
-gerarchia restano quelli di oggi*. Resta come prima cosa da valutare.
+**Il secondo giro, lo stesso giorno.** La prima passata aveva cambiato la
+tavolozza e le forme e lasciato indietro quello che nelle schermate si vede per
+primo. Il numero grande in cima a ogni sezione era stato messo da parte come
+«contenuto nuovo, non una pelle»: e' invece il TITOLO di quella schermata, e
+senza si perde il colpo d'occhio del disegno. Con lui sono arrivati il binario a
+segmenti, le viste come blocchi, la scheda del gioco rifatta riga per riga e il
+rosso tratteggiato di quello che aggiunge. Le sezioni dell'estetica dicono come.
+
+**Cosa resta fuori, e perche':** nel disegno le due azioni della riga del
+catalogo sono scritte per esteso («ce l'ho», «lo voglio»); qui restano un `+` e
+un cuore. La nota «un gesto solo si dice con un segno, non con una parola» sta
+li' apposta -- su una riga che si scorre una pastiglia di testo ruba larghezza
+al titolo, che e' la cosa che si sta leggendo -- e la FORMA dei due pulsanti e'
+quella del disegno anche se dentro c'e' un segno.
 
 ### Dove sta la lista delle cose da fare
 

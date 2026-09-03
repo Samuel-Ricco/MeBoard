@@ -5249,11 +5249,341 @@ input::placeholder, textarea::placeholder{
    di questa, che di classi ne porta due. Senza escluderlo, "rimuovi"
    nel piede della recensione diventava un filo come gli altri e
    perdeva l'unica cosa che lo distingue. */
-.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del){
+.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna){
   background:none; color:var(--ink);
   border:1px dashed var(--line); border-radius:0;
   font-family:var(--ff); font-weight:900; text-transform:uppercase;
 }
-.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):hover{
+.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna):hover{
   background:rgba(var(--ink-rgb),.08); border-color:var(--accent); color:var(--accent);
 }
+
+/* ===================================================================
+   PIU' VICINI AL DISEGNO
+
+   Quello che le sette schermate del pacchetto dicono e che una passata
+   di sola tavolozza non aveva portato: il contatore grande in testa, il
+   binario a segmenti, le viste come blocchi, la scheda del gioco.
+   =================================================================== */
+
+/* --- IL CONTATORE E' IL TITOLO DELLA SCHERMATA ---------------------
+   Su ogni schermata piatta l'occhiello dice CHE COSA e', e subito sotto
+   un numero grande dice QUANTO e' grande. Era una riga di testo tenue
+   sotto ai comandi -- la quarta cosa che si leggeva -- ed e' invece la
+   risposta alla domanda per cui uno apre quella schermata.
+
+   La seconda riga (`<i>`) e' una parte della prima, non un secondo
+   numero: stessa misura, colore tenue. */
+.testa-n{
+  margin:0 0 4px;
+  font-family:var(--ff-display); font-weight:900;
+  font-size:clamp(34px,11vw,46px); line-height:.86;
+  letter-spacing:-.035em; text-transform:uppercase; color:var(--ink);
+}
+.testa-n:empty{display:none}
+.testa-n i{font-style:normal; color:rgba(var(--ink-rgb),.42)}
+/* Il riepilogo sotto e' passato a didascalia: dice PERCHE' sono quelli
+   -- quale ricerca, quale filtro -- e il quanto lo dice il numero. */
+#mia-msg, #cat-msg{font-size:12px; color:var(--ink-soft)}
+
+/* --- LE VISTE SONO DUE PEZZI, NON DUE PAROLE SOTTOLINEATE ----------
+   Il binario che scorreva sotto la voce scelta era il modo giusto di
+   dirlo su superfici morbide. Qui la stessa cosa si dice con la forma:
+   quella scelta e' un pezzo STACCATO -- carta, angolo tagliato -- e le
+   altre sono ancora attaccate alla plancia.
+
+   L'indicatore se ne va: due segni per la stessa cosa sono uno di
+   troppo, e sarebbe rimasto un filo che scorre sotto un blocco pieno. */
+.viste{
+  display:flex; gap:2px; border-bottom:0; margin:16px 0 0;
+}
+.viste button{
+  flex:1; padding:12px 6px;
+  background:rgba(var(--ink-rgb),.08); color:var(--ink-soft);
+  border-radius:0; transition:background-color .18s var(--ease), color .18s var(--ease);
+}
+.viste button:hover{background:rgba(var(--ink-rgb),.14); color:var(--ink)}
+.viste button.on{
+  background:var(--ink); color:var(--card);
+  clip-path:var(--fustella);
+}
+.viste .ind{display:none}
+
+/* --- LA RICERCA: il campo e il suo comando -------------------------
+   Il tasto e' ROSSO. Non e' l'accento -- non e' una cosa scelta, e' il
+   comando stampato accanto al campo, come su una plancia il tasto sta
+   accanto alla sua casella. */
+.cat-cerca{gap:8px; margin-top:14px}
+.cat-cerca button{
+  font-family:var(--ff); font-weight:900; font-size:11px;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--su-rosso); background:var(--rosso);
+  border:0; border-radius:0; padding:0 16px;
+  box-shadow:var(--ombra-lieve);
+}
+.cat-cerca button:hover{background:var(--ink); color:var(--card)}
+.cat-cerca button:active{transform:translate(2px,2px); box-shadow:none}
+#cat-q, #mia-q, #par-q{background:rgba(var(--ink-rgb),.07)}
+
+/* --- IL BINARIO E' UNA FILA DI PEZZI -------------------------------
+   Una barra che scorre dice "sei a un terzo"; una fila di segmenti dice
+   "sei nel primo di tre", che e' la domanda vera -- le librerie si
+   contano, non si misurano.
+
+   I segmenti li disegna un gradiente ripetuto: il numero glielo dice
+   `updateRail()` con `--n`, e il vuoto fra l'uno e l'altro e'
+   `--rail-gap`. Il segmento dove sei e' `#rail-thumb`, in ROSSO: e' il
+   pezzo staccato, e l'ocra qui direbbe "scelto" a tutti e tre.
+
+   Niente pastiglia sotto: il binario sta sulla scena come tutto il
+   resto che galleggia, e una carta chiara dietro tre blocchi pieni e'
+   una superficie di troppo. */
+#rail{
+  background:none; box-shadow:none; border:0; padding:0; gap:10px;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+#rail-txt{
+  font-family:var(--ff); font-weight:900; font-size:15px;
+  letter-spacing:.02em; text-transform:uppercase; color:var(--ink);
+  opacity:1; font-variant-numeric:tabular-nums;
+}
+#rail-txt i{font-style:normal; color:rgba(var(--ink-rgb),.42)}
+.rail-bar{
+  --rail-gap:4px;
+  height:8px; background:transparent;
+  background-image:repeating-linear-gradient(90deg,
+    rgba(var(--ink-rgb),.20) 0 calc(100% / var(--n,1) - var(--rail-gap)),
+    transparent calc(100% / var(--n,1) - var(--rail-gap)) calc(100% / var(--n,1)));
+  background-clip:padding-box;
+}
+.rail-bar i{height:8px; background:var(--rosso); transition:left .25s var(--ease), width .25s var(--ease)}
+.rail-bar:hover i, .rail-bar.presa i{background:var(--accent)}
+
+/* --- LA SCHEDA DEL GIOCO -------------------------------------------
+   E' il foglio di carta sul cartone, ed e' la schermata su cui il
+   disegno e' piu' preciso. */
+
+/* L'occhiello e' VERDE e non ocra: il verde e' l'inchiostro di quello
+   che e' gia' fatto, e una recensione o e' scritta o non c'e'. E' anche
+   l'unico occhiello del sito che non e' ocra, ed e' voluto -- gli altri
+   quattro intitolano una schermata, questo dice che cos'e' il foglio
+   che hai in mano. */
+#panel .eyebrow{color:var(--verde)}
+
+#p-title{
+  font-size:clamp(30px,8.2vw,46px); line-height:.84; letter-spacing:-.04em;
+  margin:8px 0 0;
+}
+.byline{margin:10px 0 0; font-size:12.5px; line-height:1.5}
+
+/* IL VOTO E LE MISURE, UNA RIGA SOLA. Il voto e' la cifra grande a
+   sinistra, le misure sono la didascalia a destra, e sotto un filo
+   PIENO da due pixel -- l'unico del sito che non e' tratteggiato,
+   perche' non divide due pezzi: chiude un blocco. */
+.pan-riga{
+  display:flex; align-items:flex-end; gap:14px;
+  margin:18px 0 0; padding:0 0 14px;
+  border-bottom:2px solid var(--ink);
+}
+.pan-riga .voti{gap:14px; align-items:flex-end; flex:0 1 auto}
+.pan-riga .score{
+  margin:0; padding:0; border:0; align-items:flex-end; gap:6px;
+}
+.pan-riga .score b{font-size:clamp(46px,15vw,64px); line-height:.78; letter-spacing:-.05em}
+.pan-riga .score i{font-size:16px; padding-bottom:8px}
+.pan-riga .score small{
+  margin:0; padding-bottom:8px; text-align:left;
+  font-family:var(--ff); font-weight:900; font-size:9.5px;
+  letter-spacing:.14em; text-transform:uppercase; color:rgba(var(--ink-rgb),.55);
+}
+.pan-riga .score.mio b{font-size:clamp(24px,7vw,30px); color:var(--rosso)}
+.pan-riga .score.mio i{font-size:13px; padding-bottom:4px}
+
+/* LE MISURE NON SONO TRE RIQUADRI. Erano tre caselle grigie in fila --
+   una fascia di fondi tinti in mezzo a un foglio -- e sono invece una
+   didascalia: mono, allineata a destra, sulla riga del voto. */
+.pan-riga .specs{
+  margin:0 0 0 auto; padding:0 0 6px; display:block; text-align:right;
+  font-family:var(--ff-mono); font-weight:600; font-size:10.5px;
+  line-height:1.5; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.pan-riga .specs li{background:none; padding:0; text-align:right; display:block}
+.pan-riga .specs b{
+  display:inline; font-family:inherit; font-weight:600; font-size:inherit;
+  letter-spacing:inherit; text-transform:none; color:inherit; margin-right:4px;
+}
+.pan-riga .specs span{
+  display:inline; font-family:inherit; font-size:inherit; letter-spacing:inherit;
+  color:rgba(var(--ink-rgb),.6); text-transform:uppercase;
+}
+
+.body{margin-top:16px; font-size:14.5px; line-height:1.6}
+
+/* Le etichette sono pezzi non ancora staccati: filo tratteggiato. */
+.tags span{
+  font-family:var(--ff); font-weight:900; font-size:9.5px;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink); background:none;
+  border:1px dashed rgba(var(--ink-rgb),.45); border-radius:0; padding:6px 8px;
+}
+
+/* «Segna partita» e' l'azione del piede, quindi e' un blocco pieno.
+   `#p-mia` («la tua recensione») lo era gia': sono i due comandi che
+   AGGIUNGONO qualcosa, e si somigliano apposta. */
+.pan-foot #p-segna{
+  background:var(--ink); color:var(--card); border:0;
+  clip-path:var(--fustella); filter:var(--posa);
+}
+.pan-foot #p-segna:hover{background:var(--accent); color:var(--su-accent)}
+.pan-foot #p-segna:active{filter:var(--posa-giu)}
+
+/* IL CHIUDI TORNA ALL'ANGOLO, ed e' un dietrofront dichiarato. La nota
+   di prima diceva «staccato dall'angolo», e su una superficie morbida
+   era giusto: un pulsante che tocca due bordi sembra incastrato.
+
+   Su una plancia no. La linguetta con cui si stacca un pezzo sta
+   proprio sul bordo -- e' li' che si preme -- e staccata di dodici
+   pixel dall'angolo galleggiava sopra un foglio invece di far parte
+   del suo taglio. Adesso sta a filo, sopra il filetto rosso in cima al
+   foglio, ed e' larga come una linguetta e non come un bollino. */
+#close, #add-x, #mia-x{
+  top:0; right:0; width:auto; height:auto;
+  min-width:44px; padding:11px 14px;
+  box-shadow:none;
+}
+@media (pointer:coarse){ #close, #add-x, #mia-x{width:auto; height:auto} }
+#close .ico, #add-x .ico, #mia-x .ico{width:15px; height:15px}
+/* Il pannello della recensione ha il filetto rosso in cima: la
+   linguetta ci si appoggia sopra, come su una plancia vera. */
+#panel #close{top:-6px}
+
+/* --- IL CATALOGO, riga per riga ------------------------------------ */
+/* «recensito» e' VERDE: e' quello che e' gia' fatto, ed e' l'unica cosa
+   che quella pastiglia dice. Era color legno, che non vuol dire niente. */
+.cat-dati h3 .bollo{
+  font-family:var(--ff); font-weight:900; font-size:9px;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--su-verde); background:var(--verde); padding:4px 6px;
+}
+/* Autore, editore, classifica e media: sono dati, quindi mono. */
+.cat-chi{
+  font-family:var(--ff-mono); font-size:11px; letter-spacing:.02em;
+  color:rgba(var(--ink-rgb),.62); font-variant-numeric:tabular-nums;
+}
+.cat-chi b{color:var(--ink); font-weight:600}
+.cat-spec li{font-family:var(--ff-mono); font-size:10.5px; letter-spacing:.04em;
+  text-transform:uppercase; color:rgba(var(--ink-rgb),.62); font-variant-numeric:tabular-nums}
+.cat-spec b{font-family:inherit; font-weight:600; font-size:inherit;
+  letter-spacing:inherit; text-transform:none; color:var(--ink)}
+
+/* --- IL CANCELLO: il marchio piu' grande --------------------------- */
+/* Nel disegno il marchio riempie la larghezza del telefono: e' la prima
+   cosa che si vede e ha tutto lo schermo per farsi vedere. */
+.gate-logo{font-size:clamp(38px,12.5vw,64px); line-height:.84}
+.gate-q{margin:14px 0 26px}
+.gate-pick{gap:14px}
+.gate-pick button{padding:18px 16px}
+.gate-pick button span{font-size:12.5px; line-height:1.5}
+
+/* Il binario, per davvero: la traccia e il cursore erano scritti con un
+   id e uno pseudo-elemento trecento righe piu' giu' di dove sembrava.
+   Il filo da tre pixel al centro non serve piu' -- la traccia adesso e'
+   il gradiente dei segmenti -- e il cursore riempie il suo segmento. */
+.rail-bar::before{display:none}
+#rail-thumb{
+  top:0; margin-top:0; height:8px;
+  background:var(--rosso);
+}
+.rail-bar:hover #rail-thumb, .rail-bar.presa #rail-thumb{background:var(--accent)}
+/* Nel disegno il binario attraversa lo schermo: sono i pezzi di una
+   plancia messi in fila, e una fila corta al centro sembrava un
+   cursore. Resta centrato e con un tetto, se no su desktop diventa una
+   fascia lunga un metro. */
+#rail{width:min(520px, calc(100vw - 32px)); max-width:none}
+.rail-bar{flex:1 1 auto; width:auto; min-width:0; max-width:none}
+
+/* --- i segnaposto, per davvero -------------------------------------
+   La regola generale `input::placeholder` non basta: tre campi hanno
+   la loro, scritta con l'id, e restavano minuscoli mentre gli altri
+   erano diciture stampate. Stesso peso, e piu' in basso. */
+#cerca::placeholder, #mia-q::placeholder, #par-q::placeholder,
+#cat-q::placeholder, #add-q::placeholder, #ami-q::placeholder{
+  font-family:var(--ff-mono); text-transform:uppercase;
+  letter-spacing:.1em; font-size:11px; color:var(--ink-soft); opacity:1;
+}
+
+/* --- il contatore non passa sotto all'imbuto -----------------------
+   Sull'elenco della collezione l'imbuto resta appeso in alto a destra
+   -- cercare e ordinare valgono anche li' -- e il numero grande ci
+   andava a finire sotto. Gli si lascia la sua colonna. */
+#mia .testa-n, #mia .cat-testa .eyebrow{padding-right:56px}
+
+/* --- la riga del voto, rifinita ------------------------------------
+   Tre cose viste a schermo:
+
+   1. Il fondo grigio dietro le misure non era dei riquadri, era del
+      CONTENITORE: `.specs` ha un fondo e `gap:1px`, ed e' cosi' che si
+      disegnavano i fili fra una casella e l'altra. Tolti i riquadri
+      restava il fondo, cioe' una toppa grigia in mezzo al foglio.
+   2. Le misure si spezzavano a meta' ("2- / 4 giocatori"): schiacciate
+      in settantatre pixel dai due voti, che si prendevano tutta la
+      riga. Adesso non vanno a capo e si tengono la loro larghezza.
+   3. I due voti stanno in colonna. Affiancati sono troppo larghi per
+      un telefono, e uno dei due andava a capo da solo: meglio deciderlo
+      qui che lasciarlo al caso della larghezza. */
+.pan-riga .specs{
+  background:none; flex:none; white-space:nowrap; align-self:flex-end;
+}
+.pan-riga .specs li{white-space:nowrap}
+.pan-riga .voti{
+  flex-direction:column; align-items:flex-start; gap:2px;
+  flex:1 1 auto; min-width:0;
+}
+
+/* --- «segna partita» e' un blocco pieno ----------------------------
+   La regola tratteggiata del piede porta `:not(#close)` e `:not(#del)`,
+   e ogni `:not()` con un id dentro PESA un id: fanno due id, cioe' piu'
+   di `.pan-foot #p-segna`. Il fondo restava tratteggiato mentre l'ombra
+   piena -- che quella regola non nomina, e la cascata va per proprieta'
+   -- passava lo stesso: un filo con l'ombra di un blocco.
+
+   Si esclude anche lui, come gli altri due, e la regola del blocco
+   torna a essere l'unica che parla di questo pulsante. */
+.pan-foot #p-segna{
+  background:var(--ink); color:var(--card); border:0;
+  clip-path:var(--fustella); filter:var(--posa);
+}
+
+/* --- QUELLO CHE AGGIUNGE UNA RIGA E' UN TAGLIO SEGNATO -------------
+   Nel disegno «+ segna una partita» e «lo voglio» hanno la stessa
+   faccia, ed e' una faccia che nel sito non c'era: filo ROSSO
+   tratteggiato. Non e' il rosso di quello che distrugge e non lo
+   contraddice -- e' lo stesso segno con il verso opposto. Su una
+   plancia il tratteggio e' il taglio *segnato e non ancora fatto*, e
+   queste due cose sono esattamente questo: una riga che potrebbe
+   esserci e non c'e' ancora.
+
+   Il pieno resta a quello che CONFERMA -- entra, salva, scrivi la tua
+   recensione -- e il rosso pieno a quello che, premuto la seconda
+   volta, butta via. */
+.aggiungi, .cat-azioni .desidero{
+  background:none; color:var(--rosso);
+  border:1px dashed rgba(var(--rosso-rgb),.7); border-radius:0;
+  clip-path:none; filter:none;
+}
+.aggiungi:hover, .cat-azioni .desidero:hover{
+  background:rgba(var(--rosso-rgb),.12); color:var(--rosso);
+  border-color:var(--rosso);
+}
+.aggiungi:active{transform:translate(2px,2px); filter:none}
+/* Preso: il taglio e' fatto, e il pezzo si stacca. */
+.cat-azioni .desidero[aria-pressed="true"]{
+  background:var(--rosso); color:var(--su-rosso); border-color:transparent;
+  clip-path:var(--fustella);
+}
+
+/* Il wrap e' un pezzo, non una fascia. Largo quanto tutta la colonna
+   sembrava un'intestazione verde sopra alla schermata; nel disegno e'
+   un blocco della misura della sua parola, in fila con gli altri. */
+.par-wrap{display:inline-block; width:auto; padding:11px 14px}
