@@ -480,6 +480,26 @@ function bollino(hex, scelto){
 function disegnaSelettore(){
   const lista = document.getElementById('pro-tema-lista');
   if (!lista) return;
+  /* NON SI RIDISEGNA MENTRE LA RUOTA E' APERTA.
+
+     Questa funzione svuota la fila e la rifa' da capo, ed e' iscritta a
+     `suCambio`: cioe' gira a ogni `applica()`, cioe' a ogni colore
+     provato mentre si sceglie. Il risultato era che il primo movimento
+     STACCAVA dal documento la ruota e il suo campo, e il `change` che
+     arriva alla chiusura -- quello che salva -- finiva su un nodo che
+     non era piu' figlio di nessuno. L'accento scelto a mano si vedeva
+     subito e non veniva salvato mai.
+
+     Non e' un guaio nato con la finestrella nuova: con
+     `input[type=color]` succedeva lo stesso, e non si vedeva perche' il
+     selettore del sistema restava agganciato all'elemento morto e
+     l'accento, applicato in memoria, sembrava a posto fino al
+     ricaricamento.
+
+     Alla chiusura la fila si rifa' da sola: il `change` fa
+     `scegliAccento`, che chiama `applica()`, che passa di qui -- e a
+     quel punto la ruota e' chiusa. */
+  if (typeof SCEGLI !== 'undefined' && SCEGLI.aperta()) return;
   const t = quale(base);
   const c = tinteDi(base, accento);
 
@@ -525,14 +545,32 @@ function disegnaSelettore(){
   ACCENTI.forEach(function(hex){
     acc.appendChild(bollino(hex, accento === hex));
   });
+  /* LA RUOTA E' DUE NODI: il campo che tiene il valore, nascosto, e il
+     pulsante che si vede. I due ascoltatori qui sotto guardano il
+     CAMPO -- `input[data-acc-ruota]` -- e non sono cambiati: e'
+     js/scegli.js a scriverci dentro e a mandargli `input` mentre si
+     sceglie e `change` alla chiusura, che e' quello che faceva il
+     selettore del sistema.
+
+     Questo file gira nel `<head>`, prima che js/scegli.js esista, e
+     va bene: un pulsante e' markup, e quel file serve solo quando lo
+     si preme. */
   const r = document.createElement('input');
-  r.type = 'color';
-  r.className = 'ruota' + (accento && ACCENTI.indexOf(accento) < 0 ? ' on' : '');
+  r.type = 'hidden';
+  r.className = 'ruota';
   r.value = suo;
   r.setAttribute('data-acc-ruota', '1');
-  const tit = (typeof T === 'function') ? T('stanza.ruota') : 'colore';
-  r.title = tit; r.setAttribute('aria-label', tit);
   acc.appendChild(r);
+
+  const rb = document.createElement('button');
+  rb.type = 'button';
+  rb.className = 'ruota' + (accento && ACCENTI.indexOf(accento) < 0 ? ' on' : '');
+  rb.style.backgroundColor = suo;
+  rb.setAttribute('aria-haspopup', 'dialog');
+  rb.setAttribute('aria-expanded', 'false');
+  const tit = (typeof T === 'function') ? T('stanza.ruota') : 'colore';
+  rb.title = tit; rb.setAttribute('aria-label', tit);
+  acc.appendChild(rb);
   lista.appendChild(acc);
 }
 

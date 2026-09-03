@@ -94,6 +94,7 @@ js/profilo.js         nick, faccia, codice amico, amicizie
 js/partite.js         giocatori salvati e partite giocate
 js/stanza.js          luce, colori e arredi scelti da chi ci abita
 js/suoni.js           i quindici suoni, sintetizzati -- nessun file audio
+js/scegli.js          la carta dei colori e il calendario, al posto di quelli del sistema
 js/tema.js            due basi (chiaro/scuro) e l'accento scelto
 js/bgg.js             ricerca BGG: sceglie da se' fra proxy locale e edge function
 js/bggdump.js         l'indice di BGG in casa: cerca e classifica, senza rete
@@ -3780,6 +3781,86 @@ i giorni del calendario, i punti del podio, le percentuali del winrate, i
 punteggi di una partita. Il nome di chi ha vinto no -- quello e' una parola, e
 le parole sulla plancia sono punzonate.
 
+### Le due finestrelle disegnate da qualcun altro
+
+`<input type="color">` e `<input type="date">` erano gli ultimi due pezzi
+d'interfaccia che il sito non disegnava: aprivano il selettore del sistema
+operativo e il calendario di Chrome, col loro carattere, le loro ombre sfumate e
+il loro azzurro. Niente di rotto, ma su una plancia punzonata sono la finestra
+di un altro programma. Adesso le disegna `js/scegli.js`.
+
+**Il campo vero RESTA e diventa `hidden`.** Tiene il valore, tiene la sua
+classe, e chi lo ascoltava continua ad ascoltarlo: questo file gli manda `input`
+mentre si sceglie e `change` alla chiusura, che e' esattamente quello che
+mandava il selettore del sistema. Accanto c'e' un pulsante, ed e' quello che si
+vede. Cosi' nessuno dei tre posti che avevano una ruota -- le tinte della
+stanza, il meeple del profilo, l'accento della tavolozza -- ha dovuto cambiare
+una riga di logica: hanno cambiato il markup che disegnano, e basta.
+
+**Un aggancio solo, delegato sul documento.** I pulsanti si rifanno di continuo
+(ogni scelta ridisegna la sua fila) e `js/tema.js` disegna la sua ruota nel
+`<head>`, prima che `js/scegli.js` esista. Un pulsante e' markup; quel file
+serve solo quando lo si preme.
+
+**La carta dei colori, non una ruota continua.** Dodici tinte a trenta gradi
+l'una dall'altra piu' il neutro, e sotto la griglia della tinta scelta: sei
+saturazioni per cinque chiarezze. Su una plancia i colori sono FUSTELLATI, sono
+pezzi -- e trenta pezzi sono quanti se ne guardano in un colpo d'occhio, oltre
+si comincia a cercare invece che a vedere. Il colore esatto, se uno ce l'ha in
+mente, si scrive in esadecimale nel piede. In **HSL** e non in RGB, perche' una
+tavolozza si sfoglia per tinta e la tinta in RGB non e' un numero, e' il
+rapporto fra tre.
+
+Il calendario e' quello delle partite in piccolo: settimana da lunedi', numeri
+in mono, oggi segnato da un anello e il giorno scelto pieno d'ocra col suo
+angolo tagliato. Sul pulsante il mese si abbrevia a tre lettere -- il campo sta
+in mezza riga accanto alla durata, e «4 settembre 2026» ci va a capo; per esteso
+resta nel `title`.
+
+#### Tre trappole, tutte nate dallo stesso cambio
+
+Un `<input>` che diventa un `<button>` entra in tutte le regole scritte per i
+pulsanti. Sono venute fuori una dopo l'altra:
+
+1. **`background` invece di `background-color`.** Il colore sta rientrato dentro
+   l'anello tratteggiato, e a farlo e' `background-clip:content-box`. Ma lo
+   shorthand `background:` **riazzera `background-clip`**: scritto cosi' dal lato
+   del markup, il rientro spariva e la ruota si leggeva come un settimo
+   predefinito. Va scritto `background-color`.
+2. **`#profilo button:not(.primario):not(.secondario):not(.distruttivo)`** --
+   quella catena da un id e tre classi -- adesso prende anche la ruota, e le
+   metteva addosso il tratteggio maiuscolo dei comandi piu' `background:none`,
+   cioe' le cancellava il colore. Si esclude con `:not(.ruota)`, come si esclude
+   gia' `#close`. Il pulsante del giorno invece vince con **due id**
+   (`#partitalayer #pa-quando`), che e' la stessa uscita della calcolatrice.
+3. **`qa(sel + ' button')` nel laboratorio del meeple** comprendeva la ruota:
+   toccarla scriveva `null` nel colore e subito dopo `disegnaPastiglie`
+   rifaceva la fila, staccando dal documento il pulsante appena toccato -- la
+   finestrella non si apriva piu'. Si mira a `button[data-v]`. E' la lezione
+   dell'elenco dei gruppi, arrivata da una porta nuova.
+
+#### E un guasto che c'era gia' da prima
+
+`disegnaSelettore()` svuota la fila dell'accento e la rifa' da capo, ed e'
+iscritta a `suCambio`: gira a **ogni** `applica()`, cioe' a ogni colore provato
+mentre si sceglie. Il primo movimento staccava dal documento la ruota e il suo
+campo, e il `change` della chiusura -- quello che SALVA -- finiva su un nodo che
+non era piu' figlio di nessuno.
+
+**L'accento scelto a mano non e' mai stato salvato.** Non si vedeva perche' il
+selettore del sistema restava agganciato all'elemento morto e il colore,
+applicato in memoria, sembrava a posto fino al ricaricamento della pagina. La
+finestrella nuova non ha creato il guasto: lo ha reso visibile.
+
+La cura e' una riga: `disegnaSelettore` non ridisegna mentre la ruota e' aperta
+(`SCEGLI.aperta()`). Alla chiusura la fila si rifa' da sola, perche' il `change`
+chiama `scegliAccento`, che chiama `applica()`, che passa di li'.
+
+**La lezione generale:** un elemento che ridisegna il proprio contenitore
+mentre e' in uso si sta staccando da sotto le dita. Vale per un pulsante di
+conferma in due tempi, per una riga di elenco che si trascina, e ora anche per
+un campo che ne notifica un altro.
+
 ### Il suono: prima cartone, adesso un'interfaccia
 
 Il cartone e' durato un giro. Era coerente con la pelle -- colpi secchi,
@@ -5893,9 +5974,9 @@ BGG lo serve una **edge function**, non piu' solo il proxy locale: e' la
 differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
-Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
-`css/style.css` 5.900, `js/app.js` 9.891, `js/suoni.js` 493, `js/tema.js` 584,
-piu' `js/art.js` 1.346 e `supabase/functions/bgg/index.ts` 291.
+Le misure, per sapere in che cosa si mette le mani: `index.html` 1.115 righe,
+`css/style.css` 6.226, `js/app.js` 9.969, `js/suoni.js` 533, `js/tema.js` 650,
+`js/scegli.js` 543, piu' `js/art.js` 1.346 e `supabase/functions/bgg/index.ts` 297.
 
 ### La sessione del 2026-09-03: il fork e la fustella
 
@@ -5917,6 +5998,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il wrap | le otto slide rifatte: un inchiostro piatto invece di un gradiente, il contenuto a sinistra, il bollino del periodo, e il PNG ridisegnato per combaciare |
 | l'alone | la vignettatura e tre ombre erano fatte di inchiostro: sul cartone dipingevano un velo chiaro sui bordi dello schermo |
 | le voci e i suoni | venti comandi passati alla voce della fustella e i numeri in mono. I quindici suoni sono stati rifatti due volte: prima in cartone, poi -- perche' il cartone suonava vecchio -- **intonati** su una pentatonica, con l'aria in alto e una coda di stanza |
+| le due finestrelle | il colore e il giorno non passano piu' dal selettore del sistema: `js/scegli.js` disegna una carta dei colori e un calendario, e il campo vero resta nascosto a tenere il valore |
 | eliminare | il gioco si cancella dal menu a tre punti dell'elenco: mancava solo il pulsante, tutto il resto era gia' li' |
 
 **Le lezioni generali** di questa sessione:

@@ -3131,14 +3131,14 @@ body.elenco #conta b{color:var(--su-accent)}
   font-family:var(--ff); font-weight:500; letter-spacing:0; text-transform:none;
   border:0; border-radius:var(--r-s); cursor:pointer;
 }
-#profilo button:not(.primario):not(.secondario):not(.distruttivo),
-#partitalayer button:not(.primario):not(.secondario):not(.distruttivo),
-#gruppilayer button:not(.primario):not(.secondario):not(.distruttivo),
-#recelayer button:not(.primario):not(.secondario):not(.distruttivo){
+#profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#gruppilayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#recelayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota){
   background:rgba(var(--ink-rgb),.06); color:var(--ink); padding:10px 14px; font-size:14px;
 }
-#profilo button:not(.primario):hover, #partitalayer button:not(.primario):hover,
-#gruppilayer button:not(.primario):hover, #recelayer button:not(.primario):hover{
+#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):hover,
+#gruppilayer button:not(.primario):not(.ruota):hover, #recelayer button:not(.primario):not(.ruota):hover{
   background:rgba(var(--ink-rgb),.11);
 }
 /* il codice amico e' un dato da copiare, non un comando */
@@ -3298,12 +3298,10 @@ body.sez-collezione:not(.elenco) header{
   box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent);
 }
 #pro-tema-lista .ruota{
-  width:30px; height:30px; padding:0; border-radius:0; cursor:pointer;
-  background:none; border:1.5px dashed rgba(var(--ink-rgb),.34);
+  width:30px; height:30px; padding:5px; border-radius:0; cursor:pointer;
+  background-clip:content-box; border:1.5px dashed rgba(var(--ink-rgb),.34);
   -webkit-appearance:none; appearance:none;
 }
-#pro-tema-lista .ruota::-webkit-color-swatch-wrapper{padding:5px}
-#pro-tema-lista .ruota::-webkit-color-swatch{border:0; border-radius:0}
 #pro-tema-lista .ruota.on{
   border-style:solid; border-color:transparent;
   box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent);
@@ -3519,22 +3517,28 @@ body.arreda #stanza{transform:none}
    diverse -- ma con il bordo tratteggiato, che dice "qui il colore lo
    metti tu" invece di mostrarne uno gia' scelto.
 
-   `input[type=color]` disegna un proprio riquadro dentro di se': senza
-   i due `::-webkit-color-swatch` dentro il cerchio resta un quadratino
-   con il suo margine. */
+   IL CAMPO NON SI VEDE PIU'. Era un `input[type=color]`, che disegnava
+   un proprio riquadro dentro di se' e per allinearlo servivano i due
+   `::-webkit-color-swatch`; adesso il campo e' `hidden` -- tiene il
+   valore e basta -- e quello che si vede e' un pulsante, che apre la
+   carta dei colori disegnata da js/scegli.js.
+
+   Il colore sta RIENTRATO come prima, e adesso lo fa un'imbottitura
+   piu' `background-clip:content-box` invece di uno pseudo-elemento del
+   browser. Il rientro non e' un vezzo: senza, il colore riempie il
+   bollino e la ruota si legge come un settimo predefinito -- l'anello
+   tratteggiato attorno e' tutta la differenza fra "questo colore" e
+   "scegli un colore".
+
+   E il colore si scrive su `background-color` e non su `background`:
+   lo shorthand riazzera `background-clip`, cioe' cancellerebbe il
+   rientro dal lato del markup senza che si veda perche'. */
+input.ruota{display:none}
 .pastiglie.tinte .ruota, #stanza .pastiglie .ruota{
-  width:34px; height:34px; padding:0; border-radius:0; cursor:pointer;
-  background:none; border:1.5px dashed rgba(var(--ink-rgb),.34);
+  width:34px; height:34px; padding:5px; border-radius:0; cursor:pointer;
+  background-clip:content-box; border:1.5px dashed rgba(var(--ink-rgb),.34);
   -webkit-appearance:none; appearance:none;
 }
-/* Il colore sta RIENTRATO, se no riempie il cerchio e la ruota si
-   legge come un settimo bollino: l'anello tratteggiato che resta
-   attorno e' tutta la differenza fra "questo colore" e "scegli un
-   colore". */
-.pastiglie.tinte .ruota::-webkit-color-swatch-wrapper,
-#stanza .pastiglie .ruota::-webkit-color-swatch-wrapper{padding:5px}
-.pastiglie.tinte .ruota::-webkit-color-swatch,
-#stanza .pastiglie .ruota::-webkit-color-swatch{border:0; border-radius:0}
 /* Scelto dalla ruota: l'anello dell'accento, come per i bollini, cosi'
    si vede che a comandare e' lei e non uno dei predefiniti. */
 .pastiglie.tinte .ruota.on, #stanza .pastiglie .ruota.on{
@@ -5396,19 +5400,24 @@ input::placeholder, textarea::placeholder{
    `#partitalayer #calc .calc-tasti button` porta due id, e due id
    battono un id piu' tre `:not()`. Un tastierino di cifre e' l'unico
    posto del sito dove un pulsante non e' una parola. */
+/* `:not(.ruota)` come `:not(#close)` due righe sotto: la RUOTA non e'
+   un comando, e' un campione di colore. Da quando e' un `<button>` --
+   prima era un `input[type=color]`, e per questo la catena non la
+   toccava -- questa regola le metteva addosso il tratteggio maiuscolo
+   dei comandi e le cancellava il colore con `background:none`. */
 #p-segna, #p-pref,
-#profilo button:not(.primario):not(.secondario):not(.distruttivo),
-#partitalayer button:not(.primario):not(.secondario):not(.distruttivo),
-#gruppilayer button:not(.primario):not(.secondario):not(.distruttivo),
-#recelayer button:not(.primario):not(.secondario):not(.distruttivo){
+#profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#gruppilayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#recelayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota){
   background:none; color:var(--ink);
   border:1px dashed var(--line); border-radius:0;
   font-family:var(--ff); font-weight:900; font-size:11px;
   letter-spacing:.1em; text-transform:uppercase;
 }
 #p-segna:hover, #p-pref:hover,
-#profilo button:not(.primario):hover, #partitalayer button:not(.primario):hover,
-#gruppilayer button:not(.primario):hover, #recelayer button:not(.primario):hover{
+#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):hover,
+#gruppilayer button:not(.primario):not(.ruota):hover, #recelayer button:not(.primario):not(.ruota):hover{
   background:rgba(var(--ink-rgb),.08); border-color:var(--accent); color:var(--accent);
 }
 /* Acceso: pezzo staccato, come ovunque nel sito */
@@ -6064,3 +6073,154 @@ input::placeholder, textarea::placeholder{
 .pod-nome, .wr-lista span{
   font-family:var(--ff); font-weight:900; letter-spacing:.02em; text-transform:uppercase;
 }
+
+
+/* ============================================================
+   LE DUE FINESTRELLE CHE IL SITO SI DISEGNA DA SE'
+
+   `<input type="color">` e `<input type="date">` erano gli ultimi due
+   pezzi di interfaccia disegnati da qualcun altro: aprivano il
+   selettore del sistema e il calendario di Chrome, con il loro
+   carattere, le loro ombre sfumate e il loro azzurro. Su una plancia
+   punzonata sono la finestra di un altro programma.
+
+   Adesso il campo resta -- nascosto, a tenere il valore -- e quello che
+   si vede e' un pulsante che apre questa finestrella. Il markup lo
+   scrive js/scegli.js.
+
+   E' un PANNELLO ANCORATO come l'imbuto e la libreria: fondo di
+   cartone tagliato, angolo fustellato, ombra piena, e si chiude
+   guardando altrove. Non e' una schermata e non oscura niente.
+   ============================================================ */
+.scegli{
+  position:fixed; z-index:40; left:0; top:0;
+  width:262px; max-width:calc(100vw - 16px);
+  background:var(--card); color:var(--ink);
+  padding:12px;
+  display:flex; flex-direction:column; gap:10px;
+  clip-path:var(--fustella);
+  filter:var(--posa);
+}
+.scegli[hidden]{display:none}
+
+/* --- la carta dei colori ------------------------------------------ */
+
+/* Le dodici tinte, che sono la prima domanda: QUALE colore. La riga va
+   a capo da sola -- tredici pezzi su una finestrella da 262 non ci
+   stanno in fila, e stringerli per farceli stare vorrebbe dire pezzi
+   da centrare col dito. */
+.sc-tinte{display:flex; flex-wrap:wrap; gap:6px}
+.sc-tinta{
+  width:24px; height:24px; padding:0; border:0; border-radius:0; cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.14);
+}
+/* Scelta: l'anello staccato, lo stesso dei bollini delle tinte. Serve
+   lo STACCO -- su un colore chiaro un contorno attaccato ci si
+   confonde. */
+.sc-tinta.on{box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent)}
+
+/* La griglia della tinta scelta: sei saturazioni per cinque chiarezze.
+   Quadrata perche' e' una carta di campioni, e un campione e' un
+   rettangolo di colore e basta. */
+.sc-griglia{display:grid; grid-template-columns:repeat(6, 1fr); gap:3px}
+.sc-cella{
+  aspect-ratio:1; padding:0; border:0; border-radius:0; cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(var(--ombra-rgb),.10);
+}
+.sc-cella.on{box-shadow:0 0 0 2px var(--card), 0 0 0 3px var(--accent)}
+
+/* --- il piede: la prova e l'esadecimale --------------------------- */
+.sc-piede{display:flex; align-items:center; gap:8px}
+.sc-prova{
+  flex:none; width:30px; height:30px;
+  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.14);
+}
+/* L'esadecimale e' un CODICE, quindi mono e a cifre di larghezza
+   fissa, come ogni altra cosa che si conta in questo sito. */
+.scegli .sc-esa{
+  flex:1 1 auto; min-width:0;
+  font-family:var(--ff-mono); font-size:13px; letter-spacing:.04em;
+  color:var(--ink); background:rgba(var(--ink-rgb),.06);
+  border:0; border-radius:0; padding:8px 10px;
+}
+.scegli .sc-esa:focus{outline:none; box-shadow:inset 0 0 0 2px var(--accent)}
+
+/* --- il calendario ------------------------------------------------ */
+.scegli.scegli-data{width:250px}
+.sc-testa{display:flex; align-items:center; gap:6px}
+.sc-testa b{
+  flex:1; text-align:center;
+  font-family:var(--ff); font-weight:900; font-size:12px;
+  letter-spacing:.1em; text-transform:uppercase;
+}
+.scegli .sc-mese{
+  flex:none; width:28px; height:28px; padding:0; cursor:pointer;
+  background:none; color:var(--ink); border:1px dashed var(--line); border-radius:0;
+  font-size:15px; line-height:1;
+}
+.scegli .sc-mese:hover{border-color:var(--accent); color:var(--accent)}
+
+/* Le iniziali dei sette giorni. Mono, come i numeri sotto: e' una
+   didascalia di una griglia di cifre, non una parola. */
+.sc-sett{
+  display:grid; grid-template-columns:repeat(7, 1fr); gap:2px;
+  font-family:var(--ff-mono); font-size:10px; letter-spacing:.08em;
+  color:var(--ink-soft); text-align:center;
+  border-bottom:1px dashed var(--line); padding-bottom:5px;
+}
+.sc-giorni{display:grid; grid-template-columns:repeat(7, 1fr); gap:2px}
+.sc-g{
+  aspect-ratio:1; padding:0; border:0; border-radius:0; cursor:pointer;
+  background:rgba(var(--ink-rgb),.05); color:var(--ink);
+  font-family:var(--ff-mono); font-size:12px; font-variant-numeric:tabular-nums;
+  display:flex; align-items:center; justify-content:center;
+}
+.sc-g.vuoto{background:none; cursor:default}
+.scegli .sc-g:hover{background:rgba(var(--accent-rgb),.18); color:var(--accent)}
+/* Oggi si segna con un ANELLO e non con un fondo: il fondo lo usa gia'
+   il giorno scelto, e due significati sullo stesso segno non si
+   distinguono piu'. E' la stessa regola del calendario delle partite. */
+.sc-g.oggi{box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.34)}
+.scegli .sc-g.scelto{
+  background:var(--accent); color:var(--su-accent);
+  clip-path:var(--fustella);
+}
+/* I due comandi del piede stanno in fila e non vanno a capo: una
+   finestrella da 250 px lascia poco piu' di cento a testa, e "senza
+   data" a corpo pieno ci si spezza in due righe -- due pulsanti alti
+   diversi nella stessa riga. */
+.scegli.scegli-data .sc-piede{gap:8px}
+.scegli.scegli-data .sc-piede button{
+  flex:1 1 0; min-width:0; white-space:nowrap;
+  font-size:10px; letter-spacing:.06em; padding:10px 6px;
+}
+
+/* --- il pulsante del giorno --------------------------------------- */
+
+/* Sta nella riga dei campi del modulo e deve leggersi come un campo,
+   non come un comando: stesso fondo, stessa imbottitura, stesso
+   carattere dei due che gli stanno accanto. L'unica differenza e'
+   l'icona a destra, che dice che si apre qualcosa.
+
+   Vince sulla regola dei comandi dei pannelli per PESO e non per
+   posizione: `#partitalayer #pa-quando` sono due id, e due id battono
+   un id piu' tre `:not()` in qualunque ordine. */
+.campo-quando{display:flex; flex-direction:column}
+#partitalayer #pa-quando{
+  display:flex; align-items:center; gap:8px; width:100%;
+  font-family:var(--ff); font-size:14px; font-weight:500;
+  letter-spacing:0; text-transform:none;
+  color:var(--ink); background:rgba(var(--ink-rgb),.05);
+  border:0; border-radius:var(--r-s); padding:12px 14px;
+  cursor:pointer; text-align:left;
+}
+#partitalayer #pa-quando:hover{background:rgba(var(--ink-rgb),.09)}
+#partitalayer #pa-quando[aria-expanded="true"]{box-shadow:inset 0 0 0 2px var(--accent)}
+#partitalayer #pa-quando .sc-quando{
+  flex:1 1 auto; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* Senza data la scritta e' un invito, non un valore: va tenue come un
+   segnaposto, che e' quello che e'. */
+#partitalayer #pa-quando.vuota .sc-quando{color:var(--ink-soft)}
+#partitalayer #pa-quando .ico{flex:none; width:17px; height:17px; color:var(--ink-soft)}

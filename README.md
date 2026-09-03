@@ -46,6 +46,7 @@ js/profilo.js         nick, faccia, codice amico, amicizie
 js/partite.js         giocatori salvati e partite giocate
 js/stanza.js          luce, colori, arredi della stanza e dei singoli cubi
 js/suoni.js           i quindici suoni, sintetizzati -- nessun file audio
+js/scegli.js          la carta dei colori e il calendario, al posto di quelli del sistema
 js/tema.js            due basi (chiaro e scuro) e l'accento scelto
 js/bgg.js             BGG: sceglie da sé fra proxy locale e edge function
 js/bggdump.js         l'indice di BGG in casa: cerca e classifica, senza rete

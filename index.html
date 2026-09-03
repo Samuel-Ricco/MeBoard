@@ -986,7 +986,22 @@
       </label>
       <!-- Solo la data: di una partita ci si ricorda il giorno, non il
            minuto. L'ora era un campo che nessuno riempiva. -->
-      <label><span data-i18n="pa.data">data</span> <input id="pa-data" type="date"></label>
+      <!-- IL GIORNO NON E' PIU' UN `type="date"`. Quel campo apre il
+           calendario di Chrome -- suo carattere, sue ombre sfumate, suo
+           azzurro -- che su una plancia punzonata e' la finestra di un
+           altro programma. Il campo resta e diventa `hidden`: tiene il
+           valore ISO e chi lo legge continua a leggerlo per nome
+           (`#pa-data`). Quello che si vede e' un pulsante, e la
+           finestrella la disegna js/scegli.js. -->
+      <label class="campo-quando"><span data-i18n="pa.data">data</span>
+        <input id="pa-data" type="hidden">
+        <button type="button" id="pa-quando" class="quando" data-quando="pa-data"
+                aria-haspopup="dialog" aria-expanded="false"
+                data-i18n-aria="scegli.data" aria-label="scegli il giorno">
+          <span class="sc-quando"></span>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/></g></svg>
+        </button>
+      </label>
       <!-- QUANTO E' DURATA, ed e' opzionale: di molte partite non ci si
            ricorda, e un campo obbligatorio qui vorrebbe dire o un numero
            inventato o una partita non segnata. Fra le due, la seconda e'
@@ -1089,6 +1104,7 @@
 <script src="js/profilo.js"></script>
 <script src="js/stanza.js"></script>
 <script src="js/suoni.js"></script>
+<script src="js/scegli.js"></script>
 <script src="js/partite.js"></script>
 <script src="js/bgg.js"></script>
 <script src="js/bggdump.js"></script>

@@ -5745,10 +5745,19 @@ function disegnaStanza(){
       return '<button type="button" data-v="' + esc(x.v) + '" title="' + esc(nome) + '"' +
              on + stile + '>' + (testo ? esc(nome) : '') + '</button>';
     }).join('');
+    /* LA RUOTA E' DUE COSE: un campo NASCOSTO che tiene il valore -- e
+       che i due ascoltatori qui sotto continuano a leggere come prima,
+       perche' e' sempre lo stesso `input.ruota` -- e un pulsante, che e'
+       quello che si vede. La finestrella la disegna js/scegli.js, che
+       scrive nel campo e gli manda `input` e `change` esattamente come
+       faceva il selettore del sistema. */
+    const suoColore = chiave ? STANZA.tinta(chiave, valore) : valore;
     const conRuota = ruota
-      ? '<input type="color" class="ruota' + (scelto ? '' : ' on') + '" value="' +
-        esc(chiave ? STANZA.tinta(chiave, valore) : valore) + '" ' +
-        'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '">'
+      ? '<input type="hidden" class="ruota" value="' + esc(suoColore) + '">' +
+        '<button type="button" class="ruota' + (scelto ? '' : ' on') + '" ' +
+        'style="background-color:' + esc(suoColore) + '" ' +
+        'aria-haspopup="dialog" aria-expanded="false" ' +
+        'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '"></button>'
       : '';
     q(sel).innerHTML = html + conRuota;
   };
@@ -6869,11 +6878,21 @@ function disegnaPastiglie(){
       return '<button type="button" data-v="' + esc(v) + '"' + on + stile + '>' +
              (testo ? (v || '&mdash;') : '') + '</button>';
     }).join('');
+    const suo = labAvatar[campo] || '#000000';
     q(sel).innerHTML = html + (testo ? '' :
-      '<input type="color" class="ruota' + (scelto ? '' : ' on') + '" value="' +
-      esc(labAvatar[campo] || '#000000') + '" title="' + esc(TP('stanza.ruota')) +
-      '" aria-label="' + esc(TP('stanza.ruota')) + '">');
-    qa(sel + ' button').forEach(function(b){
+      '<input type="hidden" class="ruota" value="' + esc(suo) + '">' +
+      '<button type="button" class="ruota' + (scelto ? '' : ' on') + '" ' +
+      'style="background-color:' + esc(suo) + '" aria-haspopup="dialog" aria-expanded="false" ' +
+      'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '"></button>');
+    /* `button[data-v]` e non `button`: da quando la ruota E' un
+       pulsante, "tutti i pulsanti di questa fila" comprendeva anche
+       lei. Il risultato era che toccarla scriveva `null` nel colore --
+       un `data-v` non ce l'ha -- e subito dopo `disegnaPastiglie`
+       rifaceva la fila, staccando dal documento il pulsante appena
+       toccato: la finestrella non si apriva piu', e il meeple restava
+       senza colore. E' la lezione dell'elenco dei gruppi, arrivata da
+       una porta nuova. */
+    qa(sel + ' button[data-v]').forEach(function(b){
       b.addEventListener('click', function(){
         const v = b.getAttribute('data-v');
         labAvatar[campo] = testo ? (parseInt(v, 10) || 0) : v;
@@ -6888,8 +6907,13 @@ function disegnaPastiglie(){
     if (r) r.addEventListener('input', function(){
       labAvatar[campo] = r.value;
       disegnaFaccia(q('#pro-avatar'), labAvatar, 160);
-      qa(sel + ' button.on').forEach(function(b){ b.classList.remove('on'); });
-      r.classList.add('on');
+      /* I bollini si spengono tutti tranne la ruota. `button.ruota` va
+         escluso a mano: da quando la ruota E' un pulsante, spegnere
+         "tutti i pulsanti accesi" spegneva anche lei, e un attimo dopo
+         la riga sotto la riaccendeva -- si vedeva sfarfallare. */
+      qa(sel + ' button.on').forEach(function(b){
+        if (!b.classList.contains('ruota')) b.classList.remove('on');
+      });
     });
   };
   gruppo('#lab-corpi', PROFILO.CORPI, 'corpo', false);
@@ -8353,6 +8377,10 @@ function apriPartita(dati){
   q('#pa-h').textContent = TP(paCorrente.id ? 'pa.hCorreggi' : 'pa.h');
   q('#pa-titolo').value = paCorrente.titolo || '';
   q('#pa-data').value   = paCorrente.giocata_il || '';
+  /* Il campo e' nascosto: quello che si legge e' la scritta sul
+     pulsante, e va rimessa in pari ogni volta che il valore arriva da
+     fuori -- cioe' ogni volta che si apre una partita gia' segnata. */
+  if (typeof SCEGLI !== 'undefined') SCEGLI.mostraData('pa-data');
   const cm = q('#pa-minuti');
   if (cm) cm.value = paCorrente.minuti == null ? '' : paCorrente.minuti;
   q('#pa-togli').hidden = !paCorrente.id;
