@@ -3456,6 +3456,35 @@ sono buchi in un segno già debole.
 «questo si tocca» o «questo è scelto adesso», e un marchio non è né l'una né
 l'altra cosa: è stampato, e basta.
 
+### L'alone bianco: la vignettatura era fatta di inchiostro
+
+Sui quattro bordi dello schermo c'era un alone chiaro, su **ogni** schermata,
+perche' `#vig` -- la vignettatura che chiude gli angoli della stanza -- era
+scritta `rgba(var(--ink-rgb),.26)`.
+
+E' la stessa lezione gia' scritta per le ombre, **ripresentata dove nessuno
+l'aveva cercata**: quella riga vuole SCURIRE gli angoli, e finche' il fondo del
+sito e' stato chiaro l'inchiostro era scuro e le due cose coincidevano. Sul
+cartone l'inchiostro e' la carta, quindi dipingeva un velo color carta tutto
+attorno allo schermo -- una luce che entra da fuori, sopra una stanza che
+dovrebbe chiudersi.
+
+Va presa da `--ombra-rgb`, che e' il conto gia' fatto: l'inchiostro finche' il
+fondo e' chiaro, il nero quando e' scuro.
+
+**Nello stesso giro sono venute fuori altre tre ombre della stessa specie** --
+la finestrella delle azioni di una riga, la scatola in mano mentre si trascina,
+i suggerimenti del modulo della partita -- tutte scritte a mano
+(`0 10px 34px rgba(var(--ink-rgb),.20)`) invece di prendere `--shadow`. Facevano
+due cose sbagliate insieme: un alone chiaro sul cartone, e una sfocatura su una
+plancia che non ne ha.
+
+**Come si riconoscono le altre**, se ne restasse una: `rgba(var(--ink-rgb), ...)`
+dentro una `box-shadow` va guardata caso per caso. Se e' un **filo**
+(`inset 0 0 0 1px`) l'inchiostro e' giusto -- un segno su fondo scuro si fa
+chiaro. Se e' un'**ombra** -- uno scarto, una sfocatura -- e' sbagliata: le ombre
+sono il buio, e il buio ha il suo nome.
+
 ### Il contatore e' il titolo della schermata
 
 Ogni schermata piatta apre con l'occhiello e poi con un NUMERO GRANDE:
@@ -5644,7 +5673,7 @@ differenza fra un sito che funziona su questa macchina e uno che funziona anche
 online.
 
 Le misure, per sapere in che cosa si mette le mani: `index.html` 1.104 righe,
-`css/style.css` 5.834, `js/app.js` 9.875, `js/tema.js` 584, `js/art.js` 1.346,
+`css/style.css` 5.851, `js/app.js` 9.875, `js/tema.js` 584, `js/art.js` 1.346,
 piu' `supabase/functions/bgg/index.ts` 291.
 
 ### La sessione del 2026-09-03: il fork e la fustella
@@ -5665,6 +5694,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il secondo giro | il **contatore grande** in testa alle schermate, il binario a **segmenti**, le viste come blocchi, la scheda del gioco rifatta riga per riga, e il rosso tratteggiato di quello che aggiunge |
 | il terzo giro | le **righe** del catalogo e della collezione, il winrate come terzo riquadro, e i titoli del profilo -- piu' la cache dell'anteprima capita fino in fondo |
 | il wrap | le otto slide rifatte: un inchiostro piatto invece di un gradiente, il contenuto a sinistra, il bollino del periodo, e il PNG ridisegnato per combaciare |
+| l'alone | la vignettatura e tre ombre erano fatte di inchiostro: sul cartone dipingevano un velo chiaro sui bordi dello schermo |
 
 **Le lezioni generali** di questa sessione:
 

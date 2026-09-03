@@ -160,8 +160,21 @@ canvas{display:block}
    alto e in basso sono state tolte -- servivano a staccare testata e
    suggerimenti dal fondo, ma tagliavano la stanza in orizzontale e si
    vedevano come due bande slavate. */
+/* LA VIGNETTATURA E' IL BUIO, NON L'INCHIOSTRO -- ed e' esattamente la
+   lezione gia' scritta per le ombre, ripresentata dove nessuno l'aveva
+   cercata.
+
+   Chiude gli angoli della stanza, cioe' li SCURISCE. Finche' il fondo
+   e' stato chiaro l'inchiostro era scuro e le due cose coincidevano;
+   sul cartone l'inchiostro e' la carta, e questa riga dipingeva
+   `rgba(239,227,205,.26)` tutto attorno allo schermo -- un alone chiaro
+   sui quattro bordi, come una luce che entra da fuori. Si vedeva su
+   ogni schermata, perche' `#vig` sta fisso sopra la scena.
+
+   `--ombra-rgb` e' il conto gia' fatto: e' l'inchiostro finche' il
+   fondo e' chiaro ed e' il nero quando e' scuro. */
 #vig{position:fixed; inset:0; z-index:1; pointer-events:none;
-  background:radial-gradient(ellipse 88% 80% at 50% 46%, transparent 46%, rgba(var(--ink-rgb),.26) 100%)}
+  background:radial-gradient(ellipse 88% 80% at 50% 46%, transparent 46%, rgba(var(--ombra-rgb),.26) 100%)}
 
 /* --- interfaccia --------------------------------------------- */
 /* z-index 4 e non 3: l'elenco della collezione e' salito a 3 per
@@ -2973,7 +2986,11 @@ body.elenco #conta b{color:var(--su-accent)}
 /* La finestrella delle azioni era trasparente: si leggeva attraverso e
    non si capiva dove finisse, e prendere una voce era un tiro a segno. */
 .riga-azioni{
-  background:var(--card); box-shadow:0 10px 34px rgba(var(--ink-rgb),.20);
+  /* L'ombra e' quella del sito: piena e presa dal buio. Scritta a mano
+     con l'inchiostro e una sfocatura da trentaquattro pixel faceva due
+     cose sbagliate insieme -- un alone chiaro sul cartone, e una
+     sfumatura su una plancia che non ne ha. */
+  background:var(--card); box-shadow:var(--shadow);
   border:0; border-radius:var(--r-m);
 }
 
@@ -3677,7 +3694,7 @@ body.arreda #stanza{transform:none}
 }
 #st-lista li.qui{background:rgba(var(--accent-rgb),.12)}
 #st-lista li.in-mano{
-  background:var(--card); box-shadow:0 8px 24px rgba(var(--ink-rgb),.20);
+  background:var(--card); box-shadow:var(--shadow);
   position:relative; z-index:2;
 }
 #st-lista .nome{
@@ -3844,7 +3861,7 @@ body.browse:not(.elenco):not(.ferma):not(.sez-catalogo):not(.sez-profilo) .rail-
    e la riga sotto dice da dove viene ognuno. */
 .pa-sugg{
   list-style:none; margin:-4px 0 0; padding:6px; position:relative; z-index:3;
-  background:var(--card); border-radius:var(--r-m); box-shadow:0 10px 34px rgba(var(--ink-rgb),.18);
+  background:var(--card); border-radius:var(--r-m); box-shadow:var(--shadow);
   max-height:220px; overflow:auto;
 }
 .pa-sugg[hidden]{display:none}
