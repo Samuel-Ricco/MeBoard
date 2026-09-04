@@ -3916,16 +3916,8 @@ trasformazione è la grana, perché `getImageData` lavora in pixel veri.
 **Una scena ferma non si ridisegna sessanta volte al secondo.** Il ciclo girava
 sempre a pieno regime, e quasi tutto il tempo che una libreria passa a schermo è
 tempo in cui niente si muove: si legge una scheda, si guarda uno scaffale, si
-pensa.
-
-Non è un ciclo **a domanda** — quello è più veloce, ma basta un posto che si
-dimentica di segnare "sporco" e lo schermo resta indietro finché non lo si tocca.
-Qui si **rallenta**: a scena ferma si scende a sedici fotogrammi al secondo, e il
-caso peggiore di una svista è un sessantesimo di secondo di ritardo che nessuno
-vede. «Fermo» si legge dalle stesse grandezze che muovono l'immagine qualche riga
-più su — nessuna animazione, niente in mano, nessun trascinamento, lo scorrimento
-arrivato, il dondolio assestato, nessuna ombra da rifare — non da una lista a
-parte da tenere allineata a mano.
+pensa. Prima è stato **rallentato** a sedici fotogrammi; poi, il 2026-09-04, è
+diventato **a domanda** — vedi la sezione qui sotto.
 
 **Attenzione all'ordine con la mappa d'ombra**: `ombreDaRifare` è un gettone che
 si consuma disegnando, e consumarlo in un fotogramma che poi non disegna vuol
@@ -3963,6 +3955,77 @@ corpo, cioè troppo tardi per servire a questo.
 Più `decoding="async"` sulle immagini degli elenchi, che toglie la decodifica dal
 thread principale.
 
+#### Il ciclo a domanda, e come si prova senza fotogrammi
+
+Il rallentamento a sedici fotogrammi era un compromesso dichiarato: prendeva il
+73% del guadagno senza il modo di rompersi di un ciclo a domanda — basta un posto
+che si dimentica di dire «è cambiato qualcosa» e lo schermo resta indietro finché
+non lo si tocca. Adesso è a domanda davvero (**60 → 1 fps a riposo, −98%**), e
+quel modo di rompersi è chiuso da **tre strade messe insieme**:
+
+1. **Le grandezze che muovono l'immagine si leggono, non si dichiarano.**
+   Animazioni in corso, scatola in mano, trascinamento, scorrimento non arrivato,
+   dondolio della camera non assestato, ombre da rifare: sono le *stesse* che
+   `frame()` usa qualche riga più su per muovere le cose. Non è una lista da
+   tenere allineata a mano, è la stessa lista.
+2. **Ogni gesto sporca, e da un solo posto.** Un banco di ascoltatori in cattura
+   su `window` — puntatore, rotella, tastiera, tocco, ridimensionamento, ritorno
+   in primo piano — tiene acceso il disegno per **400 ms** dopo qualunque cosa
+   faccia una persona. Praticamente tutto quello che cambia la scena sta a valle
+   di un gesto, di un'animazione o di una risposta dalla rete: questo copre il
+   primo caso senza doverlo elencare.
+3. **Un soffitto: passato un secondo si disegna comunque.** È la rete di
+   sicurezza, ed è quella che toglie all'errore la sua conseguenza peggiore. Se
+   un giorno qualcosa cambia la scena senza passare da nessuna delle strade qui
+   sopra, il peggio è **un secondo di ritardo, non uno schermo fermo**. Un
+   fotogramma al secondo costa niente.
+
+Più meno di dieci `sporca()` espliciti, tutti in fondo a funzioni che già
+esistono: `applyLibrary`, `applicaLuce`, `applicaStanza`, `makeMats`,
+`buildRoom`, `buildProps`, `layout`, `svuotaScatole`, `adattaDensita`,
+`alzaCopertina`/`abbassaCopertina`, `scendiDiUno`.
+
+**E non si salta il resto di `frame()`**: le animazioni avanzano, le posizioni si
+aggiornano, il raycast fa il suo. Si salta solo `renderer.render`, che è quello
+che costa — così lo stato resta sempre vero e la condizione vede i cambiamenti
+nello stesso fotogramma in cui avvengono.
+
+**L'ultimo fotogramma di un'animazione**, che è la trappola vera. Nel fotogramma
+in cui una tween arriva a 1 succedono due cose in quest'ordine: `fn(1)` scrive la
+posizione finale, e subito dopo la tween esce da `anims`. Più in basso
+`daDisegnare` guarda `anims.length`, che a quel punto è **già zero**: la posizione
+finale c'è e non viene disegnata, e sullo schermo resta il penultimo fotogramma
+finché non scatta il soffitto. Su una scatola non si vedrebbe — `updateBoxes` se
+ne accorge e chiede l'ombra — ma su una tween che muove **solo la camera** non se
+ne accorge nessuno. Una riga in cima a `stepAnims` (`if (anims.length) sporca()`)
+copre tutte e sedici le tween del sito, presenti e future.
+
+**Come si prova, che era il vero motivo per cui non era stato fatto.** Nel
+pannello di anteprima `requestAnimationFrame` è sospeso o arriva a un fotogramma
+al secondo, quindi il ciclo vero non gira mai abbastanza per essere osservato. La
+via d'uscita è **non usare `requestAnimationFrame` per provarlo**: si espone
+`frame` temporaneamente e **la si chiama a mano** con un orologio sintetico, a
+passi di 16 ms, contando `renderer.info.render.frame` prima e dopo. È un test
+d'integrazione vero, e non dipende dai fotogrammi che il browser concede.
+
+Misurato così, sul codice di adesso:
+
+| prova | fotogrammi | disegnati |
+|---|---|---|
+| scena ferma | 60 (≈1 s) | **1** |
+| scena ferma | 188 (≈3 s) | **3** |
+| subito dopo un `pointermove` | 20 | **20** |
+| durante una tween che muove solo la camera | 8 | **8**, e `daDisegnare` è ancora vero al fotogramma dopo la fine |
+
+Più il predicato provato voce per voce con lo stato costruito a mano: a riposo
+falso; con scorrimento, dondolio, scatola in mano, trascinamento, animazione o
+soffitto scaduto, vero.
+
+**La lezione:** quando l'ambiente non ti dà il segnale su cui la funzione si
+appoggia, il segnale si simula. `frame(now)` prende il tempo come argomento
+proprio perché `requestAnimationFrame` glielo passa — ed è quello che la rende
+verificabile senza.
+
 #### Quello che è stato guardato e lasciato com'era
 
 Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
@@ -3977,12 +4040,8 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - **119 draw call e 3.186 triangoli** non sono il collo di bottiglia: il conto è
   di riempimento, e lo fanno le quattro luci puntiformi che ogni frammento paga.
   Il terzo gradino del freno le toglie già, ed è misurato al 28% del tempo GPU.
-- **Il ciclo a domanda vero** (disegnare solo su richiesta invece di rallentare)
-  resta la leva più grossa rimasta, e non è stato fatto per un motivo preciso:
-  **nel pannello di anteprima `requestAnimationFrame` è sospeso**, quindi un
-  ciclo così non si può provare qui — e una svista, lì, vuol dire uno schermo
-  fermo. Il rallentamento a sedici fotogrammi prende buona parte del guadagno
-  senza quel rischio.
+- ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
+  domanda, e come si prova senza fotogrammi» qui sotto.
 
 ### Le due finestrelle disegnate da qualcun altro
 
@@ -6211,6 +6270,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il nero, di nuovo | `#0a0806` non era ancora nero: adesso il fondo e' `#000000` pieno, con lo scalino verso la scheda invariato. Sul fondo l'ombra non si vede piu', ed e' il prezzo |
 | le copertine sui telefoni | erano morbide per due cause sommate: il canvas a due terzi dei pixel dello schermo (densita' 3 con tetto 2) e una texture da 760 su mille pixel veri. Adesso il tetto e' 2,5 sfogliando e 3 in primo piano, e la copertina ha due misure -- 480 sullo scaffale, 1200 aperta |
 | il giro di prestazioni | memoria video da 39,9 a 20,7 MB, sedici fotogrammi al secondo a scena ferma, cinque `backdrop-filter` su sei tolti (tre sfocavano dietro a fondi opachi), il volume non piu' scritto su disco a ogni pixel, `preconnect` al database |
+| il ciclo a domanda | da 60 a **1 fotogramma al secondo** a scena ferma (-98%), con tre reti di sicurezza invece di una lista da tenere a mano. Provato chiamando `frame()` a mano con un orologio sintetico, perche' nell'anteprima i fotogrammi veri non arrivano |
 
 **Le lezioni generali** di questa sessione:
 

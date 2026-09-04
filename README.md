@@ -155,9 +155,12 @@ sul lato lungo sullo scaffale — dove una scatola ne misura fra i 220 e i 320 v
 entrando e muore uscendo: una texture attaccata a un materiale che nessuno guarda
 occupa la scheda video come una che si vede.
 
-E **la scena ferma non si ridisegna sessanta volte al secondo**: scende a sedici,
+E **la scena ferma non si ridisegna sessanta volte al secondo**: scende a uno,
 perché quasi tutto il tempo che una libreria passa a schermo è tempo in cui
-nessuno sta muovendo niente.
+nessuno sta muovendo niente. Si disegna a domanda — appena qualcosa si muove, o
+qualcuno tocca qualcosa, si torna a pieno regime — e c'è un soffitto che disegna
+comunque una volta al secondo, così il peggio che una svista può fare è un
+secondo di ritardo invece di uno schermo fermo.
 
 L'eccezione è il **catalogo**, e non poteva essere altrimenti: le miniature dei
 centomila titoli arrivano da BoardGameGeek. Un catalogo così non si committa, e

@@ -165,9 +165,28 @@ const anims = [];
 function tween(dur, fn, done, delay){
   const a = { t: -(delay || 0), dur: dur, fn: fn, done: done };
   anims.push(a);
+  /* Ogni animazione che parte accende il disegno. `anims.length` gia'
+     basterebbe -- e' la prima cosa che guarda `daDisegnare` -- ma
+     un'animazione con un ritardo puo' finire e lasciare l'ultimo
+     fotogramma non disegnato: la grazia copre quella coda. */
+  sporca();
   return a;
 }
 function stepAnims(dt){
+  /* L'ULTIMO FOTOGRAMMA DI UN'ANIMAZIONE VA DISEGNATO.
+
+     Nel fotogramma in cui una tween arriva a 1 succedono due cose in
+     quest'ordine: `fn(1)` scrive la posizione finale, e subito dopo la
+     tween esce da `anims`. Piu' in basso `daDisegnare` guarda
+     `anims.length`, che a quel punto e' gia' zero: la posizione finale
+     c'e' ma non viene disegnata, e sullo schermo resta il penultimo
+     fotogramma finche' non scatta il soffitto.
+
+     Su una scatola non si vedrebbe -- `updateBoxes` se ne accorge e
+     chiede l'ombra, che tiene acceso il disegno -- ma su una tween che
+     muove solo la CAMERA non se ne accorge nessuno. Una riga qui copre
+     tutte e sedici le tween del sito, presenti e future. */
+  if (anims.length) sporca();
   for (let i = anims.length - 1; i >= 0; i--){
     const a = anims[i];
     a.t += dt;
@@ -463,6 +482,7 @@ function stileLib(l){
 
 function makeMats(){
   MATS = matsDi(STANZA.reso().scaffali);
+  sporca(900);
 }
 
 /* Il pavimento e' a LISTONI, non una tavola sola stirata per tutta la
@@ -649,6 +669,7 @@ function buildRoom(){
   }
 
   alone = makeAlone();
+  sporca(900);
 }
 
 /* Il segnaposto del cubo dove si sta per posare una scatola: una lastra
@@ -805,6 +826,7 @@ function applicaLuce(){
     if (scene.fog) scene.fog.color = f.clone();
   }
   rifaiOmbre();            // cambiata l'intensita', l'ombra e' un'altra
+  sporca();
 }
 
 /* Tutto il resto: colori delle superfici e arredi. Ricostruisce
@@ -825,6 +847,7 @@ function applicaStanza(){
   makeMats();
   buildCabinet();              // rimette anche scala e ripetizione del pavimento
   applyLibrary({});            // e con essa gli arredi nello stile scelto
+  sporca(600);
 }
 
 /* La stanza si allunga con le librerie: se pavimento e parete finissero
@@ -1302,6 +1325,7 @@ function svuotaScatole(){
   state.focused = null;
   state.presa = null;
   state.hover = null;
+  sporca();
 }
 
 function makeGameBox(game){
@@ -2023,6 +2047,7 @@ function buildProps(used){
   propGroup = g;
   scene.add(g);
   rifaiOmbre();
+  sporca(600);
 }
 
 /* ===============================================================
@@ -2259,6 +2284,7 @@ function applyLibrary(opts){
   updateRail();
   updateConta();
   if (document.body.classList.contains('elenco')) disegnaMia();
+  sporca(900);
 }
 
 /* ===============================================================
@@ -2333,6 +2359,7 @@ function layout(){
   allineaComandi();
   rifaiOmbre();            // cambiato il quadro, la mappa va rifatta
   reposeFocused();          // una scatola aperta va rimessa a posto sul quadro nuovo
+  sporca(600);
 }
 
 /* --- I COMANDI SI ALLINEANO AL MOBILE, NON A UN NUMERO ------------
@@ -3025,6 +3052,7 @@ let copGrande = null;      // { mat, tex, prima }
 
 function alzaCopertina(box){
   abbassaCopertina();
+  sporca();
   const u = box && box.userData;
   const g = u && u.game;
   if (!u || !u.cover || !g || !g.img || !g.img.naturalWidth) return;
@@ -3040,6 +3068,7 @@ function alzaCopertina(box){
 
 function abbassaCopertina(){
   if (!copGrande) return;
+  sporca();
   const c = copGrande;
   copGrande = null;
   c.mat.map = c.prima;
@@ -9453,11 +9482,99 @@ function updateBoxes(dt){
 
 let last = 0;
 let faseIeri = '';
-/* A scena ferma si scende a sedici fotogrammi al secondo. Sessantadue
-   millisecondi e' il ritardo massimo che una svista puo' costare, ed e'
-   sotto la soglia in cui un tocco si sente in ritardo. */
-const RIPOSO_MS = 62;
+
+/* ===============================================================
+   SI DISEGNA A DOMANDA
+
+   Il ciclo girava a pieno regime sempre, e quasi tutto il tempo che una
+   libreria passa a schermo e' tempo in cui NIENTE si muove: si legge
+   una scheda, si guarda uno scaffale, si pensa. Sessanta fotogrammi
+   identici al secondo su un telefono sono batteria e basta.
+
+   Prima era un compromesso -- sedici fotogrammi al secondo a scena
+   ferma -- perche' un ciclo a domanda ha un modo di rompersi che il
+   rallentamento non ha: basta un posto che si dimentica di dire "e'
+   cambiato qualcosa" e lo schermo resta indietro finche' non lo si
+   tocca. Adesso e' a domanda davvero, e il modo di rompersi e' chiuso
+   da TRE strade messe insieme:
+
+   1. LE GRANDEZZE CHE MUOVONO L'IMMAGINE SI LEGGONO, non si dichiarano.
+      Animazioni in corso, scatola in mano, trascinamento, scorrimento
+      non arrivato, dondolio della camera non assestato, ombre da
+      rifare: sono le stesse che `frame()` usa qualche riga piu' su per
+      muovere le cose. Non e' una lista da tenere allineata a mano, e'
+      la stessa lista.
+
+   2. OGNI GESTO SPORCA, e da un solo posto. Un banco di ascoltatori in
+      cattura su `window` -- puntatore, rotella, tastiera, tocco,
+      ridimensionamento, ritorno in primo piano -- tiene acceso il
+      disegno per quattro decimi dopo QUALUNQUE cosa faccia una persona.
+      Praticamente tutto quello che cambia la scena sta a valle di un
+      gesto, di un'animazione (punto 1) o di una risposta dalla rete
+      (punto 3), e questo copre il primo caso senza doverlo elencare.
+
+   3. UN SOFFITTO. Passato un secondo senza disegnare si disegna
+      comunque, sempre. E' la rete di sicurezza: se un giorno qualcosa
+      cambia la scena senza passare da nessuna delle strade qui sopra,
+      il peggio che puo' succedere e' un secondo di ritardo, non uno
+      schermo fermo. Un fotogramma al secondo di scena ferma costa
+      niente e toglie all'errore la sua conseguenza peggiore.
+
+   Piu' le chiamate esplicite a `sporca()` nei punti che rifanno
+   materiali, luci o scena: sono meno di dieci e stanno tutte in fondo a
+   funzioni che gia' esistono.
+
+   Quello che NON si salta e' il resto di `frame()`: le animazioni
+   avanzano, le posizioni si aggiornano, il raycast fa il suo. Si salta
+   solo `renderer.render`, che e' quello che costa. Cosi' lo stato resta
+   sempre vero e la condizione qui sotto vede i cambiamenti nello stesso
+   fotogramma in cui avvengono.
+   =============================================================== */
+const GRAZIA_MS = 400;      // quanto si disegna dopo un gesto o un cambio
+const SOFFITTO_MS = 1000;   // mai piu' di tanto senza disegnare
+let sporcoFino = 0;
 let ultimoDisegno = 0;
+
+function oraMs(){
+  return (typeof performance !== 'undefined' ? performance.now() : Date.now());
+}
+
+/* "E' cambiato qualcosa": tiene acceso il disegno per un po'. Il
+   parametro serve a chi sa di aver fatto un cambiamento grosso -- una
+   libreria rifatta, le luci ridipinte -- e vuole qualche fotogramma in
+   piu' di margine. */
+function sporca(ms){
+  sporcoFino = Math.max(sporcoFino, oraMs() + (ms || GRAZIA_MS));
+}
+
+function daDisegnare(now){
+  if (anims.length || state.presa || state.dragging) return true;
+  if (ombreDaRifare > 0) return true;
+  if (Math.abs(state.scrollTo - state.scroll) > 1e-3) return true;
+  if (Math.abs(state.tx - state.px) > 1e-3) return true;
+  if (Math.abs(state.ty - state.py) > 1e-3) return true;
+  if (now < sporcoFino) return true;
+  return (now - ultimoDisegno) >= SOFFITTO_MS;
+}
+
+/* Il banco: un ascoltatore per tipo, in CATTURA, cosi' arriva anche
+   quando qualcun altro ferma l'evento per strada. `passive` perche' non
+   si annulla niente -- serve solo a saperlo. */
+function ascoltaPerSporcare(){
+  const eventi = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel',
+                  'wheel', 'keydown', 'touchstart', 'touchmove', 'touchend',
+                  'resize', 'orientationchange', 'focus'];
+  eventi.forEach(function(e){
+    window.addEventListener(e, function(){ sporca(); }, { capture: true, passive: true });
+  });
+  /* Tornando in primo piano la scheda ha perso i fotogrammi che il
+     browser non le ha dato: un margine piu' largo, perche' qui il
+     primo disegno arriva dopo un'attesa che non abbiamo scelto noi. */
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) sporca(1200);
+  });
+}
+ascoltaPerSporcare();
 /* ===============================================================
    IL FRENO: sessanta fotogrammi anche dove non ci starebbero
 
@@ -9550,11 +9667,13 @@ function adattaDensita(){
   if (Math.abs(renderer.getPixelRatio() - d) < .01) return;
   renderer.setPixelRatio(d);
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  sporca();
 }
 
 function scendiDiUno(){
   if (qualita >= 3) return;
   qualita++;
+  sporca(600);
   if (qualita === 1 && renderer){
     renderer.setPixelRatio(pixelRatioOra());
     renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -9716,35 +9835,8 @@ function frame(now){
 
   if (updateBoxes(dt) || anims.length || state.presa){ rifaiOmbre(); sporcaMirino(); }
 
-  /* UNA SCENA FERMA NON SI RIDISEGNA SESSANTA VOLTE AL SECONDO.
-
-     Il ciclo girava sempre a pieno regime, e quasi tutto il tempo che
-     una libreria passa a schermo e' tempo in cui NIENTE si muove: si
-     legge una scheda, si guarda uno scaffale, si pensa. Sessanta
-     fotogrammi identici al secondo su un telefono sono batteria e
-     basta.
-
-     NON SI SALTA IL DISEGNO, SI RALLENTA. La differenza e' tutta qui:
-     un ciclo a domanda -- disegna solo quando qualcuno segna "sporco"
-     -- e' piu' veloce, ma basta un posto che si dimentica di segnare e
-     lo schermo resta indietro finche' non lo si tocca. Rallentando
-     invece, il caso peggiore di una svista e' un sessantesimo di
-     secondo di ritardo che nessuno vede.
-
-     Fermo vuol dire tutto insieme: nessuna animazione in corso,
-     niente in mano, nessun trascinamento, lo scorrimento arrivato, il
-     dondolio della camera assestato e nessuna ombra da rifare. Sono le
-     stesse grandezze che muovono l'immagine qualche riga piu' su --
-     non una lista a parte da tenere allineata a mano.
-
-     Sedici fotogrammi al secondo a riposo: la scena non cambia, quindi
-     non si vede, e il conto scende a poco piu' di un quarto. */
-  const fermo = !anims.length && !state.presa && !state.dragging &&
-    ombreDaRifare <= 0 &&
-    Math.abs(state.scrollTo - state.scroll) < 1e-3 &&
-    Math.abs(state.tx - state.px) < 1e-3 &&
-    Math.abs(state.ty - state.py) < 1e-3;
-  if (fermo && now - ultimoDisegno < RIPOSO_MS) return;
+  // si disegna solo se serve: vedi "SI DISEGNA A DOMANDA" piu' su
+  if (!daDisegnare(now)) return;
   ultimoDisegno = now;
 
   /* La mappa d'ombra solo quando serve davvero (vedi `rifaiOmbre`), e
