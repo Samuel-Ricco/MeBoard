@@ -3847,13 +3847,64 @@ anche un filo tratteggiato che non separava niente.
 a dodici risultati, cioe' mezza pagina delle ventiquattro che l'elenco mostra:
 quel pulsante non compariva mai, e chi cercava una parola comune vedeva una
 pagina e credeva che fosse tutto. Il tetto e' salito a duecento in tutt'e due i
-proxy, ma **la funzione remota si aggiorna solo con un rilascio**, quindi il
-client si rincalza da solo: prima i risultati di BGG nel suo ordine di
-pertinenza, poi quelli dell'indice in casa che BGG non ha nominato, senza
-doppioni -- e la chiave del confronto e' l'**id BGG**, che e' lo stesso numero in
-tutte e due le fonti, non il titolo, che nelle due si scrive con sottotitoli
-diversi. Il pulsante dice anche cosa fa: sfogliando CHIEDE una pagina nuova,
-cercando SCOPRE righe gia' arrivate.
+proxy, e la funzione remota e' stata **rilasciata il 2026-09-04**: verificata
+dall'esterno con la sola chiave pubblica, `search?q=war` risponde 200 risultati
+dove ne rispondeva 12, e l'ordine di pertinenza regge ancora -- cercando «arcs»
+esce Arcs e poi le sue espansioni, che e' il motivo per cui quell'ordinamento
+esiste.
+
+**Il rincalzo dall'indice in casa resta lo stesso**, e non e' diventato inutile
+col rilascio: BGG e il dump non conoscono gli stessi titoli. Prima i risultati di
+BGG nel suo ordine di pertinenza, poi quelli dell'indice che BGG non ha nominato,
+senza doppioni -- e la chiave del confronto e' l'**id BGG**, che e' lo stesso
+numero in tutte e due le fonti, non il titolo, che nelle due si scrive con
+sottotitoli diversi.
+
+Misurato dopo il rilascio: su «war» BGG riempie da solo il tetto e il dump non
+aggiunge niente (200 e 200, zero doppioni); su «dado» BGG ne da' 69, il dump 22, e
+l'unione e' **79** -- dieci titoli che senza il rincalzo non si vedrebbero. Su
+«arcs» il dump ne ha uno solo, perche' **esclude le espansioni**, e quello ce
+l'aveva gia' BGG: zero aggiunti, ed e' giusto cosi'.
+
+Il pulsante dice anche cosa fa: sfogliando CHIEDE una pagina nuova, cercando
+SCOPRE righe gia' arrivate.
+
+#### Due cartelle, lo stesso repo, e un rilascio partito da quella sbagliata
+
+Vale la pena scriverlo perche' costa mezz'ora e non si vede subito.
+
+Su questa macchina ci sono **due cartelle che si chiamano quasi uguale e puntano
+allo stesso repo GitHub**: `NEW_MEBOARD`, che e' questa, e `MeBoard`, che e' un
+clone vecchio fermo a `15a538e` -- il MeBoard di *prima* del fork, quello il cui
+codice abbiamo sostituito. E tutte e due hanno un `supabase/functions/bgg/`.
+
+`npx supabase functions deploy bgg` lanciato dalla cartella sbagliata ha messo in
+produzione **l'altra funzione**, che parla un'API completamente diversa: rotte
+`cerca`, `dettagli`, `copertina` invece di `ping`, `search`, `game`, `thumbs`,
+`cover`, e risposte `{esiti:[{id,nome,anno}]}` invece di una lista piatta.
+Risultato: **404 su ogni rotta**, compresa quella nuda.
+
+**Come si riconosce al volo:** il corpo dell'errore. La funzione di questa
+cartella scrive `{"error": ...}`, quella vecchia `{"errore": "rotta sconosciuta:
+..."}`. Se torna una scritta in italiano, il rilascio e' partito da `MeBoard`.
+
+**Cosa NON e' successo:** il sito non si e' rotto. `ping` ha fallito, `fonte()` e'
+degradata all'indice in casa, e catalogo e ricerca hanno continuato a funzionare
+da `dati/bgg.txt`. E' esattamente la strada prevista per quando il proxy non
+c'e', ed e' l'unica ragione per cui la cosa non si e' notata subito. Spente
+finche' e' durata: miniature del catalogo, copertine vere all'aggiunta, ricerca
+su BGG. E valeva anche per *il dado e trap*, che chiama gli stessi indirizzi.
+
+**La verifica da fare sempre dopo un rilascio**, che sta qui perche' senza `grep`
+su Windows non e' ovvia:
+
+```powershell
+$k = 'sb_publishable_...'
+$r = Invoke-WebRequest "https://<progetto>.supabase.co/functions/v1/bgg/search?q=war" `
+     -Headers @{ apikey = $k } -SkipHttpErrorCheck
+if ($r.StatusCode -eq 200) { "OK - $(($r.Content | ConvertFrom-Json).Count) risultati" }
+else { "HTTP $($r.StatusCode) - $($r.Content)" }
+```
 
 ### Le copertine sgranate sui telefoni, e il giro di prestazioni
 
@@ -6271,6 +6322,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | le copertine sui telefoni | erano morbide per due cause sommate: il canvas a due terzi dei pixel dello schermo (densita' 3 con tetto 2) e una texture da 760 su mille pixel veri. Adesso il tetto e' 2,5 sfogliando e 3 in primo piano, e la copertina ha due misure -- 480 sullo scaffale, 1200 aperta |
 | il giro di prestazioni | memoria video da 39,9 a 20,7 MB, sedici fotogrammi al secondo a scena ferma, cinque `backdrop-filter` su sei tolti (tre sfocavano dietro a fondi opachi), il volume non piu' scritto su disco a ogni pixel, `preconnect` al database |
 | il ciclo a domanda | da 60 a **1 fotogramma al secondo** a scena ferma (-98%), con tre reti di sicurezza invece di una lista da tenere a mano. Provato chiamando `frame()` a mano con un orologio sintetico, perche' nell'anteprima i fotogrammi veri non arrivano |
+| il rilascio della edge function | il tetto a 200 vale anche in produzione dal 2026-09-04. Il primo tentativo era partito da `MeBoard` invece che da `NEW_MEBOARD` -- stesso repo, due cartelle -- e ha messo in produzione una funzione con le rotte in italiano: 404 su tutto, e il sito degradato all'indice in casa senza dirlo |
 
 **Le lezioni generali** di questa sessione:
 
