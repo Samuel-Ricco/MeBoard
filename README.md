@@ -72,7 +72,7 @@ metafora scritta a posteriori: è la regola con cui si decide come è fatta ogni
 cosa, e da lì scendono la tavolozza, la tipografia, le forme e il gesto di
 premere.
 
-**Due materiali.** Il *cartone* (`#0a0806`, il fondo di serie) e la *carta*
+**Due materiali.** Il *cartone* (`#000000`, il fondo di serie) e la *carta*
 (`#efe3cd`). Non sono un tema chiaro e uno scuro: sono i due lati della stessa
 plancia, e il sito li usa **tutti e due insieme** — la recensione è un foglio di
 carta appoggiato sul cartone. Nel foglio non si rovesciano solo il testo e il
@@ -148,6 +148,16 @@ successo, e una coda di 320 millisecondi presa al 16% — poco, ma è quella che
 toglie a un suono sintetico l'aria di provino. Il tocco è il più corto e il più
 basso di tutti perché è quello che si sente cento volte più spesso; l'unico che
 è fuori scala apposta è l'avviso, perché deve mettere a disagio.
+
+Le **copertine hanno due misure**, perché sono due momenti diversi: 480 pixel
+sul lato lungo sullo scaffale — dove una scatola ne misura fra i 220 e i 320 veri
+— e 1.200 quando se ne apre una, che è quando riempie lo schermo. La grande nasce
+entrando e muore uscendo: una texture attaccata a un materiale che nessuno guarda
+occupa la scheda video come una che si vede.
+
+E **la scena ferma non si ridisegna sessanta volte al secondo**: scende a sedici,
+perché quasi tutto il tempo che una libreria passa a schermo è tempo in cui
+nessuno sta muovendo niente.
 
 L'eccezione è il **catalogo**, e non poteva essere altrimenti: le miniature dei
 centomila titoli arrivano da BoardGameGeek. Un catalogo così non si committa, e

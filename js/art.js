@@ -193,7 +193,34 @@ function senzaBande(im){
    orizzontale viene disegnata su un desktop retina. Scendere si
    vedrebbe, e si vedrebbe proprio nel momento in cui la copertina e'
    l'unica cosa a schermo. */
-const COP_MAX = 760;
+/* DUE MISURE PER OGNI COPERTINA, e non e' un compromesso fra le due:
+   sono due momenti diversi, e prima ce n'era una sola tarata sul
+   secondo.
+
+   SULLO SCAFFALE una scatola e' larga poco piu' di cento pixel CSS --
+   misurato: 112 su un telefono, 158 su un desktop da 1440 -- cioe' fra
+   i 220 e i 320 pixel veri. Una texture da 760 li' e' cinque volte
+   quello che serve, e le cinque volte si pagano tutte: memoria sulla
+   scheda video, tempo di caricamento e banda di memoria a ogni
+   fotogramma. 480 copre il caso peggiore con un margine, e la
+   mipmappatura fa il resto.
+
+   IN PRIMO PIANO la stessa copertina riempie lo schermo: 1.114 pixel
+   veri su un desktop retina, 1.125 su un telefono a densita' 3. Li' 760
+   era gia' POCO -- la nota di prima lo ammetteva -- e adesso si sale a
+   1.200, ma per una copertina sola: quella che si sta guardando. La
+   texture grande nasce entrando e muore uscendo.
+
+   Il conto totale: dieci copertine sullo scaffale passano da 21,5 MB a
+   8,6, e quella in primo piano ne aggiunge sette finche' e' aperta.
+
+   E quella che finisce NEL BUCKET e' una terza misura ancora: 1.100,
+   perche' e' la sorgente di tutte e due le altre e va salvata una volta
+   sola. A 760 la copertina in primo piano non poteva essere nitida
+   nemmeno volendo. */
+const COP_SCAFFALE = 480;
+const COP_FUOCO = 1200;
+const COP_SALVA = 1100;
 
 function riduciA(src, max){
   const W = src.naturalWidth || src.width, H = src.naturalHeight || src.height;
@@ -211,20 +238,37 @@ function riduciA(src, max){
 
    Le due cose stanno insieme perche' sono la stessa domanda -- che
    immagine e' davvero questa -- e perche' pagarle due volte vorrebbe
-   dire decodificare due volte. Il risultato resta attaccato
-   all'immagine, quindi chi arriva dopo lo trova gia' fatto.
+   dire decodificare due volte.
+
+   SI TIENE SOLO QUELLA DELLO SCAFFALE. E' quella che sta a schermo
+   sempre, e ricalcolarla a ogni ricostruzione della libreria sarebbe
+   uno scatto visibile. Quella del primo piano no: e' grande, ce n'e'
+   una sola per volta, e tenerne una per ogni gioco che si e' aperto
+   nella sessione vorrebbe dire un canvas da sei megabyte a testa
+   parcheggiato in memoria per sempre. Costa una passata di
+   ridimensionamento a ogni apertura, che e' esattamente il momento in
+   cui una scatola sta gia' scorrendo fuori dal ripiano.
 
    E vale anche per le copertine GIA' caricate: il tetto si applica qui,
    non nel bucket, quindi una libreria vecchia smette di pagare la
    differenza senza che nessuno debba ricaricare niente. */
-function copertinaTex(im){
-  if (im.__cop !== undefined) return im.__cop;
+function copertinaTex(im, max){
+  const M = max || COP_SCAFFALE;
+  const daTenere = (M === COP_SCAFFALE);
+  if (daTenere && im.__cop !== undefined) return im.__cop;
   let c = null;
   try {
     const netta = senzaBande(im);
-    c = riduciA(netta || im, COP_MAX) || netta;
+    /* Se non c'e' niente da togliere e niente da stringere, per lo
+       SCAFFALE si torna `null` -- vuol dire "tieniti l'immagine com'e'",
+       ed e' quello che chi chiama sa gia' fare. Per il PRIMO PIANO no:
+       li' si chiede espressamente qualcosa di piu' grande di quello che
+       c'e' a schermo, e tornare `null` vorrebbe dire lasciare su la
+       texture piccola. Si torna la sorgente, che e' esattamente il
+       massimo che quell'immagine puo' dare. */
+    c = riduciA(netta || im, M) || netta || (daTenere ? null : im);
   } catch (e) { c = null; }
-  im.__cop = c;
+  if (daTenere) im.__cop = c;
   return c;
 }
 
@@ -232,7 +276,7 @@ function copertinaTex(im){
    questa funzione era scritta due volte, in `catalogo.js` e in
    `bgg.js`, con lo stesso difetto in tutte e due. */
 function copertinaSalva(im){
-  const c = riduciA(im, COP_MAX);
+  const c = riduciA(im, COP_SALVA);
   if (!c) {
     const [c2, x2] = cnv(im.naturalWidth || im.width, im.naturalHeight || im.height);
     x2.drawImage(im, 0, 0);
@@ -875,9 +919,24 @@ function coverTitolo(game){
    --------------------------------------------------------------- */
 
 // Il dorso: si vede quando la scatola e' inclinata
+/* IL DORSO A META' RISOLUZIONE.
+
+   Era 128x512, e la nota qui sotto dice gia' perche' non serviva:
+   "una striscia che a schermo ne vale otto". Otto pixel CSS, sedici
+   veri, contro una texture da 512: trentadue volte quello che serve, e
+   moltiplicato per due dorsi per scatola faceva 7,3 MB di memoria
+   video su undici scatole.
+
+   Si dimezza scalando il CONTESTO e non riscrivendo le misure: tutto
+   il disegno qui sotto resta in coordinate da 128x512 e ci pensa la
+   trasformazione. L'unica che non passa dalla trasformazione e' la
+   grana, perche' `getImageData` lavora in pixel veri: a lei si passano
+   quelli del canvas. */
+const DORSO = .5;
 function spine(game, vertical){
   const w = vertical ? 128 : 512, h = vertical ? 512 : 128;
-  const [c,x] = cnv(w,h);
+  const [c,x] = cnv(Math.round(w * DORSO), Math.round(h * DORSO));
+  x.scale(DORSO, DORSO);
   x.fillStyle = game.wrap; x.fillRect(0,0,w,h);
 
   // sfumatura per non avere un colore piatto
@@ -901,7 +960,7 @@ function spine(game, vertical){
   x.fillStyle = 'rgba(0,0,0,.28)';
   if (vertical){ x.fillRect(0,0,4,h); x.fillRect(w-4,0,4,h); }
   else { x.fillRect(0,0,w,4); x.fillRect(0,h-4,w,4); }
-  grain(x, w, h, 10);
+  grain(x, c.width, c.height, 10);
   return c;
 }
 
@@ -1336,6 +1395,7 @@ function targhetta(nome, tinta){
 return {
   cnv: cnv, toTex: toTex, imgTex: imgTex, wood: wood, spaced: spaced, grain: grain,
   senzaBande: senzaBande, copertinaTex: copertinaTex, copertinaSalva: copertinaSalva,
+  COP_SCAFFALE: COP_SCAFFALE, COP_FUOCO: COP_FUOCO,
   aoCubi: aoCubi, fariCubi: fariCubi, copia: copia,
   parquet: parquet, contatto: contatto,
   avatar: avatar, targhetta: targhetta,

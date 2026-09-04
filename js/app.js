@@ -534,7 +534,7 @@ function slab(w, h, d, mat, x, y, z){
    Conta solo nei primi fotogrammi: subito dopo `applicaLuce()` mette lo
    sfondo del colore del MURO, che e' del profilo e non della
    tavolozza. */
-const SFONDO_DEF = 0x0a0806;
+const SFONDO_DEF = 0x000000;
 function sfondoOra(){
   if (typeof TEMA === 'undefined') return SFONDO_DEF;
   try { return new THREE.Color(TEMA.tinte().bg).getHex(); }
@@ -1296,6 +1296,7 @@ function rifaiScatole(ids){
    nota, ed e' l'unico modo di essere sicuri che niente si porti dietro
    la copertina di un'altra libreria. */
 function svuotaScatole(){
+  abbassaCopertina();          // se no la grande resta attaccata a un materiale morto
   for (let i = boxes.length - 1; i >= 0; i--) killGroup(boxes[i], true);
   boxes.length = 0;
   state.focused = null;
@@ -3005,10 +3006,53 @@ function scaldaShader(){
   } catch(e){ if (window.console) console.warn('scaldaShader:', e); }
 }
 
+/* LA COPERTINA GRANDE, UNA SOLA E SOLO MENTRE SI GUARDA.
+
+   Sullo scaffale la copertina e' una texture da 480 pixel sul lato
+   lungo, che e' il doppio di quanto una scatola misura davvero a
+   schermo. Aprendola diventa la cosa piu' grande della pagina -- mille
+   pixel veri e passa -- e li' 480 si vedono. Quindi entrando si carica
+   la stessa immagine a 1.200 e uscendo si butta.
+
+   Si butta DAVVERO (`dispose()`): una texture che resta attaccata a un
+   materiale che nessuno guarda occupa la scheda video esattamente come
+   una che si vede. E si tiene traccia di una sola alla volta, perche'
+   una sola scatola alla volta si apre.
+
+   Se non c'e' una copertina vera -- quelle disegnate da `ART` -- qui
+   non si fa niente: sono gia' nate alla misura che serve. */
+let copGrande = null;      // { mat, tex, prima }
+
+function alzaCopertina(box){
+  abbassaCopertina();
+  const u = box && box.userData;
+  const g = u && u.game;
+  if (!u || !u.cover || !g || !g.img || !g.img.naturalWidth) return;
+  let c = null;
+  try { c = ART.copertinaTex(g.img, ART.COP_FUOCO); } catch(e){ return; }
+  if (!c || c.width <= (u.cover.map && u.cover.map.image ? u.cover.map.image.width : 0)) return;
+  const tex = ART.toTex(c);
+  copGrande = { mat: u.cover, tex: tex, prima: u.cover.map };
+  u.cover.map = tex;
+  u.cover.emissiveMap = tex;
+  u.cover.needsUpdate = true;
+}
+
+function abbassaCopertina(){
+  if (!copGrande) return;
+  const c = copGrande;
+  copGrande = null;
+  c.mat.map = c.prima;
+  c.mat.emissiveMap = c.prima;
+  c.mat.needsUpdate = true;
+  c.tex.dispose();
+}
+
 function focusOn(box){
   if (state.phase !== 'browse' || box.userData.busy) return;
   state.phase = 'focus';
   state.focused = box;
+  alzaCopertina(box);
   state.hover = null;
   document.body.classList.remove('browse');
 
@@ -3150,6 +3194,7 @@ function unfocus(poi){
       u.busy = false;
       state.focused = null;
       state.phase = 'browse';
+      abbassaCopertina();
       accendiFocus(false);
       document.body.classList.add('browse');
       if (poi) poi();
@@ -3223,6 +3268,7 @@ function removeFocused(){
 
   state.phase = 'closing';
   state.focused = null;
+  abbassaCopertina();
   hidePanel();
   anims.length = 0;
 
@@ -4671,7 +4717,7 @@ async function riempiMiniature(da, mio, a){
       const li = q('#cat-list li[data-i="' + i + '"]');
       const box = li && li.querySelector('.cat-cop');
       if (box) box.innerHTML = '<img src="' + esc(v.immagine) +
-        '" alt="" loading="lazy" referrerpolicy="no-referrer">';
+        '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
     }
   });
 }
@@ -4713,7 +4759,7 @@ function rigaCatalogo(v, i){
        dicevano soltanto "non lo so". L'iniziale almeno appartiene a quel
        gioco, e scorrendo l'occhio ci si aggancia. */
     '<div class="cat-cop">' + (img
-      ? '<img src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
+      ? '<img src="' + esc(img) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">'
       : '<span class="senza">' + esc(String(v.title || '?').trim().slice(0, 1).toUpperCase()) + '</span>') +
     '</div>' +
     '<div class="cat-dati">' +
@@ -4854,7 +4900,7 @@ async function riempiMiniatureWish(mio){
     const url = m[String(w.bgg)];
     if (!url) return;
     const cop = q('#wish-list li[data-w="' + i + '"] .cat-cop');
-    if (cop) cop.innerHTML = '<img src="' + esc(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
+    if (cop) cop.innerHTML = '<img src="' + esc(url) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
   });
 }
 
@@ -6360,7 +6406,7 @@ function scaffaleRiga(g){
 
 function rigaMia(g){
   const cop = g.cover
-    ? '<img src="' + esc(g.cover) + '" alt="" loading="lazy">'
+    ? '<img src="' + esc(g.cover) + '" alt="" loading="lazy" decoding="async">'
     : '<span class="senza">' + esc(String(g.title || '?').slice(0, 1).toUpperCase()) + '</span>';
 
   return '<li data-id="' + esc(g.id) + '">' +
@@ -7550,7 +7596,7 @@ function salvaSlide(){
    esce dal sito e deve leggersi uguale per tutti, qualunque materiale
    abbia scelto chi l'ha fatta. */
 const SLIDE_INK = {
-  carta: '#efe3cd', cartone: '#0a0806',
+  carta: '#efe3cd', cartone: '#000000',
   rosso: '#e23d28', ocra: '#f0b429', verde: '#2f9e6b'
 };
 /* Su un inchiostro scuro si stampa chiaro, su uno chiaro si stampa
@@ -9407,6 +9453,11 @@ function updateBoxes(dt){
 
 let last = 0;
 let faseIeri = '';
+/* A scena ferma si scende a sedici fotogrammi al secondo. Sessantadue
+   millisecondi e' il ritardo massimo che una svista puo' costare, ed e'
+   sotto la soglia in cui un tocco si sente in ritardo. */
+const RIPOSO_MS = 62;
+let ultimoDisegno = 0;
 /* ===============================================================
    IL FRENO: sessanta fotogrammi anche dove non ci starebbero
 
@@ -9452,12 +9503,53 @@ let qualita = 0;                // 0 = tutto, 3 = ultimo gradino
 let passoMin = 999;             // il fotogramma piu' breve visto: e' lo schermo
 let frenoVisti = 0, frenoLenti = 0;
 
-/* Il pixel ratio lo decidono in due -- il freno e `layout()`, che gira
-   a ogni ridimensionamento -- quindi il valore sta in un posto solo: se
-   no il primo resize rimetterebbe su i pixel appena tolti. */
+/* LA DENSITA' NON E' UNA SOLA, PERCHE' NON SI GUARDA SEMPRE LA STESSA
+   COSA.
+
+   Il tetto era 2 dappertutto, ed e' il numero che ha reso le copertine
+   morbide sui telefoni: un telefono ha densita' 3, quindi la scena
+   veniva disegnata a due terzi dei pixel dello schermo e poi stirata.
+   Sul desktop, dove la densita' e' 1 o 2, il conto tornava esatto -- ed
+   e' esattamente la differenza che si vedeva fra le due viste.
+
+   Adesso i tetti sono due:
+
+   - SFOGLIANDO 2,5. Non 3: li' ci sono dodici scatole, una direzionale
+     con le ombre e quattro luci puntiformi da pagare per ogni
+     frammento, e la scena si muove. Da 2 a 2,5 sono la meta' dei pixel
+     in piu' su un telefono a densita' 3, e li paga il freno di sotto se
+     la macchina non ce la fa.
+   - IN PRIMO PIANO 3, cioe' tutti. Li' c'e' UNA scatola, la scena e'
+     ferma, e la copertina e' la cosa piu' grande della pagina: e' il
+     posto dove la densita' si paga una volta e si vede sempre. Insieme
+     alla texture da 1.200 (vedi `alzaCopertina`) e' quello che rende la
+     copertina aperta nitida davvero.
+
+   Su un desktop a densita' 1 o 2 non cambia niente: `Math.min` prende
+   comunque quella dello schermo. */
+function tettoDensita(){
+  return (state.phase === 'focus' || state.phase === 'review') ? 3 : 2.5;
+}
+
+/* Il pixel ratio lo decidono in tre -- il freno, `layout()` e il cambio
+   di fase -- quindi il valore sta in un posto solo: se no il primo
+   resize rimetterebbe su i pixel appena tolti. */
 function pixelRatioOra(){
-  const d = Math.min(window.devicePixelRatio || 1, 2);
-  return qualita >= 1 ? Math.max(1, d * .75) : d;
+  const d = Math.min(window.devicePixelRatio || 1, tettoDensita());
+  return qualita >= 1 ? Math.max(1, d * .8) : d;
+}
+
+/* Ridimensionare il buffer non e' gratis -- e' una riallocazione -- e
+   qui capita due volte per apertura. Sono i due momenti in cui una
+   scatola sta gia' scorrendo avanti e la scena si sta riordinando, ed
+   e' l'unico posto dove ci si accorge. Se il numero non cambia (uno
+   schermo a densita' 1 o 2) non si fa niente. */
+function adattaDensita(){
+  if (!renderer) return;
+  const d = pixelRatioOra();
+  if (Math.abs(renderer.getPixelRatio() - d) < .01) return;
+  renderer.setPixelRatio(d);
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
 }
 
 function scendiDiUno(){
@@ -9521,6 +9613,7 @@ function frame(now){
   if (state.phase !== faseIeri){
     faseIeri = state.phase;
     if (state.phase === 'browse') allineaComandi();
+    adattaDensita();
   }
 
   /* Fuori dalla libreria la scena e' coperta da una pagina piatta. Il
@@ -9623,7 +9716,42 @@ function frame(now){
 
   if (updateBoxes(dt) || anims.length || state.presa){ rifaiOmbre(); sporcaMirino(); }
 
-  // la mappa d'ombra solo quando serve davvero: vedi `rifaiOmbre`
+  /* UNA SCENA FERMA NON SI RIDISEGNA SESSANTA VOLTE AL SECONDO.
+
+     Il ciclo girava sempre a pieno regime, e quasi tutto il tempo che
+     una libreria passa a schermo e' tempo in cui NIENTE si muove: si
+     legge una scheda, si guarda uno scaffale, si pensa. Sessanta
+     fotogrammi identici al secondo su un telefono sono batteria e
+     basta.
+
+     NON SI SALTA IL DISEGNO, SI RALLENTA. La differenza e' tutta qui:
+     un ciclo a domanda -- disegna solo quando qualcuno segna "sporco"
+     -- e' piu' veloce, ma basta un posto che si dimentica di segnare e
+     lo schermo resta indietro finche' non lo si tocca. Rallentando
+     invece, il caso peggiore di una svista e' un sessantesimo di
+     secondo di ritardo che nessuno vede.
+
+     Fermo vuol dire tutto insieme: nessuna animazione in corso,
+     niente in mano, nessun trascinamento, lo scorrimento arrivato, il
+     dondolio della camera assestato e nessuna ombra da rifare. Sono le
+     stesse grandezze che muovono l'immagine qualche riga piu' su --
+     non una lista a parte da tenere allineata a mano.
+
+     Sedici fotogrammi al secondo a riposo: la scena non cambia, quindi
+     non si vede, e il conto scende a poco piu' di un quarto. */
+  const fermo = !anims.length && !state.presa && !state.dragging &&
+    ombreDaRifare <= 0 &&
+    Math.abs(state.scrollTo - state.scroll) < 1e-3 &&
+    Math.abs(state.tx - state.px) < 1e-3 &&
+    Math.abs(state.ty - state.py) < 1e-3;
+  if (fermo && now - ultimoDisegno < RIPOSO_MS) return;
+  ultimoDisegno = now;
+
+  /* La mappa d'ombra solo quando serve davvero (vedi `rifaiOmbre`), e
+     DOPO il freno di sopra: `ombreDaRifare` e' un gettone che si
+     consuma disegnando, e consumarlo in un fotogramma che poi non
+     disegna vorrebbe dire perdere l'aggiornamento dell'ombra. Il salto
+     va deciso prima di toccarlo. */
   renderer.shadowMap.needsUpdate = ombreDaRifare > 0;
   if (ombreDaRifare > 0) ombreDaRifare--;
 
@@ -9636,7 +9764,7 @@ function frame(now){
 function buildFlatList(){
   q('#flat-list').innerHTML = LIB.list(state.sort).map(function(g){
     return '<article>' +
-      (g.cover ? '<img src="' + esc(g.cover) + '" alt="' + esc(TP('flat.scatolaDi', {g: g.title})) + '" loading="lazy">' : '') +
+      (g.cover ? '<img src="' + esc(g.cover) + '" alt="' + esc(TP('flat.scatolaDi', {g: g.title})) + '" loading="lazy" decoding="async">' : '') +
       '<h2>' + esc(g.title) + '</h2>' +
       '<p class="byline"><b>' + esc(g.designer) + '</b> &middot; ' + esc(g.publisher) + ' &middot; ' + esc(g.year) +
       ' &middot; ' + esc(g.players) + ' ' + T('spec.giocatori') +

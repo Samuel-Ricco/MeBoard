@@ -130,8 +130,26 @@ function leggi(){
   } catch (e) { return VOL_DEF; }
 }
 
+/* SCRIVERE SU DISCO NON SI FA A OGNI PIXEL DI TRASCINAMENTO.
+
+   Il cursore del volume manda `input` a ogni movimento -- decine di
+   volte al secondo -- e ognuno finiva in un `localStorage.setItem`, che
+   e' una scrittura SINCRONA: blocca il thread principale, cioe' proprio
+   quello che sta disegnando la scena mentre si trascina.
+
+   Il valore vive gia' in memoria e il volume vero e' `master.gain`, che
+   cambia subito. Su disco basta che ci arrivi quando ci si ferma. Un
+   quarto di secondo dopo l'ultimo movimento e' impercettibile a chi
+   trascina e trasforma sessanta scritture in una.
+
+   E' la stessa forma di `salvaStanzaTraPoco`, che per il database fa
+   gia' esattamente questo per la stessa ragione. */
+let scritturaFraPoco = 0;
 function scrivi(){
-  try { localStorage.setItem(CHIAVE, String(vol)); } catch (e) {}
+  clearTimeout(scritturaFraPoco);
+  scritturaFraPoco = setTimeout(function(){
+    try { localStorage.setItem(CHIAVE, String(vol)); } catch (e) {}
+  }, 250);
 }
 
 /* LA CODA, costruita a mano.

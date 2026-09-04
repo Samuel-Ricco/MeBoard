@@ -43,8 +43,8 @@
      `--bg` deve restare uguale allo sfondo della scena 3D (SFONDO in
      js/app.js, che lo chiede a TEMA): e' la stessa tinta a tenere
      insieme il caricamento, il cancello e il mondo dietro. */
-  --bg:#0a0806;          /* cartone bagnato: la stanza */
-  --card:#1c1813;        /* cartone tagliato: i pannelli */
+  --bg:#000000;          /* il fondo: nero pieno */
+  --card:#141210;        /* cartone tagliato: i pannelli */
   --ink:#efe3cd;         /* carta cruda: il testo, e il blocco pieno */
   --ink-soft:#a2937c;    /* carta in ombra: il testo secondario */
   --sage:#6d6252;        /* superfici quiete */
@@ -58,27 +58,27 @@
      si vedrebbe un filo verde oliva su un fondo lilla. Cosi' invece
      basta `rgba(var(--ink-rgb), .06)`. */
   --ink-rgb:239,227,205;
-  --card-rgb:28,24,19;
-  --bg-rgb:10,8,6;
+  --card-rgb:20,18,16;
+  --bg-rgb:0,0,0;
   --accent-rgb:240,180,41;
   --ombra-rgb:0,0,0;
 
   /* Il fondo delle quattro schermate piatte: sta fra la carta e la
      stanza, che e' il colore di una pagina che si legge. */
-  --fondo:#16130f;
+  --fondo:#0d0c0b;
   --accent-su:#f2bd43;   /* l'accento premuto */
   /* QUELLO CHE SI SCRIVE SOPRA UN INCHIOSTRO. Sopra l'ocra ci va il
      cartone, sopra il rosso ci va la carta: non e' una scelta, e' un
      conto, e sta in `sopra()` dentro js/tema.js. */
-  --su-accent:#1c1813;
+  --su-accent:#141210;
 
   /* I TRE INCHIOSTRI DA STAMPA. Non sono la tavolozza: sono i colori
      con cui la plancia e' stampata, e li adatta al materiale
      `stampa()`. Il rosso resta il segnale di quello che distrugge e il
      filetto delle barre -- non diventa mai l'accento. */
-  --rosso:#e9634f;       --su-rosso:#1c1813;   --rosso-rgb:233,99,79;
-  --ocra:#f0b429;        --su-ocra:#1c1813;
-  --verde:#2f9e6b;       --su-verde:#1c1813;
+  --rosso:#e9634f;       --su-rosso:#141210;   --rosso-rgb:233,99,79;
+  --ocra:#f0b429;        --su-ocra:#141210;
+  --verde:#2f9e6b;       --su-verde:#141210;
 
   /* ORO, ARGENTO, BRONZO. Sono le uniche tinte del sito che non vengono
      dalla tavolozza ne' cambiano col materiale, ed e' voluto: una
@@ -94,9 +94,9 @@
   --argento:#8d949c;
   --bronzo:#a2683c;
 
-  --velo:rgba(24,20,16,.82);        /* la testata: cartone velato */
-  --velo-lieve:rgba(24,20,16,.55);  /* sulla scena, dove non scorre niente */
-  --velo-pieno:rgba(24,20,16,.94);  /* con la stanza in penombra */
+  --velo:rgba(16,14,12,.92);        /* la testata: cartone velato */
+  --velo-lieve:rgba(16,14,12,.55);  /* sulla scena, dove non scorre niente */
+  --velo-pieno:rgba(16,14,12,.94);  /* con la stanza in penombra */
   /* Il filo e' TRATTEGGIATO come le fustelle di una plancia, e un
      tratteggio tenue non si vede: sono buchi in un segno gia' debole.
      Sta a .26 e non a .14, che era il valore di un filo pieno. */
@@ -227,9 +227,12 @@ body.ready header{opacity:1; transform:none}
 .tool{
   font-family:var(--ff-text); font-size:13px; font-weight:500;
   letter-spacing:0; text-transform:none;
-  color:var(--ink-soft); background:rgba(var(--card-rgb),.88); cursor:pointer;
-  border:0; padding:8px 11px;
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-radius:var(--r-s);
+  /* Al 96% invece che all'88% con la sfocatura: questi stanno sopra la
+     scena, e li' ogni `backdrop-filter` e' una sfocatura rifatta a ogni
+     fotogramma. Il quattro per cento che passa fa lo stesso mestiere
+     del dodici sfocato. */
+  color:var(--ink-soft); background:rgba(var(--card-rgb),.96); cursor:pointer;
+  border:0; padding:8px 11px; border-radius:var(--r-s);
 }
 .tool:hover{color:var(--ink); border-color:var(--accent)}
 .tool b{color:var(--accent); font-weight:500}
@@ -430,7 +433,6 @@ body:not(.dentro) #cat-viste{display:none}
   position:fixed; z-index:5; display:none;
   gap:2px; padding:5px;
   background:var(--card); border-radius:0; box-shadow:var(--shadow);
-  backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
   animation:apreMenu .16s ease-out both;
 }
 body.cella-su #cella{display:flex}
@@ -1486,8 +1488,10 @@ body.mobili #mobili{opacity:1; visibility:visible; transform:translate(-50%,0); 
   transform-origin:center center;
   transform:perspective(1400px) translate(var(--da-x), var(--da-y)) scale(.26) rotateY(-34deg);
   opacity:0; visibility:hidden;
+  /* `var(--card)` e' OPACO: dietro non passa niente, e la sfocatura che
+     stava qui era il compositore che sfocava una cosa che nessuno
+     avrebbe mai visto. Stessa storia in `#cella`. */
   background:var(--card); border:1px dashed var(--line);
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   box-shadow:var(--shadow);
   display:flex; flex-direction:column;
   transition:transform .58s cubic-bezier(.22,.9,.26,1), opacity .26s ease, visibility 0s .58s;
@@ -2844,7 +2848,6 @@ button .ico + *{margin-left:2px}
    non deve sembrarlo -- copre. */
 #stanza-apri, #vista-apri, #conta{
   background:var(--ink); color:var(--card); border:0;
-  backdrop-filter:none; -webkit-backdrop-filter:none;
   clip-path:var(--fustella); filter:var(--posa); box-shadow:none;
 }
 #stanza-apri:hover, #vista-apri:hover{background:var(--accent); color:var(--su-accent)}
@@ -2873,9 +2876,11 @@ body.elenco #conta b{color:var(--su-accent)}
    `--r-m`, carta chiara, un filo di bordo, ombra leggera. La pastiglia
    a 999px era la forma delle pastigliette -- i gruppi, i nomi al tavolo
    -- e questa non e' una pastiglietta, e' una superficie. */
+/* Sfocare il quattro per cento che passa da un fondo al 96% e' lavoro
+   che non arriva agli occhi, e qui arrivava per giunta sopra la scena
+   viva -- vedi la testata. */
 #rail{
   background:rgba(var(--card-rgb),.96);
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   box-shadow:var(--ombra-lieve), inset 0 0 0 1px rgba(var(--ink-rgb),.07);
   border-radius:var(--r-m);
 }
@@ -3205,10 +3210,24 @@ button.distruttivo.armed{background:var(--rosso); color:var(--su-rosso); border-
    si compenetravano. Non serve una barra piena: serve una SUPERFICIE --
    carta velata con la sfocatura dietro, come qualunque testata che
    resta ferma mentre il contenuto scorre. */
+/* NIENTE `backdrop-filter` SOPRA LA SCENA.
+
+   La testata sta ferma sopra un canvas che si ridisegna, e un
+   `backdrop-filter` costringe il compositore a rifare una sfocatura a
+   schermo pieno A OGNI FOTOGRAMMA di quello che ci passa sotto: e' il
+   conto piu' salato che una riga di CSS possa fare su un telefono.
+
+   E qui non comprava niente. Il velo sta gia' all'82% -- della scena ne
+   passa il diciotto -- e sfocare il diciotto per cento di qualcosa non
+   si vede. Salito al 92% non si vede nemmeno la differenza col velo di
+   prima, e la sfocatura se ne va del tutto.
+
+   E' anche la scelta giusta per come e' fatto questo sito: le ombre
+   sono piene e senza sfocatura per un motivo dichiarato -- una
+   sfocatura fa galleggiare -- e una testata sfocata era l'unica cosa
+   che diceva il contrario. */
 header{
   background:var(--velo);
-  backdrop-filter:blur(16px) saturate(1.2);
-  -webkit-backdrop-filter:blur(16px) saturate(1.2);
   border-bottom:1px solid rgba(var(--ink-rgb),.08);
   padding-top:12px; padding-bottom:12px;
 }
@@ -4920,7 +4939,7 @@ body.wrap-su #wrap{display:flex}
 #wrap-x{
   position:absolute; top:20px; right:20px; z-index:2;
   width:32px; height:32px; border:0; border-radius:0; cursor:pointer;
-  background:#efe3cd; color:#0a0806; font-size:18px; line-height:1;
+  background:#efe3cd; color:#000000; font-size:18px; line-height:1;
   box-shadow:3px 3px 0 rgba(0,0,0,.28);
 }
 #wrap-x:active{transform:translate(2px,2px); box-shadow:1px 1px 0 rgba(0,0,0,.28)}
@@ -4951,7 +4970,7 @@ body.wrap-su #wrap{display:flex}
    a numeri: carta su ocra fa 1,5 a 1, cioe' un numero da centoventi
    pixel che non si vede. */
 .wrap-slide{
-  --sl-carta:#efe3cd; --sl-cartone:#0a0806;
+  --sl-carta:#efe3cd; --sl-cartone:#000000;
   --sl-rosso:#e23d28; --sl-ocra:#f0b429; --sl-verde:#2f9e6b;
   flex:0 0 100%; scroll-snap-align:start;
   display:flex; flex-direction:column; align-items:stretch;
@@ -5573,7 +5592,6 @@ input::placeholder, textarea::placeholder{
    una superficie di troppo. */
 #rail{
   background:none; box-shadow:none; border:0; padding:0; gap:10px;
-  backdrop-filter:none; -webkit-backdrop-filter:none;
 }
 #rail-txt{
   font-family:var(--ff); font-weight:900; font-size:15px;

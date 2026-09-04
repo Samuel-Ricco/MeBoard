@@ -3254,7 +3254,7 @@ regola vecchia cancellata in silenzio è una regola che qualcuno riscriverà.
 
 ### Due materiali, e il sito li usa tutti e due insieme
 
-Il *cartone* (`--bg #0a0806`, il fondo di serie) e la *carta* (`#efe3cd`). Non
+Il *cartone* (`--bg #000000`, il fondo di serie) e la *carta* (`#efe3cd`). Non
 sono un tema chiaro e uno scuro fra cui scegliere: sono i due lati della stessa
 plancia. La scelta nel profilo dice **su quale dei due è stampato il sito**, e i
 nomi dei due sono `cartone` e `carta`.
@@ -3270,28 +3270,36 @@ Le otto tinte del cartone, e tutto il resto derivato come sempre:
 
 | | |
 |---|---|
-| `--bg` `#0a0806` | cartone bagnato: la stanza |
-| `--card` `#1c1813` | cartone tagliato: i pannelli |
+| `--bg` `#000000` | il fondo: nero pieno |
+| `--card` `#141210` | cartone tagliato: i pannelli |
 | `--ink` `#efe3cd` | carta cruda: il testo, **e il blocco pieno** |
 | `--ink-soft` `#a2937c` | carta in ombra: il testo secondario |
 | `--sage` `#6d6252` · `--sand` `#b8a184` | superfici quiete |
 | `--wood` `#b0824c` | il legno dello scaffale |
 | `--accent` `#f0b429` | ocra |
 
-**Il nero è sceso di tre quarti.** Era `#16130f`, un marrone molto scuro che a
-schermo si legge come marrone e non come nero: la plancia sembrava fotografata
-di sera invece che stampata. Adesso il fondo sta a `#0a0806` (L\* da 6,0 a 2,3) e
-il caldo resta come traccia invece che come tinta. **Lo scalino fra fondo e
-scheda è rimasto quello**: il cartone tagliato è sceso insieme al fondo, e il
-rapporto di contrasto fra i due era 1,13 ed è 1,13 — è quel gradino a far
-leggere un pannello come un pezzo staccato, e abbassare solo il fondo avrebbe
-comprato un nero che nessuno guarda da solo rompendo il verso della plancia.
+**Il fondo è nero pieno, e ci è arrivato in due passi.** Prima `#16130f` — un
+marrone molto scuro che a schermo si legge come marrone — poi `#0a0806`, che era
+già quasi nero e non bastava, e adesso `#000000`. Sotto non c'è altro.
 
-E **l'ombra è dovuta passare al nero pieno**. L'ombra della fustella è uno scarto
-solido e si vede perché è *più scura* di quello su cui cade; al 55% cadeva a un
-passo dal fondo nuovo e i pannelli smettevano di sembrare appoggiati. Sotto il
-nero non c'è niente da prendere, quindi si prende tutto: `0.78` sul cartone,
-`0.34` sulla carta, dove di spazio verso il buio ce n'è quanto se ne vuole.
+Non è un vezzo da schermo OLED: questa plancia è fatta di pezzi **chiari** su un
+fondo che deve sparire, e ogni grammo di colore nel fondo torna indietro come
+alone attorno ai pannelli. Il caldo del cartone lo portano già la scheda,
+l'inchiostro e l'ocra — tre superfici su quattro.
+
+**Lo scalino fra fondo e scheda è rimasto quello**: il cartone tagliato è sceso
+insieme al fondo (`#241f18`, `#1c1813`, `#141210`) e il rapporto di contrasto fra
+i due era 1,13 ed è 1,12. È quel gradino a far leggere un pannello come un pezzo
+staccato, e abbassare solo il fondo avrebbe comprato un nero che nessuno guarda
+da solo rompendo il verso della plancia.
+
+**Quello che si perde, e va saputo: sul fondo l'ombra non si vede più.** L'ombra
+della fustella è uno scarto solido e si vede perché è *più scura* di quello su
+cui cade; sotto lo zero non c'è niente da prendere. Resta dove serve davvero — un
+pezzo posato su una **scheda**, che è dove stanno quasi tutti i comandi tagliati
+— e sul fondo a fare da stacco basta la scheda stessa. È il prezzo del nero, ed è
+stato chiesto. Sul cartone l'ombra sta a `0.78`, sulla carta a `0.34`, dove di
+spazio verso il buio ce n'è quanto se ne vuole.
 
 **Il pieno di un comando è `--ink` su `--card`, non una tinta.** È la cosa più
 utile di questa tavolozza: il blocco di carta è il materiale *rovesciato*, quindi
@@ -3846,6 +3854,135 @@ doppioni -- e la chiave del confronto e' l'**id BGG**, che e' lo stesso numero i
 tutte e due le fonti, non il titolo, che nelle due si scrive con sottotitoli
 diversi. Il pulsante dice anche cosa fa: sfogliando CHIEDE una pagina nuova,
 cercando SCOPRE righe gia' arrivate.
+
+### Le copertine sgranate sui telefoni, e il giro di prestazioni
+
+Le copertine si vedevano morbide su un telefono e nitide su un desktop, ed erano
+**due cause diverse che si sommavano**. Tutte e due misurate.
+
+**1. La scena veniva disegnata a due terzi dei pixel dello schermo.** Il tetto
+della densità era `Math.min(devicePixelRatio, 2)` dappertutto. Un telefono ha
+densità 3: il canvas usciva a 750×1624 su uno schermo da 1125×2436 e poi veniva
+stirato. Su un desktop, dove la densità è 1 o 2, il conto tornava esatto — ed è
+*esattamente* la differenza che si vedeva fra le due viste. Se poi il freno
+scendeva di un gradino si passava a 1,5, cioè a metà dello schermo.
+
+Adesso i tetti sono due, perché non si guarda sempre la stessa cosa:
+
+- **sfogliando 2,5.** Non 3: lì ci sono dodici scatole, una direzionale con le
+  ombre e quattro luci puntiformi da pagare per ogni frammento, e la scena si
+  muove.
+- **in primo piano 3**, cioè tutti. Lì c'è *una* scatola, la scena è ferma e la
+  copertina è la cosa più grande della pagina.
+
+E il primo gradino del freno è passato da `×.75` a `×.8`, così su un telefono
+atterra su 2 — cioè su quello che prima era il valore di partenza.
+
+**2. La copertina in primo piano era una texture da 760 su mille e passa pixel
+veri.** La nota di prima lo ammetteva già: 760 è *sotto* la misura a cui una
+copertina viene disegnata su un desktop retina.
+
+La cura è una sola texture con **due misure**, perché sono due momenti diversi:
+
+| | | |
+|---|---|---|
+| `COP_SCAFFALE` | 480 | una scatola sullo scaffale misura 112 px CSS su un telefono, 158 su un desktop da 1440: fra i 220 e i 320 pixel veri. 760 lì erano cinque volte quello che serve |
+| `COP_FUOCO` | 1200 | aperta, la stessa copertina ne riempie 1.114 su desktop retina e 1.125 su un telefono |
+| `COP_SALVA` | 1100 | quella che va nel bucket, ed è la sorgente delle altre due: a 760 la copertina aperta non poteva essere nitida nemmeno volendo |
+
+La grande **nasce entrando e muore uscendo** (`alzaCopertina` / `abbassaCopertina`,
+con `dispose()` vero): una texture attaccata a un materiale che nessuno guarda
+occupa la scheda video come una che si vede. Se ne tiene traccia di una sola,
+perché una sola scatola alla volta si apre. E si tiene in cache solo quella dello
+scaffale: tenere una copertina da 1200 per ogni gioco aperto nella sessione
+vorrebbe dire un canvas da sei megabyte a testa parcheggiato per sempre.
+
+#### Il resto del giro, tutto misurato
+
+**La memoria video è passata da 39,9 MB a 20,7** (−48%), su una libreria di
+quattordici giochi. Da dove:
+
+| | prima | dopo |
+|---|---|---|
+| copertine (10) | 21,5 MB | 8,6 MB |
+| dorsi (22, da `spine()`) | 7,3 MB | 1,8 MB |
+| il resto (parquet, cartone, interni, AO) | 11,1 MB | 10,3 MB |
+
+I **dorsi erano 128×512** per una striscia che a schermo ne vale otto — la nota
+dentro `spine()` lo diceva già. Dimezzati scalando il *contesto*, così tutto il
+disegno resta in coordinate da 128×512: l'unica che non passa dalla
+trasformazione è la grana, perché `getImageData` lavora in pixel veri.
+
+**Una scena ferma non si ridisegna sessanta volte al secondo.** Il ciclo girava
+sempre a pieno regime, e quasi tutto il tempo che una libreria passa a schermo è
+tempo in cui niente si muove: si legge una scheda, si guarda uno scaffale, si
+pensa.
+
+Non è un ciclo **a domanda** — quello è più veloce, ma basta un posto che si
+dimentica di segnare "sporco" e lo schermo resta indietro finché non lo si tocca.
+Qui si **rallenta**: a scena ferma si scende a sedici fotogrammi al secondo, e il
+caso peggiore di una svista è un sessantesimo di secondo di ritardo che nessuno
+vede. «Fermo» si legge dalle stesse grandezze che muovono l'immagine qualche riga
+più su — nessuna animazione, niente in mano, nessun trascinamento, lo scorrimento
+arrivato, il dondolio assestato, nessuna ombra da rifare — non da una lista a
+parte da tenere allineata a mano.
+
+**Attenzione all'ordine con la mappa d'ombra**: `ombreDaRifare` è un gettone che
+si consuma disegnando, e consumarlo in un fotogramma che poi non disegna vuol
+dire perdere l'aggiornamento dell'ombra. Il salto va deciso *prima* di toccarlo.
+
+**Via il `backdrop-filter` da sopra la scena.** La testata sta ferma sopra un
+canvas che si ridisegna, e un `backdrop-filter` costringe il compositore a rifare
+una sfocatura a schermo pieno **a ogni fotogramma** di quello che ci passa sotto:
+è il conto più salato che una riga di CSS possa fare su un telefono. E non
+comprava niente — il velo stava già all'82%, e sfocare il diciotto per cento che
+passa non si vede. Salito al 92%, la sfocatura se ne va.
+
+Ne sono cadute cinque su sei, e tre erano **lavoro completamente invisibile**:
+`#panel` e `#cella` sfocavano dietro a un `var(--card)` **opaco**, e `#rail`
+dietro a un fondo al 96%. È anche la scelta giusta per come è fatto questo sito:
+le ombre sono piene e senza sfocatura per un motivo dichiarato — una sfocatura fa
+galleggiare — e una testata sfocata era l'unica cosa che diceva il contrario.
+Resta solo quella di `#addlayer`, che sta sopra una pagina ferma e si vede solo
+mentre una finestra è aperta.
+
+**Il volume non si scrive più su disco a ogni pixel di trascinamento.** Il
+cursore manda `input` decine di volte al secondo e ognuno finiva in un
+`localStorage.setItem`, che è una scrittura **sincrona**: blocca il thread che sta
+disegnando la scena proprio mentre si trascina. Adesso si scrive un quarto di
+secondo dopo l'ultimo movimento — sessanta scritture diventano una. È la stessa
+forma di `salvaStanzaTraPoco`.
+
+**`preconnect` al database.** Appena il corpo è in piedi partono l'accesso, la
+sincronizzazione della libreria e le copertine, tutti verso lo stesso dominio:
+senza, la prima di quelle richieste paga in fila DNS, TCP e TLS — fra i cento e i
+trecento millisecondi su rete mobile, prima ancora di chiedere qualcosa.
+L'indirizzo è scritto a mano nella testa perché `js/config.js` arriva in fondo al
+corpo, cioè troppo tardi per servire a questo.
+
+Più `decoding="async"` sulle immagini degli elenchi, che toglie la decodifica dal
+thread principale.
+
+#### Quello che è stato guardato e lasciato com'era
+
+Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
+
+- **`senzaBande`** è già ottimizzata come si deve: cerca le bande su una copia da
+  360 px e taglia sull'originale, con il risultato in cache. Su una copertina da
+  5233×3544 la differenza è fra qualche millesimo e duecento millisecondi.
+- **I font** hanno già `font-display:swap` e il `preload` delle due facce che
+  servono al primo disegno.
+- **`antialias: !denso`** e la mappa d'ombra a 1024 sono già tarati, e una sola
+  luce su otto proietta ombre.
+- **119 draw call e 3.186 triangoli** non sono il collo di bottiglia: il conto è
+  di riempimento, e lo fanno le quattro luci puntiformi che ogni frammento paga.
+  Il terzo gradino del freno le toglie già, ed è misurato al 28% del tempo GPU.
+- **Il ciclo a domanda vero** (disegnare solo su richiesta invece di rallentare)
+  resta la leva più grossa rimasta, e non è stato fatto per un motivo preciso:
+  **nel pannello di anteprima `requestAnimationFrame` è sospeso**, quindi un
+  ciclo così non si può provare qui — e una svista, lì, vuol dire uno schermo
+  fermo. Il rallentamento a sedici fotogrammi prende buona parte del guadagno
+  senza quel rischio.
 
 ### Le due finestrelle disegnate da qualcun altro
 
@@ -6071,6 +6208,9 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | l'ordine di partenza | la collezione si apre in **ordine alfabetico**, che accende anche i separatori a lettera scritti da tempo e mai visti |
 | i due voti | affiancati e della stessa misura, con la fustella in mezzo: in colonna il proprio si leggeva come una postilla di quello di BGG |
 | carica altro | la ricerca del catalogo si sfoglia davvero: il tetto di BGG e' salito a 200 e il client rincalza dall'indice in casa, senza aspettare un rilascio |
+| il nero, di nuovo | `#0a0806` non era ancora nero: adesso il fondo e' `#000000` pieno, con lo scalino verso la scheda invariato. Sul fondo l'ombra non si vede piu', ed e' il prezzo |
+| le copertine sui telefoni | erano morbide per due cause sommate: il canvas a due terzi dei pixel dello schermo (densita' 3 con tetto 2) e una texture da 760 su mille pixel veri. Adesso il tetto e' 2,5 sfogliando e 3 in primo piano, e la copertina ha due misure -- 480 sullo scaffale, 1200 aperta |
+| il giro di prestazioni | memoria video da 39,9 a 20,7 MB, sedici fotogrammi al secondo a scena ferma, cinque `backdrop-filter` su sei tolti (tre sfocavano dietro a fondi opachi), il volume non piu' scritto su disco a ogni pixel, `preconnect` al database |
 
 **Le lezioni generali** di questa sessione:
 

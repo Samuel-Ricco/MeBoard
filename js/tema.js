@@ -66,23 +66,34 @@ const BASI = [
        `background:var(--ink); color:var(--card)` e si rovescia da solo
        quando si passa all'altro materiale.
 
-       IL NERO E' SCESO DI TRE QUARTI. Era #16130f, un marrone molto
-       scuro che a schermo si legge come marrone e non come nero: su un
-       pannello acceso in una stanza illuminata la sfumatura calda si
-       vede benissimo, e la plancia sembrava fotografata di sera invece
-       che stampata. Adesso il fondo sta a #0a0806, un terzo della
-       chiarezza di prima (L* da 6,0 a 2,3), e il caldo resta come
-       traccia invece che come tinta.
+       IL FONDO E' NERO. Nero vero, #000000, in due passaggi: prima
+       #16130f -- un marrone molto scuro che a schermo si legge come
+       marrone -- poi #0a0806, che era gia' quasi nero ma non abbastanza,
+       e adesso zero. Sotto non c'e' altro.
+
+       Nero pieno non e' un vezzo da schermo OLED: e' che questa
+       plancia e' fatta di pezzi CHIARI su un fondo che deve sparire.
+       Ogni grammo di colore nel fondo torna indietro come alone attorno
+       ai pannelli, e il caldo del cartone lo portano gia' la scheda,
+       l'inchiostro e l'ocra -- tre superfici su quattro.
 
        LO SCALINO FRA I DUE E' RIMASTO QUELLO. Il cartone tagliato scende
-       insieme al fondo -- da #241f18 a #1c1813 -- e non perche' sia
-       simmetrico: il rapporto di contrasto fra i due era 1,13 e adesso
-       e' 1,13. E' quel gradino a far leggere un pannello come un pezzo
-       staccato dal fondo, e abbassando solo il fondo si sarebbe rotto
-       il verso della plancia per guadagnare un nero che nessuno guarda
-       da solo. */
+       insieme al fondo -- #241f18, #1c1813, e adesso #141210 -- e non
+       perche' sia simmetrico: il rapporto di contrasto fra i due era
+       1,13 e adesso e' 1,12. E' quel gradino a far leggere un pannello
+       come un pezzo staccato dal fondo, e abbassare solo il fondo
+       vorrebbe dire comprare un nero che nessuno guarda da solo
+       rompendo il verso della plancia.
+
+       QUELLO CHE SI PERDE, e va saputo: **sul fondo l'ombra non si vede
+       piu'**. L'ombra della fustella e' uno scarto pieno e si vede
+       perche' e' piu' scura di quello su cui cade; sotto lo zero non
+       c'e' niente da prendere. Resta dove serve davvero -- un pezzo
+       posato su una SCHEDA, che e' dove stanno quasi tutti i comandi
+       tagliati -- e sul fondo a fare da stacco basta la scheda stessa.
+       E' il prezzo del nero, ed e' stato chiesto. */
     v: 'scuro', n: 'tema.cartone',
-    c: { bg:'#0a0806', card:'#1c1813', ink:'#efe3cd', inkSoft:'#a2937c',
+    c: { bg:'#000000', card:'#141210', ink:'#efe3cd', inkSoft:'#a2937c',
          sage:'#6d6252', sand:'#b8a184', wood:'#b0824c', accent:'#f0b429',
          woodDark:'#6b4d2b' }
   },
@@ -91,7 +102,7 @@ const BASI = [
        guardata dall'altra parte, con il fondo appena piu' sporco della
        carta cruda perche' i blocchi ci si stacchino sopra. */
     v: 'chiaro', n: 'tema.carta',
-    c: { bg:'#d9c9aa', card:'#efe3cd', ink:'#0a0806', inkSoft:'#6b5f4c',
+    c: { bg:'#d9c9aa', card:'#efe3cd', ink:'#000000', inkSoft:'#6b5f4c',
          sage:'#a0906f', sand:'#c9b394', wood:'#7f5528', accent:'#f0b429',
          woodDark:'#54371a' }
   }
@@ -346,7 +357,12 @@ function scrivi(s, c, pre){
      ridA' esattamente la tinta che c'era scritta a mano prima. */
   v('fondo', mescola(c.card, c.bg, .33));
   const velo = mescola(c.card, c.bg, .22);
-  v('velo', 'rgba(' + tri(velo) + ',.82)');
+  /* .92 e non .82: da quando la testata non ha piu' `backdrop-filter`
+     -- una sfocatura a schermo pieno rifatta a ogni fotogramma sopra la
+     scena viva -- il velo deve coprire da solo. Sfocare il diciotto per
+     cento che passava non si vedeva; il dieci per cento in piu' di
+     copertura nemmeno. */
+  v('velo', 'rgba(' + tri(velo) + ',.92)');
   v('velo-lieve', 'rgba(' + tri(velo) + ',.55)');
   v('velo-pieno', 'rgba(' + tri(velo) + ',.94)');
   /* Il filo e' TRATTEGGIATO, come le fustelle di una plancia, e un
