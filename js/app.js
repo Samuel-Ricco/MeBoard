@@ -1226,9 +1226,24 @@ function picDi(url){
 
 /* Il marchio scritto nel nome dell'oggetto nel bucket. Solo due forme
    sono un marchio -- `mano` e `p<numero>` -- se no lo slug di
-   `brass-birmingham` si leggerebbe come un marchio "birmingham". */
+   `brass-birmingham` si leggerebbe come un marchio "birmingham".
+
+   IL SEPARATORE E' `-` OPPURE `/`, e la seconda meta' mancava. Nella
+   cartella personale l'oggetto e' `<uid>/root-p4254509.jpg`, col
+   trattino; in quella condivisa e' `bgg/p4254509.jpg`, dove il marchio
+   E' il nome del file e prima c'e' una barra. Cercando solo il trattino
+   ogni copertina condivisa risultava SENZA marchio, e da li' partiva
+   tutto il resto: `riparaCopertine` la trovava "storta" -- il marchio
+   letto (niente) non e' quello atteso (`p4254509`) -- e a OGNI AVVIO la
+   riscaricava da BGG e la ricaricava nel bucket. Quattordici giochi,
+   quattordici giri su BGG e quattordici scritture, tutte per rimettere
+   un file identico al suo posto.
+
+   Non si vedeva perche' fino allo spostamento del pregresso in `bgg/`
+   c'erano due sole copertine condivise. Le si e' viste tutte insieme
+   il giorno in cui sono diventate quattordici. */
 function marchioDi(url){
-  const m = String(url || '').match(/-(mano|p\d+)\.jpg(?:\?|$)/);
+  const m = String(url || '').match(/[-/](mano|p\d+)\.jpg(?:\?|$)/);
   return m ? m[1] : '';
 }
 
@@ -1238,6 +1253,13 @@ async function riparaCopertine(){
   // in casa d'altri non si tocca niente, e senza database non c'e'
   // nessun posto in cui mettere quello che si scarica
   if (!LIB.eRemota() || LIB.ospitePresso()) return [];
+
+  /* PRIMA il pregresso, che non costa niente: le copertine ferme nella
+     cartella personale hanno l'id della figura scritto nel nome, quindi
+     si spostano in `bgg/` senza chiedere niente a BGG. Va fatto prima
+     del giro qui sotto perche' quello interroga l'API per ogni gioco, e
+     su una copertina appena spostata non c'e' niente da chiedere. */
+  try { await LIB.spostaInCondivisa(); } catch(e){}
 
   const candidati = LIB.all().filter(function(g){
     if (!g.bgg || !g.cover) return false;
@@ -3395,7 +3417,15 @@ function showPanel(game){
     vm.hidden = !game.mioVoto;
     vm.querySelector('b').textContent = game.mioVoto || '';
   }
-  q('#p-body').innerHTML = (game.review || []).map(function(t){ return '<p>' + esc(t) + '</p>'; }).join('');
+  /* Senza recensione il corpo restava uno spazio bianco fra il voto e i
+     pulsanti, e uno spazio bianco non dice niente: non si capisce se
+     manca il testo o se manca il caricamento. La stessa riga tenue che
+     usa gia' l'elenco -- una frase sola -- dice che non c'e' e basta.
+     Sotto c'e' gia' il pulsante per scriverla. */
+  const testo = (game.review || []).filter(function(t){ return String(t || '').trim(); });
+  q('#p-body').innerHTML = testo.length
+    ? testo.map(function(t){ return '<p>' + esc(t) + '</p>'; }).join('')
+    : '<p class="vuoto">' + T('riga.nessunaRece') + '</p>';
   q('#p-tags').innerHTML = (game.tags || []).map(function(t){ return '<span>' + esc(t) + '</span>'; }).join('');
 
   const link = q('#p-bgg');

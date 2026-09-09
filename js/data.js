@@ -6,15 +6,19 @@
    Vedi README.md per come agganciare la XML API2 di BGG.
    ============================================================ */
 
-// Quattro capoversi di riempimento, riusati finche' non ci sono i testi veri.
-/* Il segnaposto e' corto apposta. Quattro capoversi di lorem ipsum
-   riempivano il pannello e spingevano fuori vista tutto quello che
-   viene dopo -- specifiche, partite, pulsanti -- e chi apriva una
-   scatola per la prima volta pensava che il sito finisse li'. */
-const LOREM = [
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
-  "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
-];
+/* LE RECENSIONI NASCONO VUOTE.
+
+   Qui c'era un lorem ipsum, riusato da tutte le schede "finche' non ci
+   sono i testi veri". Ma i testi veri non arrivano da questo file: una
+   recensione e' quello che pensa di un gioco chi ce l'ha, e nessuno la
+   puo' scrivere al posto suo -- e' scritto anche nelle note, alla voce
+   "quello che e' stato chiesto e non si puo' fare qui".
+
+   Un segnaposto, intanto, fa un danno preciso: riempie il pannello di
+   un testo che sembra una recensione, e chi apre una scatola per la
+   prima volta crede che il sito abbia gia' un contenuto. Meglio il
+   vuoto, che e' vero e si vede: la riga tenue "Nessuna recensione, per
+   ora." e il pulsante per scriverla. */
 
 const GAMES = [
   {
@@ -31,7 +35,7 @@ const GAMES = [
     weight: '3.8',                     // peso BGG, da 1 a 5
     score: '8.6',                      // il voto della casa
     tags: ['asimmetrico', 'controllo aree', 'guerra', 'peso medio-alto'],
-    review: LOREM,
+    review: [],
     cover: 'img/root.jpg',             // copertina vera; le proporzioni della
                                        // scatola escono da quelle dell'immagine
     artist: 'Kyle Ferrin',             // chi ha fatto la copertina
@@ -54,7 +58,7 @@ const GAMES = [
     weight: '3.4',
     score: '8.2',
     tags: ['gestionale', 'motore di produzione', 'esplorazione', 'solitario'],
-    review: LOREM,
+    review: [],
     cover: 'img/scythe.jpg',
     artist: 'Jakub Rozalski',
     art: 'scythe',

@@ -457,6 +457,110 @@ function condiviso(oggetto){
   return String(oggetto || '').indexOf('bgg/') === 0;
 }
 
+/* Il marchio letto dal PERCORSO dentro il bucket, non dall'indirizzo:
+   qui si lavora sugli oggetti, e un oggetto e' `<uid>/root-p4254509.jpg`
+   oppure `bgg/p4254509.jpg`. Solo `p<numero>` e' un marchio -- lo slug
+   `brass-birmingham` non deve leggersi come il marchio "birmingham". */
+function figuraDi(oggetto){
+  const m = String(oggetto || '').match(/(?:^|[/-])(p\d+)\.jpg$/);
+  return m ? m[1] : '';
+}
+
+/* Copiare un oggetto SENZA farlo passare dal browser. Lo storage sa
+   farlo da solo (`copy`), e sono byte che non attraversano la rete due
+   volte. Se il client imbarcato non ce l'ha si ripiega sul giro lungo:
+   l'oggetto e' pubblico, quindi si rilegge e si ricarica. */
+async function copiaOggetto(c, da, a){
+  const b = c.storage.from('copertine');
+  if (typeof b.copy === 'function'){
+    const r = await b.copy(da, a);
+    // "esiste gia'" non e' un errore: e' la stessa figura, gia' condivisa
+    if (r && r.error && !/exist|dupl|conflict/i.test(r.error.message || '')) throw r.error;
+    return;
+  }
+  const url = b.getPublicUrl(da).data.publicUrl;
+  const blob = await (await fetch(url)).blob();
+  const r = await b.upload(a, blob, { contentType: 'image/jpeg', upsert: false });
+  if (r.error && !/exist/i.test(r.error.message || '')) throw r.error;
+}
+
+/* ============================================================
+   IL PREGRESSO VA IN CASA DI TUTTI
+
+   Dal 2026-09-02 quello che viene da BGG si scrive in
+   `copertine/bgg/p<id>.jpg` -- un oggetto per FIGURA, non per persona --
+   ma quella regola vale da li' in avanti: le copertine caricate prima
+   sono rimaste nelle cartelle personali, e li' la stessa immagine sta
+   sul server una volta per ognuno che ha quel gioco. Misurato sul
+   bucket vero: 86 file in cinque cartelle, 56 figure distinte, quindi
+   **19 doppioni** -- Root, Arcs e Deep Regrets in tripla copia.
+
+   Questa funzione le sposta, e la cosa importante e' che **non chiede
+   niente a BGG**: il nome dell'oggetto porta gia' l'id della figura, che
+   e' l'unica cosa che serve per sapere dove va. Chi non ha il marchio --
+   i file di prima che il marchio esistesse -- lo ritrova comunque, ma
+   per un'altra strada: `riparaCopertine` se ne accorge da solo e lo
+   riscarica, che e' quello che gia' faceva.
+
+   L'ORDINE NON E' NEGOZIABILE: copia, poi la riga, e solo dopo si
+   cancella la vecchia. Al contrario -- e basta che la scrittura sulla
+   riga non passi -- si resta con una scatola che punta al nulla. E' la
+   stessa regola gia' scritta in `caricaCopertina`, dove la vecchia si
+   cancella dopo che la nuova e' arrivata.
+
+   La scrittura sulla riga si fa QUI e si ASPETTA, invece di passare da
+   `update()`: quella manda al server senza farsi aspettare, e qui il
+   momento in cui la riga e' scritta e' esattamente quello che decide se
+   si puo' cancellare.
+
+   Ognuno sistema le proprie, entrando: le regole dello storage lasciano
+   toccare solo la propria cartella, e nessuno ha bisogno di una chiave
+   di servizio. Da `bgg/` non si cancella mai -- lo vieta `condiviso()`
+   qui sopra e lo vieta la policy -- quindi due persone che spostano la
+   stessa figura nello stesso momento non si fanno male: la seconda
+   trova che c'e' gia' e tiene quella.
+   ============================================================ */
+async function spostaInCondivisa(){
+  if (!remota || visitata || !games) return [];
+  const c = AUTH.attivo() ? AUTH.client() : null;
+  const io = AUTH.stato();
+  if (!c || !io.id) return [];
+
+  const fatti = [];
+  for (let i = 0; i < games.length; i++){
+    const g = games[i];
+    const via = oggettoDi(g.cover);
+    if (!via || condiviso(via)) continue;          // gia' a posto, o non nel bucket
+    const figura = figuraDi(via);
+    if (!figura) continue;                         // scelta a mano, o senza marchio
+    const dove = 'bgg/' + figura + '.jpg';
+
+    try {
+      await copiaOggetto(c, via, dove);
+      const url = c.storage.from('copertine').getPublicUrl(dove).data.publicUrl;
+
+      const r = await c.from('giochi').update({ copertina: url })
+        .eq('proprietario', io.id).eq('id', g.id);
+      if (r.error) continue;                       // la vecchia resta dov'e'
+      g.cover = url;
+
+      /* Registrata, la prossima persona che aggiunge questo gioco non
+         scarica niente: e' tutto il senso dello spostamento. */
+      if (g.bgg && typeof SCHEDE !== 'undefined'){
+        try { await SCHEDE.registra({ bgg: g.bgg, pic: figura, copertina: url }); }
+        catch(e){}
+      }
+
+      await c.storage.from('copertine').remove([via]);
+      fatti.push(g.id);
+    } catch(e){
+      // una che non passa non ferma le altre: si riprova al prossimo giro
+    }
+  }
+  if (fatti.length) salvaLocale();
+  return fatti;
+}
+
 async function mandaAlServer(c, game, marchio){
   try {
     const riga = aRiga(game);
@@ -1131,6 +1235,7 @@ return {
   preferito: preferito, segnaPreferito: segnaPreferito,
   stileLibreria: stileLibreria,
   visita: visita, torna: torna, ospitePresso: ospitePresso,
+  spostaInCondivisa: spostaInCondivisa,
   librerie: elencoLibrerie, caricaLibrerie: caricaLibrerie,
   creaLibreria: creaLibreria, rinominaLibreria: rinominaLibreria,
   togliLibreria: togliLibreria, riordinaLibrerie: riordinaLibrerie, metti: metti, mandaPosti: mandaPosti,

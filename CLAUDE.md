@@ -4094,6 +4094,38 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### Il marchio si leggeva solo con il trattino
+
+Trovato spostando il pregresso in `bgg/`, ed era li' da una settimana.
+
+`marchioDi()` ricava dall'indirizzo il marchio dell'oggetto — `mano` o
+`p<numero>` — e cercava `/-(mano|p\d+)\.jpg$/`, **solo con il trattino**. Nella
+cartella personale l'oggetto è `<uid>/root-p4254509.jpg` e torna; in quella
+condivisa è `bgg/p4254509.jpg`, dove il marchio **è** il nome del file e prima
+c'è una barra.
+
+Risultato: ogni copertina condivisa risultava **senza marchio**, e da lì partiva
+il resto. `riparaCopertine` confronta il marchio letto con quello atteso, non li
+trovava uguali, e concludeva che la copertina fosse quella sbagliata: **a ogni
+avvio** la riscaricava da BGG e la ricaricava nel bucket. Quattordici giochi,
+quattordici giri sull'API e quattordici scritture, tutte per rimettere al suo
+posto un file identico a quello che c'era già.
+
+**Perché non si vedeva:** fino allo spostamento del pregresso le copertine
+condivise erano **due**. Due giri di troppo per avvio non si notano; quattordici
+sì — e si sono notati come quattordici `400 Duplicate` in console, che è il modo
+in cui lo storage dice "questo oggetto c'è già".
+
+Due cose da portarsi via:
+
+- **Un separatore è una convenzione, e se la convenzione raddoppia va
+  raddoppiata anche la lettura.** Il giorno in cui è nata `bgg/` sono nati due
+  modi di scrivere lo stesso nome; la funzione che lo legge ne conosceva uno.
+- **Un errore che costa solo lavoro sprecato non si presenta come un errore.**
+  Il sito funzionava, le copertine si vedevano, nessuno si lamentava. È emerso
+  solo perché il conto degli errori in console è stato guardato *dopo* una
+  modifica che ne moltiplicava il numero.
+
 ### Le due finestrelle disegnate da qualcun altro
 
 `<input type="color">` e `<input type="date">` erano gli ultimi due pezzi
@@ -6323,6 +6355,9 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | il giro di prestazioni | memoria video da 39,9 a 20,7 MB, sedici fotogrammi al secondo a scena ferma, cinque `backdrop-filter` su sei tolti (tre sfocavano dietro a fondi opachi), il volume non piu' scritto su disco a ogni pixel, `preconnect` al database |
 | il ciclo a domanda | da 60 a **1 fotogramma al secondo** a scena ferma (-98%), con tre reti di sicurezza invece di una lista da tenere a mano. Provato chiamando `frame()` a mano con un orologio sintetico, perche' nell'anteprima i fotogrammi veri non arrivano |
 | il rilascio della edge function | il tetto a 200 vale anche in produzione dal 2026-09-04. Il primo tentativo era partito da `MeBoard` invece che da `NEW_MEBOARD` -- stesso repo, due cartelle -- e ha messo in produzione una funzione con le rotte in italiano: 404 su tutto, e il sito degradato all'indice in casa senza dirlo |
+| le recensioni | via il lorem ipsum: nascono vuote, con la riga tenue e il pulsante per scriverla. Un segnaposto che sembra una recensione fa credere che il sito abbia gia' un contenuto |
+| il pregresso delle copertine | `spostaInCondivisa()` porta in `bgg/` quelle ferme nelle cartelle personali, senza chiedere niente a BGG -- l'id della figura e' gia' nel nome. La cartella dell'admin e' sparita, `bgg/` da 2 a 15 oggetti |
+| il marchio col trattino | `marchioDi` leggeva solo `-p<id>.jpg` e non `bgg/p<id>.jpg`: ogni copertina condivisa sembrava sbagliata e veniva riscaricata da BGG **a ogni avvio**. Quattordici giri e quattordici scritture per non cambiare niente |
 
 **Le lezioni generali** di questa sessione:
 
@@ -6689,10 +6724,16 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
    dall'esterno con la sola chiave pubblica: la tabella risponde, e nella
    cartella condivisa `copertine/bgg/` c'e' un oggetto caricato da un utente
    normale e leggibile senza chiave.
-1. **Le recensioni sono lorem ipsum.** E' l'unica cosa che tiene il sito
-   lontano dall'essere finito: si scrivono dal sito con *la tua recensione*, e
-   da li' si pubblicano nel catalogo con la casella in fondo al modulo. Sono
-   opinioni di chi ci gioca, quindi non le puo' scrivere nessun altro.
+1. **Il lorem ipsum e' stato tolto il 2026-09-09: le recensioni nascono
+   VUOTE.** Un segnaposto che sembra una recensione fa un danno preciso -- chi
+   apre una scatola per la prima volta crede che il sito abbia gia' un
+   contenuto -- e i testi veri da quel file non sarebbero mai arrivati: una
+   recensione e' quello che pensa di un gioco chi ce l'ha. Adesso al posto del
+   testo c'e' la riga tenue "Nessuna recensione, per ora." e il pulsante per
+   scriverla, nel pannello come gia' nell'elenco.
+
+   **Resta il lorem gia' finito sul database**, che e' dato di chi lo ha: si
+   toglie con una `update` sul Table Editor, e non e' un lavoro di codice.
 2. **Le espansioni** -- le due voci della lista fuori dal repo. Nella scheda di
    un gioco una sezione che distingue le espansioni che hai da quelle che ti
    mancano, e la possibilita' di raggrupparle sotto il gioco base gioco per
@@ -6710,10 +6751,18 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
    garanzia, e adesso che i doppioni non ci sono piu' la migrazione passerebbe.
 5. **Le partite restano private.** Gli amici vedono libreria e recensioni, non
    le partite: e' il cambio di una policy, ed e' una scelta dell'utente.
-6. **Le copertine gia' caricate restano nella cartella personale.** La
-   condivisione vale da qui in avanti; le quattordici figure gia' in
-   `copertine/<uid>/` stanno dove sono. Se un giorno serve, il posto e'
-   `riparaCopertine`, che gia' gira all'avvio e gia' sa il `pic` di ogni gioco.
+6. **Le copertine gia' caricate: FATTO il 2026-09-09**, ed e' andata dove le
+   note dicevano -- dentro `riparaCopertine`. `LIB.spostaInCondivisa()` le
+   sposta in `bgg/` **senza chiedere niente a BGG**: il nome dell'oggetto porta
+   gia' l'id della figura, che e' l'unica cosa che serve per sapere dove va.
+   Ognuno sistema le proprie entrando, con le regole dello storage che gia'
+   lasciano toccare solo la propria cartella: nessuna chiave di servizio,
+   nessuna migrazione.
+
+   Misurato prima e dopo sul bucket vero: la cartella dell'admin aveva 14 file
+   e adesso **non esiste piu'**; `bgg/` e' passata da 2 a 15 oggetti. Restano le
+   quattro cartelle degli altri utenti (72 file), che si svuotano al loro
+   prossimo accesso.
 7. **La cache locale delle copertine (IndexedDB) e' stata valutata e NON
    fatta.** Misurato: un blob da IndexedDB da' un `blob:` URL same-origin,
    quindi il canvas resta pulito e la texture funziona -- tecnicamente si puo'.
