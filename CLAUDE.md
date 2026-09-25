@@ -4142,6 +4142,21 @@ altro colore; e le ultime due righe di un elenco aprono il menu **verso l'alto**
 per non uscire dal fondo della pagina, ma qui le righe sono due e «le ultime
 due» sono tutte, cosi' il menu della prima saliva a coprire la recensione.
 
+#### Il ridisegno buttava via la tendina
+
+Riusare le righe porta con se' anche il loro modo di aggiornarsi: dopo un
+comando si rifa' il markup, perche' lo stato scritto nella riga cambia insieme
+al menu. Con una tendina sopra, pero', rifarlo da zero la **rimette chiusa** —
+e il comando sta *dentro* una delle sue righe, quindi la si stava per forza
+guardando aperta. Su Root sono quindici righe da riaprire e da ritrovare, per
+aver toccato una voce.
+
+Quindi il disegno ha un secondo parametro, `conserva`, e non indovina: aprendo
+una scheda la tendina parte chiusa, sempre; dopo un comando resta com'era. Due
+strade che sembrano lo stesso ridisegno e non lo sono, e distinguerle a naso —
+«e' lo stesso gioco di prima?» — avrebbe riaperto la tendina anche riaprendo la
+stessa scatola, che non e' quello che si vuole.
+
 ### Raggruppare toglieva la strada per tornare indietro
 
 Il buco piu' istruttivo di questo giro, trovato provando e non leggendo.

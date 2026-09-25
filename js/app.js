@@ -1473,9 +1473,28 @@ function azioniEspansione(idEsp, mioBgg){
   return h;
 }
 
-async function disegnaEspansioni(game){
+/* `conserva` distingue i due modi in cui si arriva qui, che sembrano lo
+   stesso disegno e non lo sono:
+
+   - APRENDO UNA SCHEDA la tendina parte chiusa, sempre. E' la regola
+     delle cartelle dei gruppi, e la ragione e' la stessa: quindici
+     espansioni aperte spingono la recensione fuori vista.
+   - DOPO UN COMANDO -- un desiderio, un raggruppamento -- si rifa' il
+     markup perche' lo stato scritto nelle righe cambia insieme al menu.
+     Li' la tendina era aperta per forza, visto che il comando sta in una
+     delle sue righe, e richiuderla vorrebbe dire togliere l'elenco da
+     sotto le dita a chi ha appena scelto una voce: su Root sono quindici
+     righe da riaprire e da ricercare.
+
+   Si legge PRIMA di cancellare, perche' dopo non c'e' piu' niente da
+   leggere. */
+async function disegnaEspansioni(game, conserva){
   const el = q('#p-esp');
   if (!el) return;
+
+  const eraAperta = !!conserva &&
+                    !!el.querySelector('.cartella-tit[aria-expanded="true"]');
+
   el.innerHTML = '';
   el.hidden = true;
 
@@ -1526,9 +1545,10 @@ async function disegnaEspansioni(game){
     const hai = sue.filter(function(e){ return !!miaCopiaDi(e.id); });
     const no  = sue.filter(function(e){ return !miaCopiaDi(e.id); });
     pezzi.push('<div class="cartella esp-tendina">' +
-      '<button type="button" class="cartella-tit" aria-expanded="false">' +
+      '<button type="button" class="cartella-tit" aria-expanded="' +
+        (eraAperta ? 'true' : 'false') + '">' +
         T('esp.titolo') + '<span>' + hai.length + '/' + sue.length + '</span></button>' +
-      '<ol class="righe compatta" hidden>' +
+      '<ol class="righe compatta"' + (eraAperta ? '' : ' hidden') + '>' +
         hai.concat(no).map(function(e){ return rigaEspansione(e, mio); }).join('') +
       '</ol></div>');
   }
@@ -5420,7 +5440,7 @@ function bindCatalogo(){
         SUONI.gioca(WISH.c_e(bgg) ? 'acceso' : 'spento');
       } catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); }
       const aperta = state.focused && state.focused.userData.game;
-      if (aperta) disegnaEspansioni(aperta);     // stato e menu si riscrivono insieme
+      if (aperta) disegnaEspansioni(aperta, true);   // stato e menu si riscrivono insieme
       return;
     }
 
@@ -5441,7 +5461,7 @@ function bindCatalogo(){
          una delle sue espansioni no -- li' si sta guardando il gioco
          base, che resta dov'e'. */
       if (aperta && aperta.id === idRiga && !era) unfocus();
-      else if (aperta) disegnaEspansioni(aperta);
+      else if (aperta) disegnaEspansioni(aperta, true);
       return;
     }
   });
