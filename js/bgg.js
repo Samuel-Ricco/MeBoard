@@ -133,6 +133,28 @@ async function misure(ids){
   } catch(e){ return {}; }
 }
 
+/* LE ESPANSIONI DI UNO O PIU' GIOCHI.
+
+   Torna `{ "<id>": { espansioni: [{id, nome}], base: [{id, nome}] } }`.
+   `espansioni` sono quelle DI quel gioco; `base` e' il gioco che QUESTO
+   espande, ed e' pieno solo quando l'id chiesto e' a sua volta
+   un'espansione -- a distinguerli e' `inbound` nell'XML di BGG, non il
+   tipo dell'item.
+
+   Senza proxy torna un dizionario vuoto e non e' un errore: la sezione
+   delle espansioni semplicemente non compare. */
+async function espansioni(ids){
+  const lista = (ids || []).filter(Boolean).slice(0, 30);
+  if (!lista.length) return {};
+  try {
+    await ping();
+    const r = await chiama('/espansioni?ids=' + encodeURIComponent(lista.join(',')));
+    if (!r.ok) return {};
+    const o = await r.json();
+    return (o && !o.queued) ? o : {};
+  } catch(e){ return {}; }
+}
+
 /* La copertina arriva dal proxy (che le rimette gli header CORS), viene
    ridisegnata su canvas a larghezza contenuta e salvata come data URL:
    cosi' resta nella libreria anche quando il proxy e' spento, e non
@@ -157,7 +179,7 @@ async function copertina(id){
   }
 }
 
-return { ping: ping, cerca: cerca, scheda: scheda,
+return { ping: ping, cerca: cerca, scheda: scheda, espansioni: espansioni,
   miniature: miniature, misure: misure, copertina: copertina,
   // a che server si e' attaccato: serve solo a chi diagnostica
   dove: function(){ return base; }, LOCALE: LOCALE, REMOTA: REMOTA };

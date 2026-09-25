@@ -4819,7 +4819,12 @@ async function catNota(){
      si cerca, non si sfoglia, e un contatore che non sa contare e'
      peggio di nessun contatore -- resta vuoto e la testata si stringe
      sull'occhiello. */
-  const tot = DUMP.quanti();
+  /* Il numero e' quello dei GIOCHI, non delle voci: dalla versione 2
+     l'indice porta in coda anche le espansioni, che si trovano cercando
+     ma non si sfogliano. Contarle qui vorrebbe dire promettere un
+     elenco piu' lungo di quello che si puo' scorrere. Su un file di
+     versione 1 i due numeri coincidono. */
+  const tot = DUMP.quantiGiochi();
   const nn = q('#cat-n');
   if (nn) nn.innerHTML = tot
     ? T('cat.totale', {n: tot.toLocaleString(I18N.corrente())})

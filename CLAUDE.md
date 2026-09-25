@@ -4094,6 +4094,58 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### Le espansioni: tre risposte e la sorgente
+
+Tre domande di prodotto tenevano ferma la voce piu' grossa rimasta. Risposte il
+2026-09-25, e sono queste — vanno lette prima di toccare qualunque cosa qui
+attorno, perche' ognuna e' un pezzo di modello dei dati:
+
+1. **Un'espansione occupa un cubo, ma si puo' raggruppare.** Di serie sta sullo
+   scaffale come un gioco — che e' quello che fa oggi — e nella scheda c'e' un
+   interruttore per metterla sotto al gioco base. La scelta e' **di chi
+   possiede**, quindi sta su `giochi.sotto`, non su `schede_bgg`.
+2. **Nella scheda si vedono anche quelle che NON hai**, con il cuore della
+   wishlist. E' la risposta alla domanda vera — *cosa mi manca di questo gioco*
+   — e riusa un comando che esiste gia' nel catalogo.
+3. **L'indice locale se le riprende.** Venivano scartate da `bgg-indice.mjs`, e
+   la ragione era buona per lo *sfogliare* e sbagliata per il *cercare*: senza
+   indice, a edge function giu' un'espansione che possiedi non si trova affatto.
+
+#### Come si separano senza una colonna
+
+Il punto 3 aveva una trappola: rimetterle dentro vuol dire che sfogliando il
+catalogo, in mezzo alla classifica, comparirebbero espansioni che una classifica
+non ce l'hanno. Si separano con **l'ordine**, non con un filtro né con una
+colonna su centomila righe: prima i giochi base (classificati, poi il resto per
+voti), poi tutte le espansioni per voti. L'intestazione del file sale a
+**versione 2** e porta un numero in piu', `quantiBase`, che dice dove finiscono
+i primi.
+
+Da li' `sfoglia()` si ferma a `quantiBase` e `cerca()` scorre tutto. Due numeri
+nell'intestazione al posto di due colonne per riga — ed e' la stessa idea con cui
+il rank non ha mai avuto una colonna sua.
+
+**Un file di versione 1 si legge ancora**, e serve: il `dati/bgg.txt` committato
+oggi e' ancora v1, e lo restera' finche' qualcuno non rigenera l'indice dal CSV
+di BGG. Li' `quantiBase` resta zero e vuol dire "sono tutti giochi". Provato su
+tutt'e due: sul v1 vero (106.694 voci, sfogliate tutte) e su un v2 sintetico,
+dove sfogliare da tre giochi e cercare "root" ne da' cinque con le due espansioni
+marcate.
+
+#### Il verso del legame, che e' la parte che si sbaglia
+
+`<link type="boardgameexpansion">` compare su **tutt'e due i lati**: sulla scheda
+di Root elenca le sue espansioni, sulla scheda di un'espansione punta a Root. A
+distinguerli e' solo `inbound="true"`. Senza guardarlo, aprendo un'espansione si
+elencherebbe il gioco base come se fosse una sua espansione.
+
+Per questo il vecchio `links()` non bastava: torna solo il *nome*, e qui servono
+l'**id** — l'unica chiave su cui confrontare "ce l'hai gia'?", perche' i titoli
+su BGG e in casa si scrivono con sottotitoli diversi — e il **verso**. La nuova
+`legami()` torna `{id, nome, base}`, ed e' scritta due volte, in
+`tools/bgg-lib.mjs` e nella edge function, come tutto il resto di quel file:
+**se cambia una deve cambiare l'altra**.
+
 ### Il marchio si leggeva solo con il trattino
 
 Trovato spostando il pregresso in `bgg/`, ed era li' da una settimana.
@@ -6312,9 +6364,9 @@ e' fatto* c'e' tutto il resto di questo file, che e' aggiornato.
 Il sito ha **quattro sezioni** — collezione (la scena 3D), catalogo, partite,
 profilo — piu' **l'elenco della collezione**, che e' una voce di navigazione sua
 e non un pulsante in testata. Due lingue, **604 chiavi in italiano e 597 in
-inglese**. **Diciassette migrazioni nel repo, sedici applicate**: manca
-`librerie_nome_unico` (2026-09-25), che si incolla nell'SQL editor come si e'
-fatto con `schede_bgg`.
+inglese**. **Diciotto migrazioni nel repo, sedici applicate**: mancano
+`librerie_nome_unico` e `espansioni` (tutt'e due del 2026-09-25), che si
+incollano nell'SQL editor come si e' fatto con `schede_bgg`.
 
 BGG lo serve una **edge function**, non piu' solo il proxy locale: e' la
 differenza fra un sito che funziona su questa macchina e uno che funziona anche
@@ -6363,6 +6415,7 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | la scorta | `js/scorta.js`: le copertine in IndexedDB **davanti** al bucket, perche' `max-age=3600` le faceva sparire dopo un'ora a rete staccata. Un blob riletto e' `blob:` di casa, quindi il canvas resta pulito |
 | copertine piu' nitide | le 69 gia' nel bucket sono a 760 px: `piuNitide()` le rifa' a 1.100, quattro per sessione e solo da admin -- la condivisa e' di solo inserimento, quindi per sostituire bisogna cancellare, e da li' cancella solo un admin |
 | il nome al tavolo | sotto i 430 px prende una riga sua: da ~30 px a 243. Cede la disposizione, non le misure dei comandi |
+| le espansioni, la sorgente | `/espansioni` su proxy e edge function, `legami()` con id e verso (`inbound` distingue "le mie espansioni" da "il gioco che espando"), l'indice che se le riprende in coda con `quantiBase` nell'intestazione, e la migrazione. Manca la parte visibile |
 
 **Le lezioni generali** di questa sessione:
 
@@ -6739,12 +6792,20 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
 
    **Resta il lorem gia' finito sul database**, che e' dato di chi lo ha: si
    toglie con una `update` sul Table Editor, e non e' un lavoro di codice.
-2. **Le espansioni** -- le due voci della lista fuori dal repo. Nella scheda di
-   un gioco una sezione che distingue le espansioni che hai da quelle che ti
-   mancano, e la possibilita' di raggrupparle sotto il gioco base gioco per
-   gioco. E' il lavoro piu' grosso rimasto, e non e' un lavoro di codice: sono
-   domande di prodotto -- se un'espansione occupa un cubo, se sparisce dentro
-   il gioco base, se si conta nel totale della collezione.
+2. **Le espansioni: la FONTE e' fatta, manca quello che si vede.** Le tre
+   domande di prodotto hanno avuto risposta il 2026-09-25 -- vedi "Le espansioni:
+   tre risposte e la sorgente" piu' sotto -- e da li' e' uscito il primo pezzo:
+   `/espansioni` sul proxy e sulla edge function, `BGG.espansioni()` nel client,
+   le espansioni di nuovo dentro l'indice locale (in coda, con l'intestazione a
+   dire dove finiscono i giochi), e la migrazione con `schede_bgg.legami` e
+   `giochi.sotto`.
+
+   **Serve un rilascio e due migrazioni prima che serva a qualcosa**, e finche'
+   non arrivano non cambia niente per nessuno: `/espansioni` risponde 404 e il
+   client tratta un 404 come "nessuna espansione". Poi resta la parte visibile:
+   la sezione nella scheda con quelle che hai e quelle che mancano, il cuore
+   sulle mancanti, e l'interruttore che raggruppa un'espansione sotto il suo
+   gioco base.
 3. **Le tre porte mancanti: FATTE.** Cancellare un gioco e' tornato nel menu a
    tre punti dell'elenco il 2026-09-03; **correggere la scheda** (`apriModifica`
    -- autore, editore, anno, voto, copertina) ci e' arrivata il 2026-09-25, e

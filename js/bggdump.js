@@ -34,6 +34,7 @@ const FILE = 'dati/bgg.txt';
 let ids = null, nomi = null, anni = null, medie = null;
 let piatti = null;               // i nomi appiattiti, stesso indice
 let quantiRank = 0;              // quante righe, in testa, hanno un rank
+let quantiBase = 0;              // dove finiscono i giochi e cominciano le espansioni
 let inCorso = null;              // la promessa del caricamento, per non farne due
 let esiste = null;               // c'e' il file? null = non ancora chiesto
 
@@ -70,14 +71,23 @@ async function carica(){
     const testo = await r.text();
     const righe = testo.split('\n');
 
-    /* La prima riga dice quante voci e quante classificate. Il rank non
-       ha una colonna sua: per le prime `quantiRank` righe e' la
-       posizione della riga, per le altre non c'e'. */
+    /* La prima riga dice quante voci, quante classificate e -- dalla
+       versione 2 -- dove finiscono i giochi base. Niente di tutto questo
+       ha una colonna sua: il rank, per le prime `quantiRank` righe, e'
+       la posizione della riga; e un'espansione e' semplicemente una
+       riga dopo `quantiBase`. Due numeri nell'intestazione al posto di
+       due colonne su centomila righe.
+
+       Un file di versione 1 si legge lo stesso: li' le espansioni non
+       c'erano proprio, quindi `quantiBase` resta zero e vuol dire
+       "sono tutti giochi". */
     const testa = (righe[0] || '').split(' ');
     if (testa[0] !== '#' || testa[1] !== 'meboard-bgg'){
       throw new Error('dati/bgg.txt non ha l\u2019intestazione che mi aspetto');
     }
+    const versione = parseInt(testa[2], 10) || 1;
     quantiRank = parseInt(testa[4], 10) || 0;
+    quantiBase = versione >= 2 ? (parseInt(testa[5], 10) || 0) : 0;
     const n = righe.length - 1;
 
     ids    = new Int32Array(n);
@@ -126,17 +136,24 @@ function voce(i){
     title: nomi[i],
     year: anni[i] ? String(anni[i]) : '',
     rank: i < quantiRank ? (i + 1) : 0,
+    espansione: quantiBase ? i >= quantiBase : false,
     bggScore: medie[i] ? medie[i].toFixed(1) : '',
     designer: '', publisher: '', players: '', time: '', immagine: ''
   };
 }
 
 /* --- sfogliare: le prime N della classifica --------------------- */
+/* SFOGLIANDO si vedono i GIOCHI, non le espansioni: e' un elenco in
+   ordine di classifica, e un'espansione non ha classifica. Stanno tutte
+   dopo `quantiBase`, quindi ci si ferma li' -- e su un file di versione
+   1, dove `quantiBase` e' zero, non cambia niente. Cercando invece si
+   trova tutto: chi scrive "blighted reach" sa gia' cosa vuole. */
 async function sfoglia(offset, limite){
   await carica();
+  const fino = quantiBase || ids.length;
   const da = offset || 0, quante = limite || 24;
   const out = [];
-  for (let i = da; i < Math.min(da + quante, ids.length); i++) out.push(voce(i));
+  for (let i = da; i < Math.min(da + quante, fino); i++) out.push(voce(i));
   return out;
 }
 
@@ -191,8 +208,12 @@ async function di(bgg){
 }
 
 function quanti(){ return ids ? ids.length : 0; }
+/* Quanti sono i GIOCHI, espansioni escluse: e' il numero che la testata
+   del catalogo mostra, perche' e' quello che si sfoglia. */
+function quantiGiochi(){ return ids ? (quantiBase || ids.length) : 0; }
 function caricato(){ return !!ids; }
 
 return { c_e: c_e, carica: carica, cerca: cerca, sfoglia: sfoglia,
-         di: di, quanti: quanti, caricato: caricato, FILE: FILE };
+         di: di, quanti: quanti, quantiGiochi: quantiGiochi,
+         caricato: caricato, FILE: FILE };
 })();

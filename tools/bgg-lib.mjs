@@ -55,6 +55,34 @@ export function attr(xml, tag, name){
   return m ? unesc(m[1]) : '';
 }
 
+/* I LEGAMI, con l'ID e il VERSO. `links()` qui sotto torna solo il
+   nome, e per autori ed editori basta: un nome e' tutto quello che se
+   ne fa. Per le espansioni no.
+
+   Serve l'ID perche' e' l'unica chiave su cui confrontare: "ce l'hai
+   gia'?" si risponde guardando gli id della collezione, non i titoli --
+   che su BGG e in casa si scrivono con sottotitoli diversi, ed e' la
+   stessa ragione per cui la ricerca dedupla per id.
+
+   E serve il VERSO. Lo stesso `boardgameexpansion` compare su tutt'e
+   due i lati: sulla scheda di Root elenca le sue espansioni, sulla
+   scheda di un'espansione punta a Root, e a distinguerli e' solo
+   `inbound="true"`. Senza il verso, aprendo un'espansione si
+   elencherebbe il gioco base come se fosse una sua espansione. */
+export function legami(xml, type){
+  const out = [];
+  const re = new RegExp('<link[^>]*type="' + type + '"[^>]*>', 'g');
+  let m;
+  while ((m = re.exec(xml))){
+    const t = m[0];
+    const id = (t.match(/\sid="(\d+)"/) || [])[1];
+    const nome = (t.match(/\svalue="([^"]*)"/) || [])[1];
+    if (!id || nome === undefined) continue;
+    out.push({ id: +id, nome: unesc(nome), base: /inbound="true"/.test(t) });
+  }
+  return out;
+}
+
 export function links(xml, type){
   const out = [];
   const re = new RegExp('<link[^>]*type="' + type + '"[^>]*value="([^"]*)"', 'g');

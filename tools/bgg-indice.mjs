@@ -69,7 +69,6 @@ const reale  = function(v){ const n = parseFloat(v); return Number.isFinite(n) ?
 const voci = [];
 for (let i = 1; i < righe.length; i++){
   const c = campi(righe[i]);
-  if (intero(c[col.is_expansion]) === 1) continue;      // le espansioni non sono giochi
   const voti = intero(c[col.usersrated]);
   if (voti < 1) continue;                                // zero voti = una scheda vuota
   const id = intero(c[col.id]);
@@ -84,7 +83,21 @@ for (let i = 1; i < righe.length; i++){
     anno: intero(c[col.yearpublished]),
     rank: intero(c[col.rank]),
     media: reale(c[col.average]),
-    voti: voti
+    voti: voti,
+    /* LE ESPANSIONI CI SONO, MA IN CODA.
+
+       Prima venivano buttate via qui, e la ragione era buona per lo
+       SFOGLIARE: in un elenco che si scorre, cercando "gloomhaven"
+       uscivano prima tre espansioni e il gioco quarto. Ma era la
+       ragione sbagliata per il CERCARE -- un'espansione che si possiede
+       e' un gioco che si possiede, e senza indice non la si trova
+       affatto quando BGG non risponde.
+
+       Quindi restano, e si separano con l'ORDINE invece che con un
+       filtro: prima i giochi base (classificati, poi il resto), poi
+       tutte le espansioni. L'intestazione dice dove finiscono i primi,
+       e chi sfoglia si ferma li'. */
+    esp: intero(c[col.is_expansion]) === 1
   });
 }
 
@@ -92,25 +105,41 @@ for (let i = 1; i < righe.length; i++){
    di voti. Cosi' il rank non ha bisogno di una colonna sua: per le
    prime `quantiRank` righe e' la posizione della riga, per le altre non
    c'e'. Sfogliare il catalogo diventa "prendi le prime N righe". */
-const classificati = voci.filter(function(v){ return v.rank > 0; })
+const base = voci.filter(function(v){ return !v.esp; });
+const classificati = base.filter(function(v){ return v.rank > 0; })
                          .sort(function(a, b){ return a.rank - b.rank; });
-const resto = voci.filter(function(v){ return !v.rank; })
+const resto = base.filter(function(v){ return !v.rank; })
                   .sort(function(a, b){ return b.voti - a.voti; });
-const tutte = classificati.concat(resto);
+/* Le espansioni per numero di voti: fra loro non c'e' una classifica --
+   BGG le tiene fuori dal ranking -- e i voti sono l'unico ordine che
+   mette davanti quelle che qualcuno ha davvero giocato. */
+const espansioni = voci.filter(function(v){ return v.esp; })
+                       .sort(function(a, b){ return b.voti - a.voti; });
+const tutte = classificati.concat(resto, espansioni);
+const quantiBase = classificati.length + resto.length;
 
 const corpo = tutte.map(function(v){
   return [v.id, v.nome, v.anno || '', v.media ? v.media.toFixed(2) : ''].join('\t');
 }).join('\n');
 
-/* La prima riga dice quante voci ci sono e quante sono classificate:
-   il resto del file non ha bisogno di altre intestazioni. */
-const testa = '# meboard-bgg 1 ' + tutte.length + ' ' + classificati.length;
+/* La prima riga dice quante voci ci sono, quante sono classificate e
+   DOVE FINISCONO I GIOCHI BASE: il resto del file non ha bisogno di
+   altre intestazioni, e in particolare le espansioni non hanno bisogno
+   di una colonna loro -- stanno tutte dopo `quantiBase`, per
+   costruzione.
+
+   La versione sale a 2 proprio per questo: un lettore vecchio
+   leggerebbe il file nuovo senza accorgersi che in coda ci sono le
+   espansioni, e se le ritroverebbe mescolate ai giochi sfogliando. */
+const testa = '# meboard-bgg 2 ' + tutte.length + ' ' + classificati.length +
+              ' ' + quantiBase;
 
 mkdirSync(dirname(uscita), { recursive: true });
 writeFileSync(uscita, testa + '\n' + corpo + '\n', 'utf8');
 
 const mb = function(s){ return (Buffer.byteLength(s, 'utf8') / 1048576).toFixed(2); };
 console.log('letti      ' + (righe.length - 1) + ' record');
-console.log('scritti    ' + tutte.length + ' giochi (' + classificati.length + ' in classifica)');
-console.log('scartati   espansioni e schede senza nemmeno un voto');
+console.log('scritti    ' + tutte.length + ' voci: ' + quantiBase + ' giochi (' +
+            classificati.length + ' in classifica) e ' + espansioni.length + ' espansioni');
+console.log('scartati   le schede senza nemmeno un voto');
 console.log('uscita     ' + uscita + '  ' + mb(testa + corpo) + ' MB');

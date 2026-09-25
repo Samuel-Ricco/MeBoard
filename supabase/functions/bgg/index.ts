@@ -68,6 +68,27 @@ function attr(xml: string, tag: string, name: string): string {
   return m ? unesc(m[1]) : '';
 }
 
+/* I legami con l'ID e il VERSO: la gemella di `legami()` in
+   tools/bgg-lib.mjs, e come tutto il resto di questo file va tenuta
+   uguale a quella. `links()` qui sotto torna solo il nome e per autori
+   ed editori basta; per le espansioni serve l'id -- l'unica chiave su
+   cui confrontare "ce l'hai gia'?" -- e serve il verso, perche' lo
+   stesso `boardgameexpansion` compare su tutt'e due i lati e a
+   distinguerli e' solo `inbound="true"`. */
+function legami(xml: string, type: string): Array<{id: number; nome: string; base: boolean}> {
+  const out: Array<{id: number; nome: string; base: boolean}> = [];
+  const re = new RegExp('<link[^>]*type="' + type + '"[^>]*>', 'g');
+  let m;
+  while ((m = re.exec(xml))) {
+    const t = m[0];
+    const id = (t.match(/\sid="(\d+)"/) || [])[1];
+    const nome = (t.match(/\svalue="([^"]*)"/) || [])[1];
+    if (!id || nome === undefined) continue;
+    out.push({ id: Number(id), nome: unesc(nome), base: /inbound="true"/.test(t) });
+  }
+  return out;
+}
+
 function links(xml: string, type: string): string[] {
   const out: string[] = [];
   const re = new RegExp('<link[^>]*type="' + type + '"[^>]*value="([^"]*)"', 'g');
@@ -254,6 +275,34 @@ Deno.serve(async (req: Request) => {
     /* Le misure costano care in banda -- `versions=1` porta 70 KB per
        gioco -- ma il conto lo paga il server: al browser tornano tre
        numeri. Dieci per volta, che la risposta e' grossa. */
+    /* LE ESPANSIONI DI UN GIOCO. Stessa forma di `misure` -- id a
+       gruppi di dieci, risposta a dizionario -- e per la stessa ragione:
+       e' una `/thing`, e una `/thing` si chiede per molti insieme o non
+       si chiede affatto. Anche il ritaglio per item e' lo stesso,
+       `(?!version)` compreso: le edizioni sono `<item>` annidati e
+       prenderle spezzerebbe il pezzo dove stanno i legami. */
+    if (dove === 'espansioni') {
+      const ids = (url.searchParams.get('ids') || '')
+        .split(',').map((s) => s.trim()).filter((s) => /^\d+$/.test(s)).slice(0, 30);
+      if (!ids.length) return json(400, { error: 'mancano gli ids' });
+      const out: Record<string, unknown> = {};
+      for (let i = 0; i < ids.length; i += 10) {
+        const r = await api('/thing?id=' + ids.slice(i, i + 10).join(','));
+        if (r.queued) continue;
+        const GIOCO = '<item[^>]*type="boardgame(?!version)[a-z]*"';
+        const re = new RegExp(GIOCO + '[^>]*id="(\\d+)"[^>]*>([\\s\\S]*?)<\\/item>\\s*(?=' + GIOCO + '|<\\/items>)', 'g');
+        let m;
+        while ((m = re.exec(r.xml!))) {
+          const tutti = legami(m[2], 'boardgameexpansion');
+          out[m[1]] = {
+            espansioni: tutti.filter((x) => !x.base),
+            base: tutti.filter((x) => x.base),
+          };
+        }
+      }
+      return json(200, out);
+    }
+
     if (dove === 'misure') {
       const ids = idsDa(url, 30);
       if (!ids.length) return json(400, { error: 'mancano gli ids' });

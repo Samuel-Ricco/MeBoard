@@ -15,7 +15,7 @@
    ============================================================ */
 
 import http from 'node:http';
-import { api, parseSearch, parseGame, parseMisure, token } from './bgg-lib.mjs';
+import { api, legami, parseSearch, parseGame, parseMisure, token } from './bgg-lib.mjs';
 
 const PORT = 8125;
 
@@ -132,6 +132,38 @@ const server = http.createServer(async function(req, res){
        proxy: al browser tornano tre numeri. Dieci per volta e non
        venti: qui la risposta e' grossa, e mezzo megabyte alla volta
        basta e avanza. */
+    /* LE ESPANSIONI DI UN GIOCO.
+
+       Stessa forma di `/misure` -- id a gruppi di dieci, risposta a
+       dizionario -- e per la stessa ragione: e' una `/thing`, e una
+       `/thing` si chiede per molti insieme o non si chiede affatto.
+
+       Il ritaglio per item e' identico a quello di `/misure`, compreso
+       il `(?!version)`: anche qui le EDIZIONI sono `<item>` annidati, e
+       prenderle spezzerebbe il pezzo proprio dove stanno i legami. */
+    if (url.pathname === '/espansioni'){
+      const ids = (url.searchParams.get('ids') || '')
+        .split(',').map(function(x){ return x.trim(); })
+        .filter(function(x){ return /^\d+$/.test(x); }).slice(0, 30);
+      if (!ids.length) return json(res, 400, { error: 'mancano gli ids' });
+      const out = {};
+      for (let i = 0; i < ids.length; i += 10){
+        const r = await api('/thing?id=' + ids.slice(i, i + 10).join(','));
+        if (r.queued) continue;
+        const GIOCO = '<item[^>]*type="boardgame(?!version)[a-z]*"';
+        const re = new RegExp(GIOCO + '[^>]*id="(\\d+)"[^>]*>([\\s\\S]*?)<\\/item>\\s*(?=' + GIOCO + '|<\\/items>)', 'g');
+        let m;
+        while ((m = re.exec(r.xml))){
+          const tutti = legami(m[2], 'boardgameexpansion');
+          out[m[1]] = {
+            espansioni: tutti.filter(function(x){ return !x.base; }),
+            base: tutti.filter(function(x){ return x.base; })
+          };
+        }
+      }
+      return json(res, 200, out);
+    }
+
     if (url.pathname === '/misure'){
       const ids = (url.searchParams.get('ids') || '')
         .split(',').map(function(x){ return x.trim(); })
