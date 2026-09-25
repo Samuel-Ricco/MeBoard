@@ -282,6 +282,7 @@ const ICO = {
   /* Una calcolatrice: la cassa, il display, i tasti. Sta accanto al
      campo dei punti di ogni giocatore, ed e' l'unico posto del sito
      dove serve fare un conto. */
+  matita:   '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4l10-10a2.1 2.1 0 0 0-3-3L5 17v3zM14.5 6.5l3 3"/></svg>',
   conta:    '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M8.4 7.4h7.2"/><circle cx="9" cy="12" r="1.05" fill="currentColor"/><circle cx="12" cy="12" r="1.05" fill="currentColor"/><circle cx="15" cy="12" r="1.05" fill="currentColor"/><circle cx="9" cy="16.4" r="1.05" fill="currentColor"/><circle cx="12" cy="16.4" r="1.05" fill="currentColor"/><circle cx="15" cy="16.4" r="1.05" fill="currentColor"/></svg>'
 };
 
@@ -1293,6 +1294,76 @@ async function riparaCopertine(){
     try { dataUrl = await BGG.copertina(g.bgg); } catch(e){ continue; }
     if (!dataUrl) continue;
     LIB.update(g.id, { cover: dataUrl }, 'p' + attesa[String(g.bgg)]);
+    fatti.push(g.id);
+  }
+  return fatti;
+}
+
+/* ===============================================================
+   LE COPERTINE PIU' PICCOLE DEL DOVUTO
+
+   `COP_SALVA` e' passato da 760 a 1.100 il 2026-09-04, perche' 760 era
+   SOTTO la misura a cui una copertina viene disegnata quando si apre una
+   scatola: 1.114 pixel veri su un desktop retina, 1.125 su un telefono a
+   densita' 3. Ma un tetto nuovo vale solo per quello che si carica da
+   li' in poi: le sessantanove figure gia' nel bucket sono rimaste a 760,
+   e in primo piano restano morbide -- `copertinaTex(im, COP_FUOCO)` non
+   puo' inventare pixel che il file non ha.
+
+   RIFARLE COSTA UNA CANCELLAZIONE, e non e' un dettaglio: la policy
+   della cartella condivisa e' di SOLO INSERIMENTO -- "un oggetto li'
+   dentro e' di tutti" -- quindi nessuno puo' scrivere sopra a
+   `bgg/p<id>.jpg`, e `caricaCopertina` che ci prova si sente rispondere
+   "esiste gia'" e tiene il vecchio. Per sostituirlo va tolto prima, e a
+   togliere da li' sono solo gli admin.
+
+   Quindi questo giro:
+
+   - lo fa SOLO un admin, perche' e' l'unico che puo';
+   - ne fa QUATTRO per sessione, non sessantanove: ogni copertina e' un
+     originale da BGG (misurato: 706 KB) piu' un caricamento, e
+     svuotare un'API pubblica in un colpo solo e' il modo piu' rapido di
+     prendersi un limite. Si finisce in una quindicina di aperture,
+     senza che nessuno se ne accorga;
+   - e fra la cancellazione e il caricamento c'e' una FINESTRA di
+     qualche decimo in cui quella figura non esiste. Chi stesse
+     caricando proprio quella proprio in quel momento vede la copertina
+     disegnata per quella sessione, che e' il ripiego gia' previsto
+     ovunque. E' il prezzo di non avere il permesso di sovrascrivere, ed
+     e' piu' basso del prezzo di darlo a tutti.
+   =============================================================== */
+const NITIDE_PER_GIRO = 4;
+
+async function piuNitide(){
+  if (state.mode !== 'admin') return [];        // gli altri non possono, e va bene cosi'
+  if (!LIB.eRemota() || LIB.ospitePresso()) return [];
+
+  /* Quanto e' grande DAVVERO il file che c'e': lo dice l'immagine gia'
+     caricata, senza chiedere niente a nessuno. Si guardano solo quelle
+     condivise: nella cartella personale non ci va piu' niente di nuovo
+     e non vale la pena rifarle. */
+  const piccole = LIB.all().filter(function(g){
+    if (!g.bgg || !g.img || !g.img.naturalWidth) return false;
+    const ogg = LIB.oggettoDi(g.cover);
+    if (!ogg || ogg.indexOf('bgg/') !== 0) return false;
+    return Math.max(g.img.naturalWidth, g.img.naturalHeight) < ART.COP_SALVA - 8;
+  }).slice(0, NITIDE_PER_GIRO);
+  if (!piccole.length) return [];
+
+  const fatti = [];
+  for (let i = 0; i < piccole.length; i++){
+    const g = piccole[i];
+    const ogg = LIB.oggettoDi(g.cover);
+    const marchio = marchioDi(g.cover);
+    if (!/^p\d+$/.test(marchio)) continue;
+
+    let dataUrl = '';
+    try { dataUrl = await BGG.copertina(g.bgg); } catch(e){ continue; }
+    if (!dataUrl) continue;
+
+    // il vecchio se ne va solo QUANDO il nuovo e' gia' in mano
+    try { if (!(await LIB.togliCondivisa(ogg))) continue; } catch(e){ continue; }
+    LIB.update(g.id, { cover: dataUrl }, marchio);
     fatti.push(g.id);
   }
   return fatti;
@@ -4704,7 +4775,22 @@ async function catCerca(){
     catFine = catVoci.length <= CAT_PAG;
     disegnaCatalogo(0, CAT_PAG);
     if (!catVoci.length){
-      catMsg(T('cat.nessunGioco', {q: esc(t)}));
+      /* IL MODULO A MANO SI APRE DA QUI, e non da un "+" nella
+         collezione.
+
+         Quel "+" era stato tolto con una ragione buona -- un gioco si
+         aggiunge dal catalogo, che e' anche dove ci si accorge che
+         manca -- e da allora il modulo a mano non aveva piu' nessuna
+         porta. Ma il posto giusto non era la collezione: e' QUI, nel
+         momento esatto in cui una ricerca non trova niente. E' li' che
+         nasce il bisogno, ed e' l'unico caso in cui quel modulo serve
+         davvero -- per quello che il catalogo non conosce.
+
+         Sta dentro il messaggio e non accanto alla ricerca perche'
+         compare solo quando serve: un comando sempre a schermo
+         inviterebbe a scrivere a mano quello che il catalogo ha gia'. */
+      catMsg(T('cat.nessunGioco', {q: esc(t)}) +
+             ' <button type="button" id="cat-mano">' + T('cat.aMano') + '</button>');
     } else { catNota(); riempiMiniature(0, mio, catMostra); }
   } catch(e){
     if (mio !== catGiro) return;
@@ -5093,6 +5179,12 @@ async function mettiInLibreria(v, btn){
 }
 
 function bindCatalogo(){
+  /* Un ascoltatore sul messaggio, non sul pulsante: il pulsante nasce e
+     muore con ogni ricerca, e attaccarcelo sopra vorrebbe dire rimetterlo
+     ogni volta. */
+  q('#cat-msg').addEventListener('click', function(e){
+    if (e.target.closest('#cat-mano')) openAdd();
+  });
   q('#cat-go').addEventListener('click', catCerca);
   q('#cat-q').addEventListener('keydown', function(e){
     e.stopPropagation();
@@ -6559,6 +6651,21 @@ function contenutoAzioni(g){
             Lo `<span>` non e' decorazione: e' quello che il gestore
             riscrive per chiedere "sicuro?" senza rifare il pulsante --
             rifarlo staccherebbe dal documento il nodo appena toccato. */
+         /* CORREGGERE LA SCHEDA, e anche questa e' l'unica porta che ha.
+
+            `apriModifica` -- autore, editore, anno, voto, copertina --
+            era agganciata a un `#edit` che nel markup non esiste piu':
+            l'aggancio e' condizionato, quindi non si rompeva niente e
+            non se n'e' accorto nessuno per un mese. Il posto naturale
+            era questo menu fin dall'inizio, ed e' quello che dicevano
+            le note; e' solo che quando le hanno scritte il menu non
+            c'era ancora.
+
+            Sta PRIMA di eliminare e dopo i due gesti dello scaffale:
+            correggere e' la cosa piu' innocua delle tre, e quello che
+            distrugge resta ultimo. */
+         '<button type="button" data-fa="scheda">' +
+           ICO.matita + '<span>' + T('riga.scheda') + '</span></button>' +
          '<button type="button" data-fa="elimina" class="elimina">' +
            ICO.cestino + '<span>' + T('riga.eliminaGioco') + '</span></button>';
 }
@@ -7864,6 +7971,16 @@ function bindProfilo(){
       if (v === '+') libreriaNuovaPer(id);
       else if (v) mettiSuScaffale(id, v);
       else disegnaMia();
+      return;
+    }
+    /* Il menu si chiude PRIMA di aprire il modulo: sono due cose che
+       stanno tutte e due sopra l'elenco, e lasciarne una dietro
+       all'altra vuol dire ritrovarsela aperta uscendo. */
+    const sch = e.target.closest('[data-fa="scheda"]');
+    if (sch){
+      const g = LIB.get(id);
+      chiudiAzioni(null);
+      if (g) apriModifica(g);
       return;
     }
     /* Eliminare e' l'unico gesto qui dentro che non si disfa: resta in
@@ -9905,9 +10022,15 @@ function buildFlatList(){
 function loadCovers(forza){
   return Promise.all(LIB.all().map(function(g){
     return new Promise(function(done){
-      // `forza` serve dopo una modifica: la copertina puo' essere
-      // cambiata e quella vecchia e' ancora attaccata al gioco
-      if (forza && g.img && g.img.src !== g.cover) g.img = null;
+      /* `forza` serve dopo una modifica: la copertina puo' essere
+         cambiata e quella vecchia e' ancora attaccata al gioco.
+
+         Si confronta `__url` e non `src`: da quando c'e' la scorta,
+         `src` puo' essere un `blob:` -- l'indirizzo della copia di casa
+         -- e non somiglia piu' all'indirizzo del bucket. Confrontando
+         quello, OGNI copertina risultava cambiata e si ricaricava tutto
+         a ogni modifica. `__url` e' quello vero, messo qui sotto. */
+      if (forza && g.img && (g.img.__url || g.img.src) !== g.cover) g.img = null;
       // non basta che `img` esista: da una libreria vecchia puo' arrivare
       // un oggetto vuoto, e va ricaricata l'immagine per davvero
       if (!g.cover || (g.img && g.img.naturalWidth)) return done();
@@ -9950,7 +10073,19 @@ function loadCovers(forza){
         done();
       };
       im.onerror = function(){ done(); };
-      im.src = g.cover;
+
+      /* PRIMA LA SCORTA, POI LA RETE. `SCORTA.indirizzo` torna la copia
+         di casa se c'e' -- un `blob:` dello stesso dominio, quindi la
+         texture si costruisce lo stesso -- se no scarica, mette da parte
+         e torna quella. E se niente funziona torna l'indirizzo com'era,
+         cosi' il `<img>` ci riprova da solo con la sua cache.
+
+         `__url` resta l'indirizzo VERO: serve a `forza` qui sopra, che
+         senza confronterebbe un `blob:` con un `https:`. */
+      im.__url = g.cover;
+      if (typeof SCORTA === 'undefined'){ im.src = g.cover; return; }
+      SCORTA.indirizzo(g.cover).then(function(u){ im.src = u; },
+                                     function(){ im.src = g.cover; });
     });
   }));
 }
@@ -10127,12 +10262,23 @@ async function boot(){
   buildFlatList();
   setProg(.56, TP('load.copertine'));
   await loadCovers();
+  /* La potatura della scorta va QUI: la libreria e' appena stata letta,
+     quindi si sa esattamente quali indirizzi servono ancora, e le
+     copertine sono gia' a schermo -- se ci mette un attimo non se ne
+     accorge nessuno. Non si aspetta. */
+  if (typeof SCORTA !== 'undefined'){
+    try { SCORTA.pota(LIB.all().map(function(g){ return g.cover; })); } catch(e){}
+  }
   /* Le misure vere delle scatole, se il proxy e' acceso. Si chiede
      PRIMA di costruire: dopo vorrebbe dire rifare tutte le scatole.
      Il `ping` ha gia' il suo limite di tempo, quindi su un sito senza
      proxy questa riga costa quattrocento millisecondi e non blocca
      niente. */
   try { if ((await BGG.ping()).su) await caricaMisure(); } catch(e){}
+  /* Le copertine rimaste indietro sul tetto vecchio: quattro per volta,
+     e solo se chi guarda e' admin -- vedi "LE COPERTINE PIU' PICCOLE DEL
+     DOVUTO". Non blocca l'avvio e non dice niente se non fa niente. */
+  try { rifaiScatole(await piuNitide()); } catch(e){}
   await wait(20); setProg(.72, TP('load.mensole'));
   applyLibrary({});
   await wait(20); setProg(.92, TP('load.lampada'));

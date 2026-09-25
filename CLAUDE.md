@@ -6312,8 +6312,9 @@ e' fatto* c'e' tutto il resto di questo file, che e' aggiornato.
 Il sito ha **quattro sezioni** — collezione (la scena 3D), catalogo, partite,
 profilo — piu' **l'elenco della collezione**, che e' una voce di navigazione sua
 e non un pulsante in testata. Due lingue, **604 chiavi in italiano e 597 in
-inglese**. **Sedici migrazioni nel repo, sedici applicate**: `schede_bgg` e' stata
-applicata il 2026-09-03 e verificata contro il database vero.
+inglese**. **Diciassette migrazioni nel repo, sedici applicate**: manca
+`librerie_nome_unico` (2026-09-25), che si incolla nell'SQL editor come si e'
+fatto con `schede_bgg`.
 
 BGG lo serve una **edge function**, non piu' solo il proxy locale: e' la
 differenza fra un sito che funziona su questa macchina e uno che funziona anche
@@ -6358,6 +6359,10 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | le recensioni | via il lorem ipsum: nascono vuote, con la riga tenue e il pulsante per scriverla. Un segnaposto che sembra una recensione fa credere che il sito abbia gia' un contenuto |
 | il pregresso delle copertine | `spostaInCondivisa()` porta in `bgg/` quelle ferme nelle cartelle personali, senza chiedere niente a BGG -- l'id della figura e' gia' nel nome. La cartella dell'admin e' sparita, `bgg/` da 2 a 15 oggetti |
 | il marchio col trattino | `marchioDi` leggeva solo `-p<id>.jpg` e non `bgg/p<id>.jpg`: ogni copertina condivisa sembrava sbagliata e veniva riscaricata da BGG **a ogni avvio**. Quattordici giri e quattordici scritture per non cambiare niente |
+| le porte mancanti | correggere la scheda e' nel menu a tre punti; il modulo a mano si apre dal messaggio "nessun gioco per...", cioe' dove nasce il bisogno e non da un "+" sempre a schermo |
+| la scorta | `js/scorta.js`: le copertine in IndexedDB **davanti** al bucket, perche' `max-age=3600` le faceva sparire dopo un'ora a rete staccata. Un blob riletto e' `blob:` di casa, quindi il canvas resta pulito |
+| copertine piu' nitide | le 69 gia' nel bucket sono a 760 px: `piuNitide()` le rifa' a 1.100, quattro per sessione e solo da admin -- la condivisa e' di solo inserimento, quindi per sostituire bisogna cancellare, e da li' cancella solo un admin |
+| il nome al tavolo | sotto i 430 px prende una riga sua: da ~30 px a 243. Cede la disposizione, non le misure dei comandi |
 
 **Le lezioni generali** di questa sessione:
 
@@ -6740,42 +6745,84 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
    gioco. E' il lavoro piu' grosso rimasto, e non e' un lavoro di codice: sono
    domande di prodotto -- se un'espansione occupa un cubo, se sparisce dentro
    il gioco base, se si conta nel totale della collezione.
-3. **Cancellare un gioco: FATTO il 2026-09-03**, ed e' tornato dove le note
-   dicevano che sarebbe stato il suo posto -- il menu a tre punti dell'elenco.
-   Restano senza porta **`apriModifica`** (autore, editore, anno, voto,
-   copertina) **e il modulo di aggiunta a mano** (`openAdd`), che ha perso il
-   suo «+» dalla collezione. Per tutt'e due il posto naturale e' lo stesso
-   menu, ed e' adesso un posto che esiste.
-4. **Manca l'indice unico su `(proprietario, nome)`** delle librerie. Il
-   divieto dei nomi doppi vive in `store.js` e regge; l'indice sarebbe la
-   garanzia, e adesso che i doppioni non ci sono piu' la migrazione passerebbe.
+3. **Le tre porte mancanti: FATTE.** Cancellare un gioco e' tornato nel menu a
+   tre punti dell'elenco il 2026-09-03; **correggere la scheda** (`apriModifica`
+   -- autore, editore, anno, voto, copertina) ci e' arrivata il 2026-09-25, e
+   sta prima di eliminare perche' e' la piu' innocua delle tre.
+
+   Il **modulo a mano** (`openAdd`) invece e' andato altrove, e le note di prima
+   sbagliavano posto. Non serviva un "+" nella collezione -- quello era stato
+   tolto con una ragione buona: un gioco si aggiunge dal catalogo, che e' anche
+   dove ci si accorge che manca. Il posto giusto e' **dentro il messaggio
+   "nessun gioco per..."**, cioe' nel momento esatto in cui una ricerca non
+   trova niente: e' li' che nasce il bisogno, ed e' l'unico caso in cui quel
+   modulo serve davvero. Un comando sempre a schermo inviterebbe a scrivere a
+   mano quello che il catalogo ha gia'.
+4. **L'indice unico su `(proprietario, nome)`: SCRITTO, da applicare.**
+   `supabase/migrations/20260925120000_librerie_nome_unico.sql`. E' su
+   un'ESPRESSIONE e non sulla colonna -- `lower(btrim(nome))` -- perche'
+   `nomeLibPreso` nel client confronta gia' cosi', e un indice che distinguesse
+   "salotto" da "Salotto " lascerebbe passare proprio i doppioni che una persona
+   scrive davvero. Se fallisce vuol dire che i doppioni ci sono: la query per
+   trovarli sta nel commento della migrazione, e rinominarli e' una scelta di
+   chi li ha creati, non di una migrazione.
 5. **Le partite restano private.** Gli amici vedono libreria e recensioni, non
    le partite: e' il cambio di una policy, ed e' una scelta dell'utente.
-6. **Le copertine gia' caricate: FATTO il 2026-09-09**, ed e' andata dove le
-   note dicevano -- dentro `riparaCopertine`. `LIB.spostaInCondivisa()` le
-   sposta in `bgg/` **senza chiedere niente a BGG**: il nome dell'oggetto porta
-   gia' l'id della figura, che e' l'unica cosa che serve per sapere dove va.
-   Ognuno sistema le proprie entrando, con le regole dello storage che gia'
-   lasciano toccare solo la propria cartella: nessuna chiave di servizio,
-   nessuna migrazione.
+6. **Le copertine: spostate il 2026-09-09, e RIFATTE PIU' GRANDI dal
+   2026-09-25.** Lo spostamento in `bgg/` e' andato in porto da solo: al
+   2026-09-25 le cartelle personali sono passate da cinque a una -- l'ultima si
+   svuota al prossimo accesso del suo proprietario -- e `bgg/` tiene 69 oggetti.
 
-   Misurato prima e dopo sul bucket vero: la cartella dell'admin aveva 14 file
-   e adesso **non esiste piu'**; `bgg/` e' passata da 2 a 15 oggetti. Restano le
-   quattro cartelle degli altri utenti (72 file), che si svuotano al loro
-   prossimo accesso.
-7. **La cache locale delle copertine (IndexedDB) e' stata valutata e NON
-   fatta.** Misurato: un blob da IndexedDB da' un `blob:` URL same-origin,
-   quindi il canvas resta pulito e la texture funziona -- tecnicamente si puo'.
-   Ma **non puo' sostituire il bucket**: la stessa copertina pesa 142 KB dal
-   bucket e **706 KB dall'origine via edge function** (misurato, 852 ms),
-   perche' li' arriva l'originale di BGG. Senza bucket ogni dispositivo nuovo,
-   e ogni amico in visita, pagherebbe cinque volte i byte piu' un'invocazione.
-   Ha senso solo **davanti** al bucket, come cache: il guadagno vero e' che
-   oggi `cache-control` e' `max-age=3600`, quindi a rete staccata dopo un'ora
-   le copertine spariscono. Trenta righe, nessuna migrazione.
-8. **Su telefono la scatola e' larga 90 px**: si riconosce la copertina ma non
-   si legge il titolo. E' il prezzo delle tre colonne; se da' fastidio,
-   l'alternativa e' tornare a due.
+   Restava che quelle 69 sono a **760 px**, cioe' sotto la misura a cui una
+   copertina viene disegnata aprendo una scatola (1.114 su un desktop retina).
+   `piuNitide()` le rifa' a 1.100, e il modo e' vincolato dalla policy: la
+   cartella condivisa e' di **solo inserimento**, quindi nessuno puo' scrivere
+   sopra a un oggetto che c'e' gia', e `caricaCopertina` che ci prova si sente
+   rispondere "esiste gia'" e tiene il vecchio. Per sostituirlo va **tolto
+   prima**, e da li' toglie solo un admin.
+
+   Quindi: lo fa solo un admin, **quattro per sessione** (ogni copertina e' un
+   originale da BGG, 706 KB, piu' un caricamento: svuotare un'API pubblica in
+   un colpo solo e' il modo piu' rapido di prendersi un limite), e fra la
+   cancellazione e il caricamento c'e' una finestra di qualche decimo in cui
+   quella figura non esiste. Chi stesse caricando proprio quella proprio in
+   quel momento vede la copertina disegnata per quella sessione. E' il prezzo
+   di non avere il permesso di sovrascrivere, ed e' piu' basso del prezzo di
+   darlo a tutti.
+7. **La cache locale delle copertine: FATTA il 2026-09-25**, `js/scorta.js`.
+   Sta **davanti** al bucket e non al posto suo, che era la conclusione della
+   valutazione: la stessa copertina pesa 107 KB dal bucket e 706 KB chiesta
+   all'origine di BGG, quindi senza bucket ogni dispositivo nuovo pagherebbe
+   cinque volte i byte. Qui c'e' solo una copia di quello che si e' gia'
+   scaricato, e serve a una cosa precisa: il bucket manda
+   `cache-control: max-age=3600`, quindi dopo **un'ora** a rete staccata le
+   copertine sparivano.
+
+   IndexedDB e non `localStorage`: quest'ultimo tiene stringhe, quindi base64 --
+   un terzo di byte in piu' -- dentro cinque megabyte totali condivisi con
+   libreria, tema e volume. Quattordici copertine lo riempirebbero da sole.
+
+   E il canvas resta pulito: un blob riletto da qui diventa un `blob:` **dello
+   stesso dominio**, quindi la texture si costruisce e `senzaBande` legge i
+   pixel. Provato: scrittura, rilettura, potatura e `indirizzo()` su una
+   copertina vera (136 KB messi da parte, indirizzo `blob:http://...`).
+8. **I due compromessi su schermo stretto: uno risolto, uno no.**
+
+   *Risolto il 2026-09-25:* nella tabella di una partita, sotto i 430 px, **il
+   nome prende una riga sua**. La riga tiene sette cose e cinque hanno una
+   larghezza fissa per un motivo (un campo punti stretto non si centra col
+   pollice, una corona piccola non si tocca): a 375 px al nome ne restavano una
+   trentina, cioe' "A...", "B...". A cedere e' la disposizione, non le misure --
+   `order:-1` e base 100% sul nome, e tutto il resto scende sotto, dove ci sta
+   comodo. Misurato: da ~30 px a **243**, senza taglio.
+
+   *NON risolto, ed e' una scelta:* su telefono la scatola resta larga 90 px.
+   L'alternativa sarebbe passare a due colonne, ma **`PER_LIB = COLS * RIGHE` e
+   `posto` e' una colonna del database**: con COLS che cambia col dispositivo,
+   la stessa libreria avrebbe dodici posti sul desktop e otto sul telefono, e un
+   `posto: 10` salvato da una parte non esisterebbe dall'altra. Non e' una
+   correzione di impaginazione, e' un cambio del modello dei dati -- e va
+   deciso, non fatto di straforo.
 
 **Quello che NON manca piu'** (era in questa lista fino al 24 agosto, e
 lasciarcelo confonde chi riparte a freddo):

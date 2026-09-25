@@ -4051,6 +4051,29 @@ body.browse:not(.elenco):not(.ferma):not(.sez-catalogo):not(.sez-profilo) .rail-
   .pa-chi .corona, .pa-chi .via{width:30px; height:30px}
 }
 
+/* SOTTO I 430 PX IL NOME PRENDE UNA RIGA SUA.
+
+   La riga del tavolo tiene sei cose -- faccia, nome, corona, posizione,
+   punti, calcolatrice, togli -- e cinque hanno una larghezza fissa: a
+   375 px ne restavano una trentina per il nome, cioe' "A...", "B...".
+   Un tavolo in cui non si leggono i nomi non e' un tavolo.
+
+   Le cose fisse sono fisse per un motivo (un campo di punti stretto non
+   si centra col pollice, una corona piccola non si tocca), quindi a
+   cedere e' la DISPOSIZIONE: il nome sale in cima con `order:-1` e una
+   base del 100%, e tutto il resto scende sotto, dove ci sta comodo --
+   34+20+58+30+30 piu' i vuoti fanno circa 200 px su 343 disponibili.
+
+   E' lo stesso ragionamento della riga dei due voti nella scheda: si
+   decide CHI cede per primo, invece di lasciar cedere quello che non
+   deve. */
+@media (max-width:430px){
+  .pa-chi li{flex-wrap:wrap; row-gap:7px}
+  .pa-chi .chi-nome{flex:1 1 100%; order:-1}
+  .pa-chi .nome{white-space:normal}     /* una riga tutta sua: puo' andare a capo */
+  .pa-chi .punti{flex:1 1 auto; width:auto; min-width:58px}
+}
+
 /* ===================================================================
    LA REGOLA DELLE TENDINE VALE OVUNQUE
 

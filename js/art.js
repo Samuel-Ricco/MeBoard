@@ -1395,7 +1395,7 @@ function targhetta(nome, tinta){
 return {
   cnv: cnv, toTex: toTex, imgTex: imgTex, wood: wood, spaced: spaced, grain: grain,
   senzaBande: senzaBande, copertinaTex: copertinaTex, copertinaSalva: copertinaSalva,
-  COP_SCAFFALE: COP_SCAFFALE, COP_FUOCO: COP_FUOCO,
+  COP_SCAFFALE: COP_SCAFFALE, COP_FUOCO: COP_FUOCO, COP_SALVA: COP_SALVA,
   aoCubi: aoCubi, fariCubi: fariCubi, copia: copia,
   parquet: parquet, contatto: contatto,
   avatar: avatar, targhetta: targhetta,

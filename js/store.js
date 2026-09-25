@@ -484,6 +484,21 @@ async function copiaOggetto(c, da, a){
   if (r.error && !/exist/i.test(r.error.message || '')) throw r.error;
 }
 
+/* Togliere un oggetto dalla cartella condivisa. Normalmente NON si fa
+   -- `condiviso()` qui sopra dice perche' -- ed e' la policy a garantirlo:
+   da `bgg/` cancella solo chi e' admin. Serve a una cosa sola, rifare
+   una copertina con piu' pixel di quella che c'e' (vedi `piuNitide` in
+   js/app.js), e li' il vecchio oggetto va tolto prima perche' lo storage
+   non lascia SCRIVERE SOPRA a nessuno: la policy della condivisa e' di
+   solo inserimento. */
+async function togliCondivisa(oggetto){
+  if (!condiviso(oggetto)) return false;
+  const c = AUTH.attivo() ? AUTH.client() : null;
+  if (!c) return false;
+  const r = await c.storage.from('copertine').remove([oggetto]);
+  return !(r && r.error);
+}
+
 /* ============================================================
    IL PREGRESSO VA IN CASA DI TUTTI
 
@@ -1235,7 +1250,8 @@ return {
   preferito: preferito, segnaPreferito: segnaPreferito,
   stileLibreria: stileLibreria,
   visita: visita, torna: torna, ospitePresso: ospitePresso,
-  spostaInCondivisa: spostaInCondivisa,
+  spostaInCondivisa: spostaInCondivisa, togliCondivisa: togliCondivisa,
+  oggettoDi: oggettoDi,
   librerie: elencoLibrerie, caricaLibrerie: caricaLibrerie,
   creaLibreria: creaLibreria, rinominaLibreria: rinominaLibreria,
   togliLibreria: togliLibreria, riordinaLibrerie: riordinaLibrerie, metti: metti, mandaPosti: mandaPosti,
