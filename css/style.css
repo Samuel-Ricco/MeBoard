@@ -6269,79 +6269,88 @@ input::placeholder, textarea::placeholder{
 /* ============================================================
    LE ESPANSIONI NELLA SCHEDA
 
-   Nasce nascosta e compare solo se c'e' qualcosa: un titolo
-   "Espansioni" sopra il vuoto, per un gioco che non ne ha, sarebbe una
-   promessa non mantenuta. E arriva DOPO il resto della scheda -- i
-   legami vengono da BGG o dalla cache condivisa -- quindi non deve
-   spostare niente di quello che si sta gia' leggendo: sta in fondo,
-   sotto le partite.
+   Quasi niente, ed e' il punto: la tendina e' una `.cartella` come
+   quelle dei gruppi, e ogni espansione e' una `.riga` con il suo menu a
+   tre punti, identica a quelle dell'elenco della collezione. Un elenco
+   di titoli con un comando a testa nel sito c'era gia'; rifarne uno con
+   un vocabolario suo vorrebbe dire due modi di fare la stessa cosa.
+
+   Qui restano solo le tre differenze vere.
    ============================================================ */
 .espansioni{margin:18px 0 0}
 .espansioni[hidden]{display:none}
 
-/* "Espansione di X": una riga di contesto, non un titolo. Il nome del
-   gioco base in grassetto perche' e' l'unica cosa che si cerca. */
-.esp-base{
-  margin:0 0 10px; font-size:13px; line-height:1.6; color:var(--ink-soft);
-  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
-}
-.esp-base b{color:var(--ink); font-weight:600}
+/* 1. La tendina delle espansioni non ha il margine largo delle cartelle
+      dei gruppi: li' separa blocchi di elenco, qui sta in fondo a una
+      scheda che e' gia' finita. */
+.espansioni .cartella{margin:0}
 
-/* Il contatore accanto al titolo dice a colpo d'occhio a che punto sei:
-   "3/7" e' la risposta alla domanda per cui si apre questa sezione. */
-.esp-tit{
-  margin:0 0 8px; display:flex; align-items:baseline; gap:8px;
-  font-family:var(--ff); font-weight:900; font-size:11px;
-  letter-spacing:.1em; text-transform:uppercase; color:var(--ink);
-}
-.esp-tit span{
-  font-family:var(--ff-mono); font-size:11px; letter-spacing:.04em;
-  color:var(--ink-soft); font-variant-numeric:tabular-nums;
+/* 2. La riga del gioco base non e' una tendina: e' una riga sola, e
+      sopra ci va un filo per staccarla da quello che viene prima. */
+.espansioni .esp-base{
+  margin:0 0 12px; padding-top:10px; border-top:1px dashed var(--line);
 }
 
-.esp-lista{list-style:none; margin:0; padding:0}
-.esp-lista li{
-  display:flex; align-items:center; gap:10px;
-  padding:8px 0; border-top:1px dashed var(--line);
-}
-.esp-lista li:last-child{border-bottom:1px dashed var(--line)}
-.esp-nome{flex:1 1 auto; min-width:0; font-size:13.5px; line-height:1.45}
+/* 3. Quello che NON hai resta tenue: la differenza fra le due e'
+      l'informazione, e va vista senza leggere. Le righe che hai usano
+      gia' il pieno dell'elenco. */
+.espansioni li:not(.ce-l-hai) .riga-nome{color:var(--ink-soft)}
 
-/* Quelle che hai restano piene, le altre sono tenui: la differenza fra
-   le due e' l'informazione, e va vista senza leggere. */
-.esp-lista li .esp-nome{color:var(--ink-soft)}
-.esp-lista li.ce-l-hai .esp-nome{color:var(--ink)}
-.esp-hai{
-  flex:none; display:inline-flex; align-items:center; gap:5px;
-  font-family:var(--ff); font-weight:900; font-size:9.5px;
-  letter-spacing:.12em; text-transform:uppercase; color:var(--verde);
-}
-.esp-hai .ico{width:13px; height:13px}
+/* 4. LA RIGA QUI HA DUE CELLE, NON TRE, e questo era il guaio vero su
+      schermo stretto. `.righe.compatta > li` e' una griglia
+      `52px 1fr auto`, e quei 52 px sono la COLONNA DELLA COPERTINA: in
+      un elenco di espansioni la copertina non c'e' -- di quelle che non
+      possiedi non esiste proprio -- quindi il titolo finiva dentro la
+      colonna della copertina e il menu si prendeva l'`1fr`. Cinquantadue
+      pixel per un titolo vuol dire "ARCS: / HALLS / OF / POWER /
+      EXPANSION", una parola per riga.
 
-/* Il cuore e' quello del catalogo, e fa la stessa cosa: da spento e'
-   un contorno quieto, da acceso e' pieno. Un secondo cuore con un
-   secondo significato sarebbe un simbolo da imparare due volte. */
-.espansioni .esp-cuore{
-  flex:none; width:32px; height:32px; padding:0; cursor:pointer;
-  background:none; border:0; border-radius:0; color:var(--ink-soft);
-  display:inline-flex; align-items:center; justify-content:center;
-}
-.espansioni .esp-cuore:hover{background:rgba(var(--rosso-rgb),.12); color:var(--rosso)}
-.espansioni .esp-cuore.on{color:var(--rosso)}
-.espansioni .esp-cuore.on .ico, .espansioni .esp-cuore.on .ico path{fill:currentColor}
-.espansioni .esp-cuore .ico{width:17px; height:17px}
+      Due celle: il titolo prende quello che c'e', il menu quello che
+      gli serve. */
+.espansioni .righe.compatta > li{grid-template-columns:1fr auto; gap:10px}
 
-/* L'interruttore del raggruppamento: un secondario come gli altri --
-   tratteggiato e maiuscolo -- perche' e' una scelta che si disfa. */
-.espansioni .esp-sotto{
-  flex:none; cursor:pointer;
-  font-family:var(--ff); font-weight:900; font-size:9.5px;
-  letter-spacing:.1em; text-transform:uppercase;
-  background:none; color:var(--ink);
-  border:1px dashed var(--line); border-radius:0; padding:7px 10px;
+/* 5. E la VOCE non e' quella dell'elenco. Li' `.riga-nome` e' il
+      carattere da titoli, 15 px, maiuscolo e tracciato: giusto per una
+      riga che e' l'unica cosa sulla sua, sbagliato per un elenco dentro
+      una scheda gia' piena. Il maiuscolo poi allarga di suo, ed e'
+      meta' della ragione per cui i titoli lunghi si spezzavano.
+
+      Qui i nomi sono lunghi per costruzione -- "Arcs: Lost Vaults &
+      Fated Leaders Expansion" -- e vanno LETTI, non gridati: stessa
+      voce del resto del testo della scheda, e vanno a capo come una
+      frase. */
+.espansioni .riga-nome{
+  font-family:var(--ff); font-weight:600; font-size:13px;
+  letter-spacing:0; text-transform:none; line-height:1.35;
 }
-.espansioni .esp-sotto:hover{border-color:var(--accent); color:var(--accent)}
-.espansioni .esp-sotto.on{
-  background:var(--accent); color:var(--su-accent); border-color:transparent;
-  clip-path:var(--fustella);
+.espansioni .riga-dove{white-space:normal; overflow:visible; margin-top:4px}
+
+/* 6. NEL MENU C'E' UN COLLEGAMENTO, e un collegamento non e' un
+      pulsante. La scheda su BoardGameGeek resta un `<a>` perche' sia
+      apribile in una scheda nuova, si possa copiare l'indirizzo e si
+      comporti come si aspetta chi ci clicca col tasto centrale -- cose
+      che un pulsante con `window.open` dentro non sa fare.
+
+      Ma le voci di quel menu sono tutte `button` in cinque regole
+      sparse per il foglio, e un `<a>` non ne eredita nessuna: usciva
+      sottolineato, di un altro colore e a capo in mezzo alla frase.
+      Qui gli si da' la stessa faccia, una volta sola e in un posto
+      solo. */
+.espansioni .riga-azioni a{
+  display:flex; align-items:center; gap:9px; width:100%;
+  padding:11px 13px; font-size:12px; text-align:left; text-decoration:none;
+  font-family:var(--ff); font-weight:900; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink); border:0; border-radius:0;
+  transition:background-color .18s var(--ease), color .18s var(--ease);
 }
+.espansioni .riga-azioni a:hover{background:rgba(var(--ink-rgb),.09); color:var(--accent)}
+.espansioni .riga-azioni a .ico{flex:none}
+.espansioni .riga-azioni a span{min-width:0}
+
+/* 7. IL MENU SI APRE SEMPRE VERSO IL BASSO. Nell'elenco della
+      collezione le ultime due righe lo aprono verso l'alto, se no
+      uscirebbe dal fondo della pagina; ma qui le righe sono poche -- due
+      su una scheda come Deep Regrets -- e "le ultime due" sono quasi
+      tutte, cosi' il menu della PRIMA saliva a coprire la recensione.
+      Dentro una scheda che scorre, sotto ci si arriva sempre. */
+.espansioni .righe.compatta > li .riga-azioni{top:calc(100% + 7px); bottom:auto}

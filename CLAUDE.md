@@ -4094,6 +4094,54 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### Le espansioni sono una tendina e tre punti, non una lista a se'
+
+Prima versione: un elenco con lo stato e i comandi in fila accanto al nome. Su
+schermo stretto si e' rotta subito, e **il modo in cui si e' rotta era il
+sintomo, non la malattia**: i comandi avevano etichette lunghe — «rimettila
+sullo scaffale» — messe accanto a titoli gia' lunghi di loro, e sotto i 400 px
+si spezzavano addosso al nome.
+
+La cura non e' stata stringere le etichette: e' stata **riusare l'elenco che
+esiste gia'**. Una tendina `.cartella` come quelle dei gruppi, e dentro righe
+`.riga` con il **menu a tre punti**, identiche a quelle della collezione. Un
+elenco di titoli con un comando a testa nel sito c'era gia'; farne un secondo
+con un vocabolario suo vorrebbe dire due modi di fare la stessa cosa, e chi ha
+imparato l'uno dovrebbe imparare anche l'altro. Dentro il menu le etichette
+lunghe non stanno in fila con niente.
+
+Fuori dal menu resta lo **stato** — ce l'hai, raggruppata, nei desideri — sulla
+seconda riga: uno stato non e' un comando e non si nasconde dietro tre punti.
+
+E la tendina parte **chiusa**, come le cartelle dei gruppi: Root ha quindici
+espansioni, e aperte sempre spingerebbero la recensione fuori vista. Il
+contatore accanto al titolo (`1/2`) dice gia' tutto quello che serve per
+decidere se aprirla.
+
+#### Due trappole nel trapianto
+
+Riusare le classi di un elenco dentro un pannello non e' gratis, e tutte e due
+si vedevano solo su schermo stretto:
+
+1. **`.righe.compatta > li` e' una griglia `52px 1fr auto`, e quei 52 px sono la
+   colonna della COPERTINA.** Un'espansione non ce l'ha — di quelle che non
+   possiedi non esiste proprio — quindi il titolo finiva *dentro* la colonna
+   della copertina e il menu si prendeva l'`1fr`. Cinquantadue pixel per un
+   titolo vuol dire «ARCS: / HALLS / OF / POWER / EXPANSION», una parola per
+   riga. Qui la griglia ha due celle.
+2. **La VOCE dell'elenco non e' la voce di una scheda.** Li' `.riga-nome` e' il
+   carattere da titoli, 15 px, maiuscolo e tracciato — giusto per una riga che e'
+   l'unica cosa sulla sua, sbagliato per un elenco dentro una scheda gia' piena.
+   E il maiuscolo allarga di suo: era meta' della ragione per cui i titoli si
+   spezzavano. Dentro la scheda i nomi si leggono, non si gridano.
+
+Piu' due dettagli che vengono dallo stesso trapianto: nel menu c'e' un
+**collegamento** (la scheda su BGG) e un `<a>` non eredita nessuna delle cinque
+regole sparse che vestono i `button` di quel menu — usciva sottolineato e di un
+altro colore; e le ultime due righe di un elenco aprono il menu **verso l'alto**
+per non uscire dal fondo della pagina, ma qui le righe sono due e «le ultime
+due» sono tutte, cosi' il menu della prima saliva a coprire la recensione.
+
 ### Raggruppare toglieva la strada per tornare indietro
 
 Il buco piu' istruttivo di questo giro, trovato provando e non leggendo.

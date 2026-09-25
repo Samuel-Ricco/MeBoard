@@ -1414,35 +1414,63 @@ function miaCopiaDi(bgg){
   return LIB.all().find(function(g){ return parseInt(g.bgg, 10) === n; }) || null;
 }
 
-/* L'INTERRUTTORE STA ANCHE QUI, e non solo sulla scheda dell'espansione.
+/* UNA RIGA DI ESPANSIONE E' UNA RIGA DELLA COLLEZIONE.
 
-   Sembrava bastasse metterlo li': e' dove si sta quando si decide. Ma
-   raggruppare toglie la scatola dallo scaffale, e una scatola fuori
-   dallo scaffale non si apre piu' -- quindi da quel momento la sua
-   scheda era irraggiungibile e il gesto non si poteva disfare. Si
-   poteva raggruppare e basta.
+   Stesso involucro, stesse classi, stesso menu a tre punti: un elenco
+   di titoli con un comando a testa nel sito esiste gia', ed e' quello
+   della collezione. Rifarne uno con un vocabolario suo vorrebbe dire
+   due modi di fare la stessa cosa, e chi ha imparato l'uno dovrebbe
+   imparare anche l'altro.
 
-   Sulla scheda del gioco base invece le espansioni ci sono tutte, e
-   raggruppate o no si vedono lo stesso: e' il posto giusto per
-   decidere, ed e' l'unico da cui si torna indietro. */
+   E risolve da solo il guaio su schermo stretto: i comandi avevano
+   etichette lunghe -- "rimettila sullo scaffale" -- messe in fila
+   accanto al titolo, e sotto i 400 px si spezzavano addosso al nome.
+   Dentro il menu non stanno in fila con niente.
+
+   Quello che resta fuori dal menu e' lo STATO, sulla seconda riga:
+   ce l'hai, e' raggruppata, e' nei desideri. Uno stato non e' un
+   comando e non si nasconde dietro tre punti. */
 function rigaEspansione(e, mioBgg){
   const mia = miaCopiaDi(e.id);
-  const sotto = mia && parseInt(mia.sotto, 10) === mioBgg;
-  return '<li' + (mia ? ' class="ce-l-hai"' : '') + '>' +
-    '<span class="esp-nome">' + esc(e.nome) + '</span>' +
-    (mia
-      ? '<span class="esp-hai">' + ICO.spunta + T('esp.hai') + '</span>' +
-        (LIB.ospitePresso() ? '' :
-          '<button type="button" class="esp-sotto' + (sotto ? ' on' : '') +
-          '" data-grp="' + esc(mia.id) + '" data-base="' + mioBgg + '" ' +
-          'aria-pressed="' + (sotto ? 'true' : 'false') + '">' +
-          T(sotto ? 'esp.sciogli' : 'esp.raggruppa') + '</button>')
-      : '<button type="button" class="esp-cuore' + (WISH.c_e(e.id) ? ' on' : '') +
-        '" data-wish="' + e.id + '" data-nome="' + esc(e.nome) + '" ' +
-        'aria-pressed="' + (WISH.c_e(e.id) ? 'true' : 'false') + '" ' +
-        'title="' + esc(TP('esp.desidera')) + '" aria-label="' + esc(TP('esp.desidera')) + '">' +
-        ICO.cuore + '</button>') +
+  const sotto = !!(mia && parseInt(mia.sotto, 10) === mioBgg);
+  const stato = mia
+    ? (sotto ? T('esp.raggruppata') : T('esp.hai'))
+    : (WISH.c_e(e.id) ? T('esp.neiDesideri') : T('esp.manca'));
+  return '<li data-esp="' + e.id + '" data-base="' + mioBgg + '"' +
+           (mia ? ' class="ce-l-hai"' : '') + '>' +
+    '<span class="riga-tit"><span class="riga-testo">' +
+      '<h3 class="riga-nome">' + esc(e.nome) + '</h3>' +
+      '<p class="riga-dove' + (mia ? ' su' : '') + '">' + stato + '</p>' +
+    '</span></span>' +
+    '<div class="riga-menuwrap">' +
+      '<button type="button" class="riga-menu" data-fa="menu" aria-expanded="false" ' +
+        'aria-label="cosa posso farci">' + ICO.menu + '</button>' +
+      '<div class="riga-azioni" hidden></div>' +
+    '</div>' +
   '</li>';
+}
+
+/* Cosa si puo' fare con un'espansione. In casa di un amico niente, come
+   ovunque: si guarda e basta. */
+function azioniEspansione(idEsp, mioBgg){
+  if (LIB.ospitePresso()) return '<p class="vuoto">' + T('riga.ospite') + '</p>';
+  const mia = miaCopiaDi(idEsp);
+  const sotto = !!(mia && parseInt(mia.sotto, 10) === mioBgg);
+  let h = '';
+  if (mia){
+    h += '<button type="button" data-grp="' + esc(mia.id) + '" data-base="' + mioBgg + '">' +
+         ICO.scaffale + '<span>' + T(sotto ? 'esp.sciogli' : 'esp.raggruppa') + '</span></button>';
+  } else {
+    const su = WISH.c_e(idEsp);
+    h += '<button type="button" class="' + (su ? 'fuori' : 'dentro') + '" data-wish="' + idEsp + '">' +
+         ICO.cuore + '<span>' + T(su ? 'esp.togliDesideri' : 'esp.desidera') + '</span></button>';
+  }
+  /* Il collegamento a BGG e' l'ULTIMO: porta via dal sito, e quello che
+     porta via si mette dopo tutto quello che tiene. E' la stessa regola
+     gia' scritta per il piede della scheda. */
+  h += '<a href="https://boardgamegeek.com/boardgame/' + idEsp + '/" target="_blank" rel="noopener">' +
+       ICO.avanti + '<span>' + T('esp.suBgg') + '</span></a>';
+  return h;
 }
 
 async function disegnaEspansioni(game){
@@ -1463,31 +1491,46 @@ async function disegnaEspansioni(game){
 
   const pezzi = [];
 
-  /* E' UN'ESPANSIONE: di chi, e la si puo' raggruppare. L'interruttore
-     compare solo se quella copia e' TUA -- raggruppare e' una scelta di
-     chi possiede, e in casa di un amico non si tocca niente. */
+  /* QUESTO GIOCO E' UN'ESPANSIONE: di chi. Una riga sola, con lo stesso
+     involucro delle altre -- il comando per raggrupparla sta nel suo
+     menu, non accanto al nome. */
   const base = (l.base || [])[0];
   if (base){
     const mia = miaCopiaDi(mio);
-    const raggruppata = !!(mia && mia.sotto);
-    pezzi.push('<p class="esp-base">' + T('esp.di', {n: esc(base.nome)}) +
-      (mia && !LIB.ospitePresso()
-        ? ' <button type="button" class="esp-sotto' + (raggruppata ? ' on' : '') +
-          '" data-sotto="' + base.id + '" aria-pressed="' + (raggruppata ? 'true' : 'false') + '">' +
-          T(raggruppata ? 'esp.sciogli' : 'esp.raggruppa') + '</button>'
-        : '') + '</p>');
+    const sotto = !!(mia && parseInt(mia.sotto, 10) === base.id);
+    pezzi.push('<ol class="righe compatta esp-base">' +
+      '<li data-esp="' + mio + '" data-base="' + base.id + '" class="ce-l-hai">' +
+        '<span class="riga-tit"><span class="riga-testo">' +
+          '<h3 class="riga-nome">' + esc(base.nome) + '</h3>' +
+          '<p class="riga-dove' + (sotto ? ' su' : '') + '">' +
+            T(sotto ? 'esp.sottoA' : 'esp.diQuesto') + '</p>' +
+        '</span></span>' +
+        (mia ? '<div class="riga-menuwrap">' +
+          '<button type="button" class="riga-menu" data-fa="menu" aria-expanded="false" ' +
+            'aria-label="cosa posso farci">' + ICO.menu + '</button>' +
+          '<div class="riga-azioni" hidden></div>' +
+        '</div>' : '') +
+      '</li></ol>');
   }
 
+  /* LE SUE ESPANSIONI, IN UNA TENDINA. Root ne ha quindici: aperte
+     sempre, la scheda diventa un elenco di titoli con la recensione
+     spinta fuori vista. Chiusa, il contatore accanto al titolo dice
+     tutto quello che serve a decidere se aprirla -- "1/2" e' la
+     risposta alla domanda per cui la si guarda.
+
+     Parte chiusa, come le cartelle dei gruppi nell'elenco, e per la
+     stessa ragione gia' scritta li'. */
   const sue = (l.espansioni || []);
   if (sue.length){
-    /* Prima quelle che hai: e' l'ordine della domanda che ci si fa
-       aprendo una scheda -- cosa ho, e poi cosa mi manca. */
     const hai = sue.filter(function(e){ return !!miaCopiaDi(e.id); });
     const no  = sue.filter(function(e){ return !miaCopiaDi(e.id); });
-    pezzi.push('<h3 class="esp-tit">' + T('esp.titolo') +
-      '<span>' + hai.length + '/' + sue.length + '</span></h3>');
-    pezzi.push('<ul class="esp-lista">' +
-      hai.concat(no).map(function(e){ return rigaEspansione(e, mio); }).join('') + '</ul>');
+    pezzi.push('<div class="cartella esp-tendina">' +
+      '<button type="button" class="cartella-tit" aria-expanded="false">' +
+        T('esp.titolo') + '<span>' + hai.length + '/' + sue.length + '</span></button>' +
+      '<ol class="righe compatta" hidden>' +
+        hai.concat(no).map(function(e){ return rigaEspansione(e, mio); }).join('') +
+      '</ol></div>');
   }
 
   if (!pezzi.length) return;
@@ -5322,36 +5365,66 @@ function bindCatalogo(){
   /* Un ascoltatore sul messaggio, non sul pulsante: il pulsante nasce e
      muore con ogni ricerca, e attaccarcelo sopra vorrebbe dire rimetterlo
      ogni volta. */
-  /* I due comandi della sezione espansioni, e un ascoltatore solo: la
-     sezione si rifa' a ogni scheda aperta, quindi attaccarne uno per
-     pulsante vorrebbe dire rimetterli ogni volta. */
+  /* UN ASCOLTATORE SOLO PER TUTTA LA SEZIONE: la tendina, i menu a tre
+     punti e i comandi dentro. La sezione si rifa' a ogni scheda aperta,
+     quindi attaccarne uno per pulsante vorrebbe dire rimetterli ogni
+     volta -- e' la stessa ragione dell'elenco della collezione. */
   const esp = q('#p-esp');
   if (esp) esp.addEventListener('click', async function(e){
-    const cuore = e.target.closest('[data-wish]');
-    if (cuore){
-      const bgg = parseInt(cuore.getAttribute('data-wish'), 10) || 0;
-      if (!bgg) return;
-      cuore.disabled = true;
-      /* Si aggiorna IN POSTO e non si rifa' la sezione: rifarla
-         staccherebbe dal documento il pulsante appena premuto, e il
-         tocco dopo cadrebbe nel vuoto. E' la lezione dell'elenco dei
-         gruppi, e qui vale doppio perche' di cuori ce n'e' una fila. */
-      try {
-        await WISH.alterna({ bgg: bgg, title: cuore.getAttribute('data-nome') || '', year: '' });
-        const su = WISH.c_e(bgg);
-        cuore.classList.toggle('on', su);
-        cuore.setAttribute('aria-pressed', su ? 'true' : 'false');
-        SUONI.gioca(su ? 'acceso' : 'spento');
-      } catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); }
-      cuore.disabled = false;
+
+    // 1. la tendina si apre e si chiude
+    const tit = e.target.closest('.cartella-tit');
+    if (tit){
+      const ol = tit.parentNode.querySelector('ol');
+      const su = ol.hidden;
+      ol.hidden = !su;
+      tit.setAttribute('aria-expanded', su ? 'true' : 'false');
+      SUONI.gioca(su ? 'apre' : 'serra');
       return;
     }
 
-    /* Dalla scheda del gioco base: si tocca l'espansione NOMINATA dal
-       pulsante, non quella aperta. La sezione si ridisegna in posto --
-       cambia una parola su un pulsante e la scatola entra o esce dallo
-       scaffale -- e la scheda aperta resta quella che e', perche' qui
-       non si sta guardando l'espansione ma il gioco base. */
+    // 2. i tre punti, come nell'elenco
+    const men = e.target.closest('.riga-menu');
+    if (men){
+      const li = men.closest('li');
+      const box = li.querySelector('.riga-azioni');
+      const su = box.hidden;
+      /* Uno alla volta, e solo dentro questa sezione: i menu
+         dell'elenco della collezione sono un altro elenco. */
+      qa('#p-esp .riga-azioni').forEach(function(b){
+        if (b === box) return;
+        b.hidden = true;
+        const t = b.parentNode.querySelector('.riga-menu');
+        if (t) t.setAttribute('aria-expanded', 'false');
+        const l2 = b.closest('li'); if (l2) l2.classList.remove('menu-su');
+      });
+      if (su) box.innerHTML = azioniEspansione(
+        parseInt(li.getAttribute('data-esp'), 10) || 0,
+        parseInt(li.getAttribute('data-base'), 10) || 0);
+      box.hidden = !su;
+      men.setAttribute('aria-expanded', su ? 'true' : 'false');
+      li.classList.toggle('menu-su', su);
+      return;
+    }
+
+    // 3. i desideri
+    const cuore = e.target.closest('[data-wish]');
+    if (cuore){
+      const bgg = parseInt(cuore.getAttribute('data-wish'), 10) || 0;
+      const li = cuore.closest('li');
+      const nome = li ? (li.querySelector('.riga-nome') || {}).textContent : '';
+      if (!bgg) return;
+      cuore.disabled = true;
+      try {
+        await WISH.alterna({ bgg: bgg, title: nome || '', year: '' });
+        SUONI.gioca(WISH.c_e(bgg) ? 'acceso' : 'spento');
+      } catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); }
+      const aperta = state.focused && state.focused.userData.game;
+      if (aperta) disegnaEspansioni(aperta);     // stato e menu si riscrivono insieme
+      return;
+    }
+
+    // 4. raggruppare, e scioglierle
     const grp = e.target.closest('[data-grp]');
     if (grp){
       const idRiga = grp.getAttribute('data-grp');
@@ -5363,26 +5436,12 @@ function bindCatalogo(){
       flash(TP(era ? 'msg.espSciolta' : 'msg.espRaggruppata'));
       ridisponi();
       const aperta = state.focused && state.focused.userData.game;
-      if (aperta) disegnaEspansioni(aperta);
-      return;
-    }
-
-    const sotto = e.target.closest('[data-sotto]');
-    if (sotto){
-      const g = state.focused && state.focused.userData.game;
-      if (!g) return;
-      const base = parseInt(sotto.getAttribute('data-sotto'), 10) || 0;
-      const era = !!g.sotto;
-      sotto.disabled = true;
-      /* Raggruppare toglie la scatola dallo scaffale, quindi la scena va
-         rifatta: `applyLibrary` rilegge `listaScaffale`, che adesso
-         guarda anche `sotto`. E si esce dalla scheda, perche' la scatola
-         che si sta guardando sta per non essere piu' li'. */
-      LIB.update(g.id, { sotto: era ? null : base });
-      sotto.disabled = false;
-      flash(TP(era ? 'msg.espSciolta' : 'msg.espRaggruppata'));
-      if (!era) unfocus(function(){ ridisponi(); });
-      else ridisponi();
+      /* Raggruppando la scatola APERTA si esce: quella che si sta
+         guardando sta per non essere piu' sullo scaffale. Raggruppando
+         una delle sue espansioni no -- li' si sta guardando il gioco
+         base, che resta dov'e'. */
+      if (aperta && aperta.id === idRiga && !era) unfocus();
+      else if (aperta) disegnaEspansioni(aperta);
       return;
     }
   });
