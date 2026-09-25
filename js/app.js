@@ -1369,6 +1369,132 @@ async function piuNitide(){
   return fatti;
 }
 
+/* ===============================================================
+   LE ESPANSIONI DI UN GIOCO
+
+   Due domande diverse, e la scheda le fa tutte e due:
+
+   - di questo gioco, quali espansioni esistono? E di quelle, quali ho e
+     quali mi mancano. E' la ragione per cui la sezione esiste.
+   - e se quello aperto E' un'espansione: di che gioco? Da li' si decide
+     se raggrupparla sotto di lui.
+
+   Le due si leggono dallo stesso `<link type="boardgameexpansion">`, che
+   BGG mette su tutt'e due i lati: a distinguerle e' `inbound="true"`,
+   che il proxy traduce nel campo `base`.
+   =============================================================== */
+
+let espPer = 0;          // per quale gioco e' disegnata la sezione adesso
+
+/* Prima la cache condivisa, poi BGG -- e quello che si chiede a BGG
+   finisce in cache per tutti. E' la stessa strada delle misure e della
+   copertina, e per la stessa ragione: l'API si interroga una volta per
+   GIOCO, non una per utente e nemmeno una per apertura. */
+async function legamiDi(bgg){
+  const n = parseInt(bgg, 10) || 0;
+  if (!n) return null;
+  try { await SCHEDE.carica([n]); } catch(e){}
+  const riga = SCHEDE.di(n);
+  if (riga && riga.legami) return riga.legami;
+
+  let m = null;
+  try { m = await BGG.espansioni([n]); } catch(e){ return null; }
+  const l = m && m[String(n)];
+  if (!l) return null;
+  try { SCHEDE.registraLegami(n, l); } catch(e){}
+  return l;
+}
+
+/* La MIA copia di un gioco, per id BGG. Serve a rispondere "ce l'hai
+   gia'?" -- e si confronta l'id e non il titolo, che su BGG e in casa
+   si scrive con sottotitoli diversi. */
+function miaCopiaDi(bgg){
+  const n = parseInt(bgg, 10) || 0;
+  if (!n) return null;
+  return LIB.all().find(function(g){ return parseInt(g.bgg, 10) === n; }) || null;
+}
+
+/* L'INTERRUTTORE STA ANCHE QUI, e non solo sulla scheda dell'espansione.
+
+   Sembrava bastasse metterlo li': e' dove si sta quando si decide. Ma
+   raggruppare toglie la scatola dallo scaffale, e una scatola fuori
+   dallo scaffale non si apre piu' -- quindi da quel momento la sua
+   scheda era irraggiungibile e il gesto non si poteva disfare. Si
+   poteva raggruppare e basta.
+
+   Sulla scheda del gioco base invece le espansioni ci sono tutte, e
+   raggruppate o no si vedono lo stesso: e' il posto giusto per
+   decidere, ed e' l'unico da cui si torna indietro. */
+function rigaEspansione(e, mioBgg){
+  const mia = miaCopiaDi(e.id);
+  const sotto = mia && parseInt(mia.sotto, 10) === mioBgg;
+  return '<li' + (mia ? ' class="ce-l-hai"' : '') + '>' +
+    '<span class="esp-nome">' + esc(e.nome) + '</span>' +
+    (mia
+      ? '<span class="esp-hai">' + ICO.spunta + T('esp.hai') + '</span>' +
+        (LIB.ospitePresso() ? '' :
+          '<button type="button" class="esp-sotto' + (sotto ? ' on' : '') +
+          '" data-grp="' + esc(mia.id) + '" data-base="' + mioBgg + '" ' +
+          'aria-pressed="' + (sotto ? 'true' : 'false') + '">' +
+          T(sotto ? 'esp.sciogli' : 'esp.raggruppa') + '</button>')
+      : '<button type="button" class="esp-cuore' + (WISH.c_e(e.id) ? ' on' : '') +
+        '" data-wish="' + e.id + '" data-nome="' + esc(e.nome) + '" ' +
+        'aria-pressed="' + (WISH.c_e(e.id) ? 'true' : 'false') + '" ' +
+        'title="' + esc(TP('esp.desidera')) + '" aria-label="' + esc(TP('esp.desidera')) + '">' +
+        ICO.cuore + '</button>') +
+  '</li>';
+}
+
+async function disegnaEspansioni(game){
+  const el = q('#p-esp');
+  if (!el) return;
+  el.innerHTML = '';
+  el.hidden = true;
+
+  const mio = parseInt(game && game.bgg, 10) || 0;
+  espPer = mio;                       // da qui in poi questa e' la scheda buona
+  if (!mio) return;
+
+  const l = await legamiDi(mio);
+  /* Il giro di rete puo' durare: se intanto si e' aperta un'altra
+     scatola, quello che e' tornato riguarda la scheda di prima. E' la
+     stessa guardia di `catGiro` nel catalogo. */
+  if (espPer !== mio || !l) return;
+
+  const pezzi = [];
+
+  /* E' UN'ESPANSIONE: di chi, e la si puo' raggruppare. L'interruttore
+     compare solo se quella copia e' TUA -- raggruppare e' una scelta di
+     chi possiede, e in casa di un amico non si tocca niente. */
+  const base = (l.base || [])[0];
+  if (base){
+    const mia = miaCopiaDi(mio);
+    const raggruppata = !!(mia && mia.sotto);
+    pezzi.push('<p class="esp-base">' + T('esp.di', {n: esc(base.nome)}) +
+      (mia && !LIB.ospitePresso()
+        ? ' <button type="button" class="esp-sotto' + (raggruppata ? ' on' : '') +
+          '" data-sotto="' + base.id + '" aria-pressed="' + (raggruppata ? 'true' : 'false') + '">' +
+          T(raggruppata ? 'esp.sciogli' : 'esp.raggruppa') + '</button>'
+        : '') + '</p>');
+  }
+
+  const sue = (l.espansioni || []);
+  if (sue.length){
+    /* Prima quelle che hai: e' l'ordine della domanda che ci si fa
+       aprendo una scheda -- cosa ho, e poi cosa mi manca. */
+    const hai = sue.filter(function(e){ return !!miaCopiaDi(e.id); });
+    const no  = sue.filter(function(e){ return !miaCopiaDi(e.id); });
+    pezzi.push('<h3 class="esp-tit">' + T('esp.titolo') +
+      '<span>' + hai.length + '/' + sue.length + '</span></h3>');
+    pezzi.push('<ul class="esp-lista">' +
+      hai.concat(no).map(function(e){ return rigaEspansione(e, mio); }).join('') + '</ul>');
+  }
+
+  if (!pezzi.length) return;
+  el.innerHTML = pezzi.join('');
+  el.hidden = false;
+}
+
 /* Una scatola gia' in scena non si accorge che la sua copertina e'
    cambiata: `applyLibrary` riusa il mesh che trova e si limita a
    rimetterlo al suo posto. E ridipingerla non basterebbe -- la faccia
@@ -2163,7 +2289,12 @@ function lista(){
    l'unica risposta sensata a una collezione da duecento giochi, che in
    diciassette mobili non la guarda nessuno. */
 function listaScaffale(){
-  return lista().filter(function(g){ return !!g.libreria; });
+  /* `sotto` toglie dallo scaffale, non dalla collezione: un'espansione
+     raggruppata resta nell'elenco -- ce l'hai, e l'elenco e' il posto
+     dove c'e' tutto -- ma non occupa piu' un cubo, perche' la si guarda
+     dentro la scheda del gioco base. E' esattamente la scelta che
+     `libreria` fa gia' per la vetrina, applicata a un'altra domanda. */
+  return lista().filter(function(g){ return !!g.libreria && !g.sotto; });
 }
 
 function homeOf(index, h){
@@ -3498,6 +3629,10 @@ function showPanel(game){
     ? testo.map(function(t){ return '<p>' + esc(t) + '</p>'; }).join('')
     : '<p class="vuoto">' + T('riga.nessunaRece') + '</p>';
   q('#p-tags').innerHTML = (game.tags || []).map(function(t){ return '<span>' + esc(t) + '</span>'; }).join('');
+  /* Non si aspetta: la scheda deve comparire subito, e le espansioni
+     arrivano quando arrivano -- dalla cache e' immediato, da BGG e' un
+     giro di rete. */
+  disegnaEspansioni(game);
 
   const link = q('#p-bgg');
   if (game.bgg){
@@ -5187,6 +5322,71 @@ function bindCatalogo(){
   /* Un ascoltatore sul messaggio, non sul pulsante: il pulsante nasce e
      muore con ogni ricerca, e attaccarcelo sopra vorrebbe dire rimetterlo
      ogni volta. */
+  /* I due comandi della sezione espansioni, e un ascoltatore solo: la
+     sezione si rifa' a ogni scheda aperta, quindi attaccarne uno per
+     pulsante vorrebbe dire rimetterli ogni volta. */
+  const esp = q('#p-esp');
+  if (esp) esp.addEventListener('click', async function(e){
+    const cuore = e.target.closest('[data-wish]');
+    if (cuore){
+      const bgg = parseInt(cuore.getAttribute('data-wish'), 10) || 0;
+      if (!bgg) return;
+      cuore.disabled = true;
+      /* Si aggiorna IN POSTO e non si rifa' la sezione: rifarla
+         staccherebbe dal documento il pulsante appena premuto, e il
+         tocco dopo cadrebbe nel vuoto. E' la lezione dell'elenco dei
+         gruppi, e qui vale doppio perche' di cuori ce n'e' una fila. */
+      try {
+        await WISH.alterna({ bgg: bgg, title: cuore.getAttribute('data-nome') || '', year: '' });
+        const su = WISH.c_e(bgg);
+        cuore.classList.toggle('on', su);
+        cuore.setAttribute('aria-pressed', su ? 'true' : 'false');
+        SUONI.gioca(su ? 'acceso' : 'spento');
+      } catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); }
+      cuore.disabled = false;
+      return;
+    }
+
+    /* Dalla scheda del gioco base: si tocca l'espansione NOMINATA dal
+       pulsante, non quella aperta. La sezione si ridisegna in posto --
+       cambia una parola su un pulsante e la scatola entra o esce dallo
+       scaffale -- e la scheda aperta resta quella che e', perche' qui
+       non si sta guardando l'espansione ma il gioco base. */
+    const grp = e.target.closest('[data-grp]');
+    if (grp){
+      const idRiga = grp.getAttribute('data-grp');
+      const base = parseInt(grp.getAttribute('data-base'), 10) || 0;
+      const g = LIB.get(idRiga);
+      if (!g || !base) return;
+      const era = parseInt(g.sotto, 10) === base;
+      LIB.update(idRiga, { sotto: era ? null : base });
+      flash(TP(era ? 'msg.espSciolta' : 'msg.espRaggruppata'));
+      ridisponi();
+      const aperta = state.focused && state.focused.userData.game;
+      if (aperta) disegnaEspansioni(aperta);
+      return;
+    }
+
+    const sotto = e.target.closest('[data-sotto]');
+    if (sotto){
+      const g = state.focused && state.focused.userData.game;
+      if (!g) return;
+      const base = parseInt(sotto.getAttribute('data-sotto'), 10) || 0;
+      const era = !!g.sotto;
+      sotto.disabled = true;
+      /* Raggruppare toglie la scatola dallo scaffale, quindi la scena va
+         rifatta: `applyLibrary` rilegge `listaScaffale`, che adesso
+         guarda anche `sotto`. E si esce dalla scheda, perche' la scatola
+         che si sta guardando sta per non essere piu' li'. */
+      LIB.update(g.id, { sotto: era ? null : base });
+      sotto.disabled = false;
+      flash(TP(era ? 'msg.espSciolta' : 'msg.espRaggruppata'));
+      if (!era) unfocus(function(){ ridisponi(); });
+      else ridisponi();
+      return;
+    }
+  });
+
   q('#cat-msg').addEventListener('click', function(e){
     if (e.target.closest('#cat-mano')) openAdd();
   });

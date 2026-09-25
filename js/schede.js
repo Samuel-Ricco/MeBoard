@@ -38,7 +38,7 @@ let mappa  = null;      // bgg -> riga
 let motivo = '';
 let chiesti = null;     // gli id gia' domandati al server, per non ripetersi
 
-const CAMPI = 'bgg,larghezza,lunghezza,spessore,edizione,edizione_anno,edizioni,pic,copertina';
+const CAMPI = 'bgg,larghezza,lunghezza,spessore,edizione,edizione_anno,edizioni,pic,copertina,legami';
 
 function client(){
   return (typeof AUTH !== 'undefined' && AUTH.attivo()) ? AUTH.client() : null;
@@ -158,10 +158,40 @@ async function registra(d){
 /* L'indirizzo pubblico della cartella condivisa. Il nome del file e'
    l'id della figura su BGG, che e' unico al mondo: due persone con lo
    stesso gioco puntano allo stesso oggetto. */
+/* I LEGAMI SI SCRIVONO DA SOLI, e non passano da `registra`.
+
+   Li' vale il COALESCE -- chi arriva con una scheda incompleta non deve
+   cancellare quella completa -- e qui no: i legami arrivano da BGG
+   interi o non arrivano affatto, e una lettura piu' recente e' migliore
+   di una vecchia, perche' le espansioni di un gioco si aggiungono nel
+   tempo. Due regole diverse, due funzioni diverse: e' anche il motivo
+   per cui sul database sono due `security definer` separati invece di
+   un parametro in piu' su uno solo.
+
+   Non puo' fermare niente: se la scrittura non passa, la scheda resta
+   con i legami in memoria e la prossima persona li richiede a BGG. */
+async function registraLegami(bgg, legami){
+  const n = parseInt(bgg, 10) || 0;
+  if (!n || !legami || typeof legami !== 'object') return null;
+
+  apri();
+  const k = String(n);
+  mappa[k] = Object.assign({}, mappa[k] || { bgg: n }, { legami: legami });
+  salvaLocale();
+
+  const c = client();
+  if (!c) return mappa[k];
+  try {
+    const r = await c.rpc('scheda_bgg_legami', { p_bgg: n, p_legami: legami });
+    if (r.error) motivo = traduci(r.error);
+  } catch (e){}
+  return mappa[k];
+}
+
 function pathCondiviso(pic){
   return pic ? 'bgg/' + pic + '.jpg' : '';
 }
 
-return { carica: carica, di: di, registra: registra,
+return { carica: carica, di: di, registra: registra, registraLegami: registraLegami,
          pathCondiviso: pathCondiviso, problema: problema };
 })();

@@ -6265,3 +6265,83 @@ input::placeholder, textarea::placeholder{
    segnaposto, che e' quello che e'. */
 #partitalayer #pa-quando.vuota .sc-quando{color:var(--ink-soft)}
 #partitalayer #pa-quando .ico{flex:none; width:17px; height:17px; color:var(--ink-soft)}
+
+/* ============================================================
+   LE ESPANSIONI NELLA SCHEDA
+
+   Nasce nascosta e compare solo se c'e' qualcosa: un titolo
+   "Espansioni" sopra il vuoto, per un gioco che non ne ha, sarebbe una
+   promessa non mantenuta. E arriva DOPO il resto della scheda -- i
+   legami vengono da BGG o dalla cache condivisa -- quindi non deve
+   spostare niente di quello che si sta gia' leggendo: sta in fondo,
+   sotto le partite.
+   ============================================================ */
+.espansioni{margin:18px 0 0}
+.espansioni[hidden]{display:none}
+
+/* "Espansione di X": una riga di contesto, non un titolo. Il nome del
+   gioco base in grassetto perche' e' l'unica cosa che si cerca. */
+.esp-base{
+  margin:0 0 10px; font-size:13px; line-height:1.6; color:var(--ink-soft);
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+}
+.esp-base b{color:var(--ink); font-weight:600}
+
+/* Il contatore accanto al titolo dice a colpo d'occhio a che punto sei:
+   "3/7" e' la risposta alla domanda per cui si apre questa sezione. */
+.esp-tit{
+  margin:0 0 8px; display:flex; align-items:baseline; gap:8px;
+  font-family:var(--ff); font-weight:900; font-size:11px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink);
+}
+.esp-tit span{
+  font-family:var(--ff-mono); font-size:11px; letter-spacing:.04em;
+  color:var(--ink-soft); font-variant-numeric:tabular-nums;
+}
+
+.esp-lista{list-style:none; margin:0; padding:0}
+.esp-lista li{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 0; border-top:1px dashed var(--line);
+}
+.esp-lista li:last-child{border-bottom:1px dashed var(--line)}
+.esp-nome{flex:1 1 auto; min-width:0; font-size:13.5px; line-height:1.45}
+
+/* Quelle che hai restano piene, le altre sono tenui: la differenza fra
+   le due e' l'informazione, e va vista senza leggere. */
+.esp-lista li .esp-nome{color:var(--ink-soft)}
+.esp-lista li.ce-l-hai .esp-nome{color:var(--ink)}
+.esp-hai{
+  flex:none; display:inline-flex; align-items:center; gap:5px;
+  font-family:var(--ff); font-weight:900; font-size:9.5px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--verde);
+}
+.esp-hai .ico{width:13px; height:13px}
+
+/* Il cuore e' quello del catalogo, e fa la stessa cosa: da spento e'
+   un contorno quieto, da acceso e' pieno. Un secondo cuore con un
+   secondo significato sarebbe un simbolo da imparare due volte. */
+.espansioni .esp-cuore{
+  flex:none; width:32px; height:32px; padding:0; cursor:pointer;
+  background:none; border:0; border-radius:0; color:var(--ink-soft);
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.espansioni .esp-cuore:hover{background:rgba(var(--rosso-rgb),.12); color:var(--rosso)}
+.espansioni .esp-cuore.on{color:var(--rosso)}
+.espansioni .esp-cuore.on .ico, .espansioni .esp-cuore.on .ico path{fill:currentColor}
+.espansioni .esp-cuore .ico{width:17px; height:17px}
+
+/* L'interruttore del raggruppamento: un secondario come gli altri --
+   tratteggiato e maiuscolo -- perche' e' una scelta che si disfa. */
+.espansioni .esp-sotto{
+  flex:none; cursor:pointer;
+  font-family:var(--ff); font-weight:900; font-size:9.5px;
+  letter-spacing:.1em; text-transform:uppercase;
+  background:none; color:var(--ink);
+  border:1px dashed var(--line); border-radius:0; padding:7px 10px;
+}
+.espansioni .esp-sotto:hover{border-color:var(--accent); color:var(--accent)}
+.espansioni .esp-sotto.on{
+  background:var(--accent); color:var(--su-accent); border-color:transparent;
+  clip-path:var(--fustella);
+}

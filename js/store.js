@@ -43,7 +43,10 @@ const DA_DB = {
   voto:'score', voto_mio:'mioVoto',
   tag:'tags', recensione:'review', copertina:'cover',
   arte:'art', wrap:'wrap', ink:'ink', posizione:'pos',
-  libreria:'libreria', posto:'posto', preferito:'preferito'
+  libreria:'libreria', posto:'posto', preferito:'preferito',
+  /* L'id BGG del gioco base sotto cui questa copia e' raggruppata.
+     NULL = sta da sola sullo scaffale, ed e' il valore di partenza. */
+  sotto:'sotto'
 };
 const A_DB = {};
 Object.keys(DA_DB).forEach(function(k){ A_DB[DA_DB[k]] = k; });

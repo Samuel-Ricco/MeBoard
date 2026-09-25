@@ -4094,6 +4094,26 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### Raggruppare toglieva la strada per tornare indietro
+
+Il buco piu' istruttivo di questo giro, trovato provando e non leggendo.
+
+L'interruttore per raggruppare un'espansione sotto il gioco base stava **sulla
+scheda dell'espansione**, che sembrava ovvio: e' dove sei quando lo decidi. Ma
+raggruppare la toglie dallo scaffale, e una scatola fuori dallo scaffale **non
+si apre piu'** — quindi da quel momento la sua scheda era irraggiungibile e il
+gesto non si poteva disfare. Si poteva raggruppare e basta.
+
+La cura e' metterlo (anche) **sulla scheda del gioco base**, dove le espansioni
+ci sono tutte e si vedono raggruppate o no. E' anche il posto piu' sensato per
+decidere: la domanda "quali delle mie espansioni stanno sotto questo gioco" si fa
+guardando il gioco.
+
+**La regola generale, che vale oltre questo caso:** un comando che rende
+irraggiungibile la cosa su cui agisce deve esistere anche da un'altra parte. Non
+e' una questione di comodita' — e' che senza, l'azione e' a senso unico, e
+nessuno lo scopre finche' non la prova davvero.
+
 ### Le espansioni: tre risposte e la sorgente
 
 Tre domande di prodotto tenevano ferma la voce piu' grossa rimasta. Risposte il
@@ -6364,9 +6384,9 @@ e' fatto* c'e' tutto il resto di questo file, che e' aggiornato.
 Il sito ha **quattro sezioni** — collezione (la scena 3D), catalogo, partite,
 profilo — piu' **l'elenco della collezione**, che e' una voce di navigazione sua
 e non un pulsante in testata. Due lingue, **604 chiavi in italiano e 597 in
-inglese**. **Diciotto migrazioni nel repo, sedici applicate**: mancano
-`librerie_nome_unico` e `espansioni` (tutt'e due del 2026-09-25), che si
-incollano nell'SQL editor come si e' fatto con `schede_bgg`.
+inglese**. **Diciotto migrazioni nel repo, diciotto applicate**: le ultime due
+-- `librerie_nome_unico` e `espansioni` -- sono state incollate nell'SQL editor
+il 2026-09-25 e verificate dall'esterno con la sola chiave pubblica.
 
 BGG lo serve una **edge function**, non piu' solo il proxy locale: e' la
 differenza fra un sito che funziona su questa macchina e uno che funziona anche
@@ -6416,6 +6436,8 @@ niente working tree e niente storia — e da li' e' cambiata la pelle.
 | copertine piu' nitide | le 69 gia' nel bucket sono a 760 px: `piuNitide()` le rifa' a 1.100, quattro per sessione e solo da admin -- la condivisa e' di solo inserimento, quindi per sostituire bisogna cancellare, e da li' cancella solo un admin |
 | il nome al tavolo | sotto i 430 px prende una riga sua: da ~30 px a 243. Cede la disposizione, non le misure dei comandi |
 | le espansioni, la sorgente | `/espansioni` su proxy e edge function, `legami()` con id e verso (`inbound` distingue "le mie espansioni" da "il gioco che espando"), l'indice che se le riprende in coda con `quantiBase` nell'intestazione, e la migrazione. Manca la parte visibile |
+| le espansioni, la scheda | quelle che hai e quelle che mancano con il contatore `1/2`, il cuore sulle mancanti e l'interruttore per raggruppare. `sotto` toglie dallo scaffale ma non dall'elenco: ce l'hai, e l'elenco e' il posto dove c'e' tutto |
+| il gesto a senso unico | l'interruttore stava solo sulla scheda dell'espansione, che raggruppandola diventa irraggiungibile: si raggruppava e non si tornava indietro. Sta anche sulla scheda del gioco base |
 
 **Le lezioni generali** di questa sessione:
 
@@ -6792,20 +6814,12 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
 
    **Resta il lorem gia' finito sul database**, che e' dato di chi lo ha: si
    toglie con una `update` sul Table Editor, e non e' un lavoro di codice.
-2. **Le espansioni: la FONTE e' fatta, manca quello che si vede.** Le tre
-   domande di prodotto hanno avuto risposta il 2026-09-25 -- vedi "Le espansioni:
-   tre risposte e la sorgente" piu' sotto -- e da li' e' uscito il primo pezzo:
-   `/espansioni` sul proxy e sulla edge function, `BGG.espansioni()` nel client,
-   le espansioni di nuovo dentro l'indice locale (in coda, con l'intestazione a
-   dire dove finiscono i giochi), e la migrazione con `schede_bgg.legami` e
-   `giochi.sotto`.
-
-   **Serve un rilascio e due migrazioni prima che serva a qualcosa**, e finche'
-   non arrivano non cambia niente per nessuno: `/espansioni` risponde 404 e il
-   client tratta un 404 come "nessuna espansione". Poi resta la parte visibile:
-   la sezione nella scheda con quelle che hai e quelle che mancano, il cuore
-   sulle mancanti, e l'interruttore che raggruppa un'espansione sotto il suo
-   gioco base.
+2. **Le espansioni: FATTE il 2026-09-25**, tutt'e due le meta'. Nella scheda
+   c'e' la sezione con quelle che hai e quelle che mancano (`1/2` accanto al
+   titolo, che e' la risposta alla domanda per cui si apre), il cuore della
+   wishlist sulle mancanti, e l'interruttore che raggruppa. Provate sui dati
+   veri: Deep Regrets mostra 1/2 con la mini posseduta e "Even Deeper Regrets"
+   col cuore; la mini mostra "Espansione di Deep Regrets" e il suo interruttore.
 3. **Le tre porte mancanti: FATTE.** Cancellare un gioco e' tornato nel menu a
    tre punti dell'elenco il 2026-09-03; **correggere la scheda** (`apriModifica`
    -- autore, editore, anno, voto, copertina) ci e' arrivata il 2026-09-25, e
