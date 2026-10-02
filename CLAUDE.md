@@ -4129,13 +4129,13 @@ romperebbe tutti quelli dopo, e il programma si ferma invece di consegnare
 un'animazione sbagliata. Toglie anche i metadati (`C2PA`, `EXIF`, `XMP`), che
 dicono come il file e' stato fatto e viaggiano a ogni visita.
 
-| | fotogrammi | peso |
-|---|---|---|
-| 60 al secondo | 180 | 1961 KB |
-| 30 al secondo | 90 | 975 KB |
-| 20 al secondo | 60 | 653 KB |
-| 15 al secondo | 45 | 490 KB |
-| la gif di prima | 45 | 252 KB |
+| | fotogrammi | peso | |
+|---|---|---|---|
+| 60 al secondo | 180 | 1961 KB | |
+| **30 al secondo** | **90** | **975 KB** | **quella online** |
+| 20 al secondo | 60 | 653 KB | |
+| 15 al secondo | 45 | 490 KB | |
+| la gif di prima | 45 | 252 KB | |
 
 Due mega su 4G medio sono **tre secondi**, su 3G lento **quaranta**.
 
@@ -4148,10 +4148,16 @@ complessivi**, i piu' grossi (198 e 129 ms) proprio in fondo, quando la scena si
 monta. Un'immagine animata avanza sul thread principale, quindi in quei momenti
 si inchioda -- e sono gelate che si vedono, non millisecondi teorici.
 
-E i keyframe ci si mettono in mezzo due volte: senza predizione fra fotogrammi
-il browser deve fare una decodifica VP8 **piena sessanta volte al secondo**, e
-quella CPU la toglie proprio al montaggio della scena che sta gia' bloccando
-tutto. Piu' fotogrammi al secondo qui possono voler dire **meno** fluidita'.
+Avevo scritto che i keyframe peggioravano anche questo -- sessanta decodifiche
+VP8 piene al secondo che rubano CPU al montaggio della scena -- e **misurandolo
+non e' vero**: passando da 60 a 30 fotogrammi il tempo bloccato resta lo stesso
+(639 e 793 ms contro 786), perche' le immagini le decodifica un pool di thread
+suo e non il principale. Quello che cala e' il **caricamento**, da 3,8-4,0 s a
+2,9-3,4 s, ed e' solo il file che pesa la meta'.
+
+Quindi scendere di fotogrammi compra peso e tempo di arrivo, **non** fluidita':
+le gelate vengono dalla scena che si monta e restano li' qualunque cosa si
+faccia all'animazione.
 
 La via d'uscita vera e' un **video** (WebM/VP9 con alfa) al posto di
 un'immagine: la pipeline media non passa dal thread principale, quindi continua
