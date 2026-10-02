@@ -1997,17 +1997,16 @@ body.ready #load{
    serve piu' niente: la resa 3D porta dentro la sua luce e la sua
    ombra gia' fatte.
 
-   IL PALCO VA OLTRE IL NATIVO, ed e' una scelta fatta sapendo cosa
-   costa. L'animazione e' 402x379: a 320 di base `--dk` la porta a 496
-   sul salto piu' largo, cioe' un quarto oltre la sua risoluzione.
-   Sopra il nativo non si diventa piu' grandi, si diventa piu' morbidi.
+   IL PALCO STA DENTRO AL NATIVO, adesso. Con l'animazione a 402x379
+   non ci stava: i 320 di base diventano 496 sul salto piu' largo, e
+   quello che conta non sono i pixel CSS ma quelli FISICI -- su un
+   telefono a densita' 3 sono 960, su un desktop a densita' 2 sono 992.
+   Cioe' la sorgente veniva ingrandita due volte e mezzo, e la
+   morbidezza che se ne vedeva era vera.
 
-   Qui regge per due motivi che sono di questo caso e non una regola
-   generale: e' una resa 3D di una forma tonda, senza bordi duri ne'
-   testo, e un filo di morbidezza non si legge come un difetto; e lo
-   sfondo e' nero pieno, che perdona l'interpolazione molto piu' di un
-   fondo chiaro. Su un disegno netto o su carta la stessa scelta si
-   vedrebbe subito.
+   Con la sorgente a 800x760 lo stesso palco chiede un ingrandimento
+   fra 1,0 e 1,2: praticamente nativo ovunque. La misura non e'
+   cambiata, e' cambiato quanto regge.
 
    Dentro il telaio il meeple occupa il 55% in larghezza, e quel vuoto
    attorno non e' spreco: nei fotogrammi in cui salta ci va a stare, e
@@ -2015,10 +2014,10 @@ body.ready #load{
    soggetto legge a centosettantasei pixel, dove il vecchio dado ne
    faceva centodieci. */
 .stage{
-  width:320px; height:302px; position:relative;    /* il rapporto del file: 402x379 */
+  width:320px; height:304px; position:relative;    /* il rapporto del file: 800x760 */
   transform:scale(var(--dk,1));
   /* quello che il `transform` non prende in carico: l'ingombro */
-  margin:calc((var(--dk,1) - 1) * 151px) 0;
+  margin:calc((var(--dk,1) - 1) * 152px) 0;
 }
 /* RIEMPIE IL PALCO SENZA DEFORMARSI. L'animazione e' 402x379 -- quasi
    quadrata ma non quadrata -- e tirata a forza in un quadrato il

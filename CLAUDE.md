@@ -4176,13 +4176,28 @@ romperebbe tutti quelli dopo, e il programma si ferma invece di consegnare
 un'animazione sbagliata. Toglie anche i metadati (`C2PA`, `EXIF`, `XMP`), che
 dicono come il file e' stato fatto e viaggiano a ogni visita.
 
-| | fotogrammi | peso | |
+| | fotogrammi | a 402x379 | a 800x760 |
 |---|---|---|---|
-| 60 al secondo | 180 | 1961 KB | |
-| **30 al secondo** | **90** | **975 KB** | **quella online** |
-| 20 al secondo | 60 | 653 KB | |
-| 15 al secondo | 45 | 490 KB | |
+| 60 al secondo | 180 | 1961 KB | 4033 KB |
+| **30 al secondo** | **90** | 975 KB | **2006 KB (online)** |
+| 20 al secondo | 60 | 653 KB | 1344 KB |
+| 15 al secondo | 45 | 490 KB | 1005 KB |
 | la gif di prima | 45 | 252 KB | |
+
+#### I pixel che contano sono quelli fisici
+
+La sorgente e' passata a **800x760**, e la ragione e' una misura che prima non
+avevo fatto: il palco e' 320 px CSS, ma su un telefono a densita' 3 sono **960
+pixel veri**, e su un desktop a densita' 2 sul salto largo sono **992**. Con una
+sorgente da 402 voleva dire ingrandirla **due volte e mezzo**.
+
+Avevo giustificato quella morbidezza -- forma tonda, fondo nero, perdona. Era
+vero a meta': perdonava, ma c'era. Con 800 lo stesso palco chiede fra **0,5 e
+1,2**, cioe' la sorgente si rimpicciolisce invece di allargarsi, ed e' nitida
+ovunque. **La misura a schermo non e' cambiata: e' cambiato quanto regge.**
+
+Quando si giudica se un'immagine e' abbastanza grande, i pixel CSS non dicono
+niente: vanno moltiplicati per `devicePixelRatio`.
 
 Due mega su 4G medio sono **tre secondi**, su 3G lento **quaranta**.
 
