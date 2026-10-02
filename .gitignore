@@ -17,3 +17,9 @@ dump_bgg/
 # si serve. Sta in C:/Users/Windows/_Claude/NEW_MEBOARD accanto al repo.
 design-moderno-dell-app/
 *-handoff.zip
+
+# I SORGENTI 3D DA CUI ESCONO LE IMMAGINI, non le immagini stesse.
+# `meeple-skater.obj` da solo pesa 18 MB: quello che si serve e' la gif
+# renderizzata, che sta in img/ e pesa un centesimo. Un file cosi' in un
+# repo da 200 KB non si toglie piu', perche' la storia se lo tiene.
+OBJ/
