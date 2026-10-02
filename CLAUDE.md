@@ -4094,7 +4094,7 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
-### Il dado di CSS e' diventato una gif
+### Il dado di CSS e' diventato un'animazione
 
 La schermata d'attesa aveva un dado costruito a mano: una prospettiva, ventisei
 pezzi -- sei facce, dodici spigoli, otto angoli -- un rotolamento a rimbalzi e
@@ -4102,10 +4102,42 @@ un'ombra a terra sincronizzata sulla botta. **Quattrocentocinquanta righe di
 foglio che non pesavano un byte da scaricare.** Adesso c'e' una resa 3D di un
 meeple sullo skate, `img/meboard-loader.gif`, 252 KB.
 
-Il prezzo e' tutto li' ed e' bene saperlo: **la gif sta sulla prima schermata e
-deve arrivare prima di potersi muovere.** Per questo c'e' un `preload` nella
-testa -- senza, il palco resta vuoto proprio nel momento in cui dovrebbe dire
-che sta succedendo qualcosa.
+Poi la gif e' diventata una **webp animata a 60 fotogrammi al secondo**,
+`img/meboard-loader.webp`. Ci si guadagna l'**alfa vera** -- i bordi del meeple
+sfumano sul fondo invece di tagliarsi netti, perche' la gif la trasparenza ce
+l'ha solo accesa o spenta -- e la fluidita', che a 60 fa vedere le scie di
+movimento che a 14 non c'erano.
+
+Il prezzo e' tutto li' ed e' bene saperlo: **sta sulla prima schermata e deve
+arrivare prima di potersi muovere.** Per questo c'e' un `preload` nella testa --
+senza, il palco resta vuoto proprio nel momento in cui dovrebbe dire che sta
+succedendo qualcosa.
+
+#### Perche' pesa due mega: sono tutti keyframe
+
+La webp e' **7,8 volte la gif**, e la ragione non e' il formato -- e' come e'
+stata esportata. Ogni `ANMF` copre la tela intera ed e' marcato "non fondere":
+ogni fotogramma **sostituisce** quello prima invece di disegnarci sopra, quindi
+fra un fotogramma e l'altro non c'e' nessuna compressione. Undici KB l'uno per
+centottanta. Una webp animata con la predizione fra fotogrammi, dalla stessa
+sorgente, starebbe in una frazione.
+
+Da li' `tools/webp-dimagrisci.mjs`, che butta via fotogrammi senza ricodificare
+niente -- e proprio perche' sono indipendenti lo puo' fare. **Verifica invece di
+fidarsi**: se un solo fotogramma fosse parziale o in fusione, buttarne via uno
+romperebbe tutti quelli dopo, e il programma si ferma invece di consegnare
+un'animazione sbagliata. Toglie anche i metadati (`C2PA`, `EXIF`, `XMP`), che
+dicono come il file e' stato fatto e viaggiano a ogni visita.
+
+| | fotogrammi | peso |
+|---|---|---|
+| 60 al secondo | 180 | 1961 KB |
+| 30 al secondo | 90 | 975 KB |
+| 20 al secondo | 60 | 653 KB |
+| 15 al secondo | 45 | 490 KB |
+| la gif di prima | 45 | 252 KB |
+
+Due mega su 4G medio sono **tre secondi**, su 3G lento **quaranta**.
 
 Due cose imparate misurando:
 
@@ -4113,17 +4145,19 @@ Due cose imparate misurando:
   55% in larghezza e il 52% in altezza, e il resto non e' spreco: nei fotogrammi
   in cui salta ci va a stare, quindi ritagliarlo gli taglierebbe la testa a meta'
   volo. Al palco di prima (130 px) sarebbe arrivato a settanta pixel dove il dado
-  ne faceva centodieci: il palco e' passato a **200x189** -- il rapporto della
-  gif -- e il soggetto e' tornato alla misura giusta rispetto al nome del sito.
+  ne faceva centodieci: il palco e' passato a **200x189** -- il rapporto
+  dell'animazione -- e il soggetto e' tornato alla misura giusta rispetto al
+  nome del sito.
 - **Con `prefers-reduced-motion` non si puo' piu' rallentare.** Il dado non si
   fermava (e' un'attesa, e ferma non direbbe piu' niente) ma girava molto piu'
-  piano. Una gif va alla sua velocita' e basta: quella regola e' caduta, e non
-  c'e' modo di rimetterla senza tornare a disegnare l'animazione.
+  piano. Un'immagine animata va alla sua velocita' e basta: quella regola e'
+  caduta, e non c'e' modo di rimetterla senza tornare a disegnare l'animazione.
 
 **`OBJ/` e' ignorato.** Ci stanno i sorgenti 3D da cui la gif e' uscita, e
 `meeple-skater.obj` da solo pesa 18 MB: in un repo da 200 KB un file cosi' non
 si toglie piu', perche' la storia se lo tiene. Si committa quello che il sito
-serve, non quello con cui e' stato fatto.
+serve, non quello con cui e' stato fatto -- e le esportazioni a piena qualita'
+stanno li' accanto, da cui si ricava quella che va online.
 
 ### Spostare la stella ha disfatto una regola che dipendeva da dov'era
 
