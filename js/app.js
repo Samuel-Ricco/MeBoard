@@ -6656,6 +6656,28 @@ function bindStanza(){
     SUONI.gioca('posa');
   });
 
+  /* QUALE SUPERFICIE SI STA COLORANDO. Una riga di bersagli e una
+     tavolozza sola: si cambia quale fila di bollini e' a schermo, non
+     si apre niente. Un ascoltatore solo, perche' i cinque tasti sono
+     fissi nel markup e non si rifanno mai.
+
+     Non tocca nessun dato: e' una scelta su cosa guardare, quindi non
+     si salva e riparte dagli scaffali ogni volta che si apre il
+     pannello -- come un cassetto che si richiude. */
+  const quali = q('.st-quali');
+  if (quali) quali.addEventListener('click', function(e){
+    const b = e.target.closest('button[data-sup]');
+    if (!b) return;
+    const sup = b.getAttribute('data-sup');
+    qa('.st-quali button[data-sup]').forEach(function(x){
+      x.classList.toggle('on', x === b);
+    });
+    qa('.st-tav[data-sup]').forEach(function(d){
+      d.hidden = d.getAttribute('data-sup') !== sup;
+    });
+    SUONI.gioca('tocco');
+  });
+
   /* La tinta dei faretti passa da `applicaLuce` e non da
      `applicaStanza`: e' un colore di LUCE, non di superficie. Non c'e'
      nessun materiale da rigenerare ne' nessun arredo da ricostruire --
@@ -7450,9 +7472,15 @@ function disegnaAmici(){
   const n = PROFILO.amici().length;
   quanti('#conta-amici', n + PROFILO.daAccettare().length);
   if (PROFILO.problema()){ proMsg('#pro-amici-msg', esc(PROFILO.problema()), true); return; }
-  proMsg('#pro-amici-msg', n
-    ? T(n === 1 ? 'ami.uno' : 'ami.tanti', {n: n})
-    : T('ami.nessunAmico'));
+  /* IL CONTO NON SI SCRIVE. Il numero sta gia' sulla tendina, due dita
+     piu' su, ed e' li' che si guarda; sotto ci sono gli amici, uno per
+     riga, che sono il conto fatto per esteso. Una frase in mezzo che
+     dice "4 amici." ripete tutte e due e separa l'intestazione dalla
+     cosa che intesta.
+
+     Resta il caso in cui non c'e' niente: li' la frase non ripete un
+     elenco, lo sostituisce, e dice come si comincia. */
+  proMsg('#pro-amici-msg', n ? '' : T('ami.nessunAmico'));
 }
 
 /* Una casella sola per il codice e per l'email: chi incolla qualcosa

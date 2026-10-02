@@ -195,14 +195,45 @@
       <!-- spezzata attorno a `#st-quale`, che lo riempie il JS -->
       <p class="st-quale"><i data-i18n="stanza.legnoDi">legno e arredi di</i> <b id="st-quale">questo mobile</b></p>
 
-      <!-- I FARETTI SOTTO I RIPIANI, che stavano in cima al pannello
-           accanto alla luce della stanza. Sono del MOBILE, non della
-           stanza, e quindi appartengono qui: quanto sono accesi e di
-           che colore sono la stessa domanda, e stanno nella stessa
-           tendina. -->
-      <details class="st-sotto">
-        <summary data-i18n="stanza.faretti">faretti</summary>
-        <div class="st-sotto-dentro">
+      <!-- UNA TAVOLOZZA SOLA, E CINQUE BERSAGLI.
+
+           Qui c'erano cinque tendine dentro una tendina: per vedere
+           cinque file di bollini si aprivano cinque volte, e aperte
+           insieme erano nove righe di colori una sotto l'altra in cui
+           non si capiva piu' quale appartenesse a cosa. Due livelli di
+           annidamento per una cosa che non e' annidata: i faretti, gli
+           scaffali, il muro, il pavimento e il nome non stanno uno
+           dentro l'altro, stanno uno ACCANTO all'altro. Sono cinque
+           risposte alla stessa domanda -- di che colore -- e una
+           domanda sola vuole una tavolozza sola.
+
+           Quindi: una riga che dice COSA stai colorando, e sotto i
+           colori. Un tocco invece di cinque, e in ogni momento c'e' una
+           fila di bollini e non cinque.
+
+           I cinque contenitori restano quelli di prima, con gli stessi
+           identificativi: a riempirli e a leggerli e' lo stesso codice
+           di sempre, qui cambia solo quale si vede. -->
+      <div class="st-superfici">
+        <div class="st-quali" role="tablist" data-i18n-aria="stanza.superficiAria"
+             aria-label="che cosa stai colorando">
+          <button type="button" data-sup="scaffali" role="tab" class="on" data-i18n="stanza.scaffali">scaffali</button>
+          <button type="button" data-sup="faretti" role="tab" data-i18n="stanza.faretti">faretti</button>
+          <button type="button" data-sup="muro" role="tab" data-i18n="stanza.muro">muro</button>
+          <button type="button" data-sup="pavimento" role="tab" data-i18n="stanza.pavimento">pavimento</button>
+          <!-- Il colore del nome scritto sulla parete: e' una scelta
+               della stanza e non del mobile, perche' due nomi di colore
+               diverso sulla stessa parete non si leggono come due nomi,
+               si leggono come un errore. -->
+          <button type="button" data-sup="nome" role="tab" data-i18n="stanza.nomeColore">nome</button>
+        </div>
+
+        <div class="st-tav" data-sup="scaffali">
+          <span id="st-scaffali" class="pastiglie"></span>
+        </div>
+        <!-- Quanto sono accesi e di che colore sono la stessa domanda,
+             quindi il cursore sta con i suoi bollini e non altrove. -->
+        <div class="st-tav" data-sup="faretti" hidden>
           <p class="st-riga luce">
             <input id="st-faretti" type="range" min="0" max="1" step="0.02" value="0.4"
                    data-i18n-aria="stanza.farettiAria" aria-label="faretti della libreria">
@@ -210,31 +241,16 @@
           </p>
           <span id="st-fari-tinta" class="pastiglie"></span>
         </div>
-      </details>
-
-      <details class="st-sotto">
-        <summary data-i18n="stanza.scaffali">scaffali</summary>
-        <div class="st-sotto-dentro"><span id="st-scaffali" class="pastiglie"></span></div>
-      </details>
-
-      <details class="st-sotto">
-        <summary data-i18n="stanza.muro">muro</summary>
-        <div class="st-sotto-dentro"><span id="st-muro" class="pastiglie"></span></div>
-      </details>
-
-      <details class="st-sotto">
-        <summary data-i18n="stanza.pavimento">pavimento</summary>
-        <div class="st-sotto-dentro"><span id="st-pavimento" class="pastiglie"></span></div>
-      </details>
-
-      <!-- Il colore del nome scritto sulla parete. E' una scelta della
-           stanza e non del mobile: due nomi di colore diverso sulla
-           stessa parete non si leggono come due nomi, si leggono come
-           un errore. -->
-      <details class="st-sotto">
-        <summary data-i18n="stanza.nomeColore">nome</summary>
-        <div class="st-sotto-dentro"><span id="st-nome-tinta" class="pastiglie"></span></div>
-      </details>
+        <div class="st-tav" data-sup="muro" hidden>
+          <span id="st-muro" class="pastiglie"></span>
+        </div>
+        <div class="st-tav" data-sup="pavimento" hidden>
+          <span id="st-pavimento" class="pastiglie"></span>
+        </div>
+        <div class="st-tav" data-sup="nome" hidden>
+          <span id="st-nome-tinta" class="pastiglie"></span>
+        </div>
+      </div>
 
       <p class="st-quale sotto" data-i18n="stanza.dellaStanza">luce, muro e pavimento sono della stanza intera</p>
       <p class="st-fondo">
@@ -441,10 +457,19 @@
            `#mia-msg` resta e dice il PERCHE' -- quale ricerca, quale
            filtro -- che e' un'altra cosa. -->
       <h1 class="testa-n" id="mia-n" aria-live="polite"></h1>
-      <div class="viste" id="viste" role="tablist">
-        <button type="button" data-vista="tutti" role="tab" data-i18n="mia.tutti">tutti i giochi</button>
-        <button type="button" data-vista="gruppi" role="tab" data-i18n="mia.gruppi">gruppi</button>
-        <i class="ind" aria-hidden="true"></i>
+      <!-- LA STELLA STA QUI, non su una riga sua. Filtrare per
+           preferiti e scegliere fra "tutti i giochi" e "gruppi" sono
+           la stessa domanda -- che pezzo di collezione sto guardando --
+           e stavano a due altezze diverse con la ricerca in mezzo. Una
+           riga sola: le due viste, e in fondo l'interruttore.
+           Si svuota da sola quando non ci sono preferiti. -->
+      <div class="viste-riga">
+        <div class="viste" id="viste" role="tablist">
+          <button type="button" data-vista="tutti" role="tab" data-i18n="mia.tutti">tutti i giochi</button>
+          <button type="button" data-vista="gruppi" role="tab" data-i18n="mia.gruppi">gruppi</button>
+          <i class="ind" aria-hidden="true"></i>
+        </div>
+        <div id="mia-gruppi" class="pref-slot"></div>
       </div>
       <!-- Cercare stava SOLO nell'imbuto, che e' un pannello da aprire.
            Sopra un elenco la ricerca e' la prima cosa che si cerca, e
@@ -460,7 +485,6 @@
       </div>
 
       <div class="mia-barra">
-        <div id="mia-gruppi" class="gruppi filtro"></div>
         <!-- DUE TASTI, NON UNO. "Gestisci" impacchettava due gesti di
              peso diverso: crearne uno e' la cosa che si fa spesso e
              che vale un tocco, riordinare e rinominare e' la cosa che

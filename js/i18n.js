@@ -96,6 +96,7 @@ it: {
   'stanza.luce':        'luce',
   'stanza.luceAria':    'luce della stanza',
   'stanza.faretti':     'faretti',
+  'stanza.superficiAria': 'che cosa stai colorando',
   'stanza.farettiAria': 'faretti della libreria',
   'stanza.suono':       'suono',
   'stanza.suonoAria':   'volume dei suoni',
@@ -470,7 +471,7 @@ it: {
   /* IL CONTATORE GRANDE. Due righe: quanti sono, e quanti di quelli
      stanno in vetrina. La seconda e' piu' tenue perche' e' una parte
      della prima, non un secondo numero. */
-  'mia.totale':         '{n} {parola}<br><i>{v} in vetrina</i>',
+  'mia.totale':         '{n} {parola}<br><i>{v} esposti</i>',
   'cat.totale':         '{n}<br>titoli',
   'mia.niente':         'Niente {perche}.',
   'mia.vuota':          'La libreria &egrave; vuota.',
@@ -484,8 +485,6 @@ it: {
   'ami.suaLibreria':    'la sua libreria',
   'ami.togli':          'togli',
   'ami.ritira':         'ritira',
-  'ami.uno':            '<b>{n}</b> amico.',
-  'ami.tanti':          '<b>{n}</b> amici.',
   'ami.nessunAmico':    'Nessun amico, per ora. Passagli il tuo codice, o chiedi il loro.',
   'ami.chiedo':         'chiedo&hellip;',
   'ami.nonRiuscito':    'non riuscito: {e}',
@@ -529,7 +528,7 @@ it: {
      in una colonna sua, e il nome del mobile stava nel `title`: cioe'
      scorrendo si vedeva CHE e' in vetrina ma non DOVE, e per saperlo
      bisognava fermarsi sopra. */
-  'riga.dove':          'in vetrina &middot; {n}',
+  'riga.dove':          'esposto &middot; {n}',
   'riga.soloColl':      'solo in collezione',
   'riga.suScaffale':    'sullo scaffale, in {n}',
   'riga.fuoriScaffale': 'in collezione, ma non sullo scaffale',
@@ -813,6 +812,7 @@ en: {
   'stanza.luce':        'light',
   'stanza.luceAria':    'light in the room',
   'stanza.faretti':     'shelf lights',
+  'stanza.superficiAria': 'what you are colouring',
   'stanza.farettiAria': 'lights inside the bookcase',
   'stanza.suono':       'sound',
   'stanza.suonoAria':   'sound volume',
@@ -1175,8 +1175,6 @@ en: {
   'ami.suaLibreria':    'their collection',
   'ami.togli':          'remove',
   'ami.ritira':         'withdraw',
-  'ami.uno':            '<b>{n}</b> friend.',
-  'ami.tanti':          '<b>{n}</b> friends.',
   'ami.nessunAmico':    'No friends yet. Pass them your code, or ask for theirs.',
   'ami.chiedo':         'asking&hellip;',
   'ami.nonRiuscito':    'did not work: {e}',

@@ -154,11 +154,19 @@ const VECCHIE = {
 let base = leggiBase();
 let accento = leggiAccento();
 
+/* LA CARTA NON SI SCEGLIE PIU'.
+
+   Resta DEFINITA, e deve restarci: il rovescio -- le variabili `--r-*`,
+   centodieci riferimenti nel foglio di stile -- e' esattamente l'altro
+   materiale con lo stesso accento, ed e' quello che veste i pezzi
+   posati sul materiale opposto. Toglierla dall'elenco farebbe tornare
+   `rovescioDi` sul cartone stesso e il rovescio smetterebbe di essere
+   un rovescio.
+
+   Quello che sparisce e' la SCELTA. Quindi non si legge piu' niente:
+   chi aveva salvato la carta tornerebbe su un materiale che non puo'
+   piu' cambiare, e resterebbe li' per sempre. */
 function leggiBase(){
-  let v = '';
-  try { v = localStorage.getItem(CHIAVE) || ''; } catch (e) {}
-  if (BASI.some(function(t){ return t.v === v; })) return v;
-  if (VECCHIE[v]) return VECCHIE[v].b;
   return BASI[0].v;
 }
 
@@ -516,11 +524,14 @@ function disegnaSelettore(){
      `scegliAccento`, che chiama `applica()`, che passa di qui -- e a
      quel punto la ruota e' chiusa. */
   if (typeof SCEGLI !== 'undefined' && SCEGLI.aperta()) return;
-  const t = quale(base);
   const c = tinteDi(base, accento);
 
+  /* Il nome del materiale non si scrive: con un materiale solo direbbe
+     sempre la stessa parola, e accanto a "tavolozza" sarebbe quella
+     parola due volte. Il pallino dell'accento basta, ed e' la cosa che
+     davvero cambia. */
   const ora_n = document.getElementById('pro-tema-ora');
-  if (ora_n) ora_n.textContent = nome(t.n);
+  if (ora_n) ora_n.textContent = '';
   const mostra = document.getElementById('pro-tema-mostra');
   if (mostra){
     mostra.innerHTML = '';
@@ -531,30 +542,7 @@ function disegnaSelettore(){
 
   lista.innerHTML = '';
 
-  // le due basi
-  const basi = document.createElement('div');
-  basi.className = 'tav-basi';
-  BASI.forEach(function(x){
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'tav-base' + (x.v === base ? ' on' : '');
-    b.setAttribute('data-tav', x.v);
-    b.setAttribute('aria-pressed', x.v === base ? 'true' : 'false');
-    const p = document.createElement('span');
-    p.className = 'tav-prova';
-    p.style.background = x.c.bg;
-    p.style.color = x.c.ink;
-    p.textContent = 'Aa';
-    b.appendChild(p);
-    const n = document.createElement('span');
-    n.className = 'tav-nome';
-    n.textContent = nome(x.n);
-    b.appendChild(n);
-    basi.appendChild(b);
-  });
-  lista.appendChild(basi);
-
-  // l'accento: i predefiniti, poi la ruota
+  // l'accento, che adesso e' l'unica scelta: i predefiniti, poi la ruota
   const acc = document.createElement('div');
   acc.className = 'tav-accenti';
   const suo = accento || quale(base).c.accent;
@@ -598,8 +586,6 @@ function montaSelettore(){
      scelta, e attaccarne uno per voce vorrebbe dire rimetterli tutti
      ogni volta. */
   lista.addEventListener('click', function(e){
-    const b = e.target.closest('button[data-tav]');
-    if (b){ scegli(b.getAttribute('data-tav')); return; }
     const a = e.target.closest('button[data-acc]');
     if (a) scegliAccento(a.getAttribute('data-acc'));
   });

@@ -4094,6 +4094,63 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### La cura era piu' pesante del male: le cinque tendine della libreria
+
+Dentro "modifica libreria" c'erano cinque tendine -- faretti, scaffali, muro,
+pavimento, nome -- dentro un'altra tendina. La ragione scritta era buona: aperte
+insieme erano nove righe di bollini una sotto l'altra e non si capiva quale
+appartenesse a cosa. Il guaio e' che la cura costava **cinque tocchi per vedere
+cinque tavolozze**, piu' un rientro con un filo verticale a spiegare un
+annidamento che **nei fatti non esiste**: i faretti non stanno dentro gli
+scaffali, e il muro non sta dentro il pavimento.
+
+Sono cinque risposte alla STESSA domanda -- di che colore -- e una domanda sola
+vuole una tavolozza sola. Adesso c'e' una riga che dice *cosa* stai colorando e
+sotto i colori di quel cosa: un tocco invece di cinque, e in ogni momento una
+fila di bollini invece di cinque. Il problema delle nove righe sparisce da se',
+perche' di righe ce n'e' una.
+
+I cinque contenitori sono rimasti gli stessi, con gli stessi identificativi:
+cambia quale si vede, non chi li riempie ne' chi li ascolta.
+
+**La scelta del bersaglio non si salva.** E' una scelta su cosa guardare, non un
+dato: riaprendo il pannello riparte dagli scaffali, come un cassetto che si
+richiude.
+
+### Una fila smangiata non e' una fila
+
+Due volte nello stesso giro, e vale come regola. La carta dei colori aveva
+tredici tinte che andavano a capo **sette e sei**; la fila dei legni aveva sei
+bollini piu' la ruota che **sforava di otto pixel**, e la ruota finiva da sola
+su una riga sua.
+
+In tutti e due i casi il difetto non era "va a capo": era che andava a capo
+**male**, lasciando una seconda riga monca in mezzo a un pannello fatto di
+rettangoli pieni. E in tutti e due i casi la cura e' stata togliere la
+possibilita' di sfrangiarsi invece di accorciare il contenuto -- le tinte sono
+diventate **un nastro** di strisce attaccate su una riga sola, i bollini una
+**griglia a sette colonne** che chiude sempre, e i faretti (che di tinte ne
+hanno dodici) fanno due righe pari invece di tre scaglionate.
+
+Nel nastro **quella scelta sporge** di sei pixel come una linguetta: un anello
+attorno a una striscia da ventuno pixel la chiuderebbe fino a farla sparire.
+E la griglia dei campioni e' **attaccata**, senza spazi: lo spazio fra due
+campioni di colore e' il modo piu' rapido di far sembrare un bottone quello che
+e' un colore.
+
+### La carta non si sceglie piu', ma resta definita
+
+Il tema chiaro e' sparito dal profilo. Quello che **non** si poteva fare era
+toglierlo da `BASI`: il rovescio -- le variabili `--r-*`, **centodieci
+riferimenti** nel foglio di stile -- e' esattamente l'altro materiale con lo
+stesso accento, ed e' quello che veste i pezzi posati sul materiale opposto.
+Senza la carta, `rovescioDi('scuro')` torna sul cartone stesso e il rovescio
+smette di essere un rovescio.
+
+Quindi la carta resta dichiarata e sparisce solo la **scelta**. E `leggiBase()`
+non legge piu' niente: chi aveva salvato il chiaro resterebbe su un materiale
+che non puo' piu' cambiare, e ci resterebbe per sempre.
+
 ### Le espansioni sono una tendina e tre punti, non una lista a se'
 
 Prima versione: un elenco con lo stato e i comandi in fila accanto al nome. Su

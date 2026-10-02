@@ -402,6 +402,39 @@ body.visita .visita-only{display:inline-flex !important}
   transition:transform .3s cubic-bezier(.22,.9,.26,1);
 }
 .viste.trascina .ind{transition:none}
+
+/* --- la riga delle viste, con l'interruttore dei preferiti in fondo --
+   Il filo tratteggiato passa sotto a TUTTA la riga e non solo sotto
+   alle due viste: e' quello che dice che la stella sta con loro e non
+   accanto per caso. L'indicatore resta figlio di `.viste`, quindi il
+   suo 50% e' ancora mezza vista e non mezzo schermo. */
+.viste-riga{display:flex; align-items:stretch; gap:6px; margin:14px 0 0; border-bottom:1px dashed var(--line)}
+.viste-riga .viste{flex:1; min-width:0; margin:0; border-bottom:0}
+.pref-slot{flex:none; display:flex; align-items:stretch}
+/* senza preferiti non c'e' niente da filtrare: il posto sparisce */
+.pref-slot:empty{display:none}
+
+/* UN'ICONA, NON UNA PASTIGLIA. Accanto a due viste larghe una pastiglia
+   con la scritta sarebbe un terzo pulsante che si legge: questo invece
+   e' un interruttore, e si riconosce dal segno -- la stessa stella che
+   si tocca sulle righe. Il numero resta, piccolo e in alto: un filtro
+   che non dice quanto taglia e' un filtro che si prova e basta. */
+.pref-slot .filtro-pref{
+  position:relative; width:42px; padding:0; gap:0; border:0; border-radius:var(--r-s);
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(var(--ink-rgb),.06); color:var(--ink-soft); cursor:pointer;
+  transition:color .18s var(--ease), background-color .18s var(--ease);
+}
+.pref-slot .filtro-pref:hover{color:var(--ink)}
+.pref-slot .filtro-pref .ico{width:17px; height:17px}
+.pref-slot .filtro-pref span{
+  position:absolute; top:4px; right:5px;
+  font-family:var(--ff-display); font-weight:900; font-size:9px; letter-spacing:0;
+  line-height:1; color:var(--ink-soft);
+}
+.pref-slot .filtro-pref.on{color:var(--accent); background:rgba(var(--ink-rgb),.12)}
+.pref-slot .filtro-pref.on span{color:var(--accent)}
+.pref-slot .filtro-pref.on .ico path{fill:currentColor}
 /* il contenuto accompagna lo scorrimento, appena appena */
 #mia-list{transition:transform .3s cubic-bezier(.22,.9,.26,1), opacity .3s ease}
 #mia.trascina #mia-list{transition:none}
@@ -466,7 +499,13 @@ body.cella-su #cella{display:flex}
 /* Nell'imbuto la casella e' l'ultima cosa del pannello; qui invece ha
    una barra sotto, e senza respiro le due si leggono come una riga
    sola. */
-#mia .cercawrap, #partite .cercawrap{margin-bottom:2px}
+/* PIU' SNELLA. Sopra un elenco la ricerca e' un campo di servizio, non
+   il contenuto: alta come prima rubava una riga di giochi a ogni
+   schermata. Scende di quattro pixel in altezza e si stacca meno da
+   quello che ha sopra. */
+#mia .cercawrap, #partite .cercawrap{margin:10px 0 2px}
+#mia .cercawrap input, #partite .cercawrap input{padding:6px 24px 6px 9px; font-size:12.5px}
+#mia .cercawrap input::placeholder, #partite .cercawrap input::placeholder{font-size:10.4px}
 .mia-barra .gruppi{margin:0; flex:1; min-width:0}
 #mia-gestisci, #gru-apri{
   flex:none; font-family:var(--ff-text); font-size:13px; font-weight:700;
@@ -1071,6 +1110,10 @@ body.sez-partite #partite{display:block}
 .pro-dentro{padding:0 0 24px}
 .pro-dentro[hidden]{display:none}
 .pro-msg{margin:0 0 14px; font-size:12.5px; line-height:1.6; color:var(--ink-soft)}
+/* Vuoto vuol dire che non c'era niente da dire: senza questo resterebbe
+   comunque il suo margine, cioe' un buco in mezzo a quello che separa. */
+.pro-msg:empty{display:none}
+#pro-tema-ora:empty{display:none}
 .pro-msg.warn{color:var(--wood)}
 .pro-msg b{color:var(--ink); font-weight:500}
 
@@ -3416,6 +3459,11 @@ body.sez-collezione:not(.elenco) header{
    filtro non si e' mai visto -- codice vivo dietro una regola morta. */
 body.vista-tutti #mia-gestisci,
 body.vista-tutti #gru-apri{display:none !important}
+/* ...e allora la barra non ha piu' niente dentro: i due tasti dei
+   gruppi sono nascosti e la stella e' salita con le viste. Un
+   contenitore vuoto non si vede ma il suo margine si', e qui erano
+   quattordici pixel di niente fra la ricerca e il primo gioco. */
+body.vista-tutti #mia .mia-barra{display:none}
 
 /* --- la finestrella delle azioni non deve finire sotto le righe -----
    Non era trasparente: era COPERTA. Ogni riga ha il suo involucro
@@ -4810,46 +4858,51 @@ body.muro-scuro.sez-collezione:not(.elenco) header{
 
 
 /* ============================================================
-   LE TENDINE DENTRO IL PANNELLO DELLA LIBRERIA
+   CHE COSA STAI COLORANDO
 
-   Aperte tutte insieme, le cinque scelte di "modifica libreria" erano
-   nove righe di bollini una sotto l'altra: da fuori non si capiva
-   quali appartenessero a cosa. Adesso ognuna e' una tendina, e la
-   gerarchia si vede in TRE modi insieme -- come per le partite, dove
-   la stessa cosa e' gia' scritta: un RIENTRO, un FILO verticale che
-   dice a chi appartiene quel rientro, e un PESO di testo minore.
-   Uno solo non basta a farla leggere.
+   Qui c'erano cinque tendine dentro una tendina, e la ragione era
+   buona: aperte insieme erano nove righe di bollini una sotto l'altra
+   in cui non si capiva quale appartenesse a cosa. La cura era pero'
+   piu' pesante del male -- cinque tocchi per vedere cinque tavolozze,
+   e un rientro con un filo verticale a spiegare un annidamento che nei
+   fatti non esiste: faretti, scaffali, muro, pavimento e nome non
+   stanno uno dentro l'altro.
+
+   Sono cinque risposte alla STESSA domanda, e una domanda sola vuole
+   una tavolozza sola: si sceglie il bersaglio in una riga, e sotto c'e'
+   sempre e solo la sua fila di colori. Il problema delle nove righe
+   sparisce da se', perche' di righe ce n'e' una.
    ============================================================ */
-.st-sotto{
-  margin:0 0 2px; padding-left:12px;
-  border-left:2px solid rgba(var(--ink-rgb),.12);
+.st-superfici{padding:2px 0 0}
+.st-quali{display:flex; flex-wrap:wrap; gap:4px; margin:0 0 12px}
+.st-quali button{
+  padding:7px 10px; border:0; border-radius:var(--r-s); cursor:pointer;
+  font-family:var(--ff); font-size:10px; font-weight:900;
+  letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-soft); background:rgba(var(--ink-rgb),.06);
+  transition:color .18s var(--ease), background-color .18s var(--ease);
 }
-.st-sotto > summary{
-  display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none;
-  padding:8px 10px; border-radius:var(--r-s);
-  font-family:var(--ff-text); font-size:12.5px; font-weight:500;
-  letter-spacing:.02em; color:var(--ink-soft);
+.st-quali button:hover{color:var(--ink)}
+/* Quello scelto e' PIENO, non contornato: e' l'unico modo che regge
+   accanto a quattro fratelli della stessa forma. */
+.st-quali button.on{color:var(--su-accent); background:var(--accent)}
+
+/* UNA FILA CHE CHIUDE. Sette pezzi -- sei tinte e la ruota -- in flex
+   con il loro spazio sforavano di otto pixel, e la ruota finiva da
+   sola su una riga sua: la stessa fila smangiata appena tolta dalla
+   carta dei colori, qui per otto pixel. In griglia le colonne si
+   dividono quello che c'e', quindi la fila chiude sempre, e i faretti
+   -- che di tinte ne hanno dodici -- fanno due righe pari invece di
+   tre scaglionate. */
+#stanza .pastiglie{
+  display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; justify-items:center;
 }
-.st-sotto > summary::-webkit-details-marker{display:none}
-.st-sotto > summary:hover{background:rgba(var(--ink-rgb),.07); color:var(--ink)}
-/* Il chevron: la stessa freccia della tendina di sopra, piu' piccola.
-   Serve a dire "questa si apre" -- senza, cinque titoli in fila si
-   leggono come cinque etichette. */
-.st-sotto > summary::after{
-  content:""; margin-left:auto; width:6px; height:6px;
-  border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
-  transform:rotate(45deg) translate(-2px,-2px);
-  transition:transform .18s var(--ease);
-}
-.st-sotto[open] > summary::after{transform:rotate(-135deg) translate(-1px,-1px)}
-.st-sotto[open] > summary{color:var(--ink)}
-.st-sotto-dentro{
-  padding:4px 0 10px 10px;
-  animation:apreSotto .2s var(--ease) both;
-}
-.st-sotto-dentro .st-riga{margin:0 0 8px}
-.st-sotto-dentro .st-riga.luce{display:flex; align-items:center; gap:10px}
-.st-sotto-dentro .st-riga.luce input[type=range]{flex:1; min-width:0}
+
+.st-tav{animation:apreSotto .18s var(--ease) both}
+.st-tav[hidden]{display:none}
+.st-tav .st-riga{margin:0 0 10px}
+.st-tav .st-riga.luce{display:flex; align-items:center; gap:10px}
+.st-tav .st-riga.luce input[type=range]{flex:1; min-width:0}
 
 /* IL VOLUME NEL PROFILO, accanto al suo interruttore: e' la stessa
    scelta, e stavano in due schermate diverse. */
@@ -6142,47 +6195,85 @@ input::placeholder, textarea::placeholder{
   clip-path:var(--fustella);
   filter:var(--posa);
 }
+/* IL BORDO NON PUO' ESSERE UN BORDO: `clip-path` taglia anche quello, e
+   l'angolo fustellato resterebbe con due monconi di filo. Un'ombra
+   interna invece sta dentro al taglio e lo segue. Serve perche' su
+   fondo scuro il cartone della finestrella e la pagina sono due neri
+   vicini, e senza un filo la finestrella non ha un confine. */
+.scegli{box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.16)}
+/* Il colore ha bisogno di piu' larghezza del calendario: tredici tinte
+   in fila su 262 px sono pezzi da centrare col dito. */
+.scegli.scegli-colore{width:304px}
 .scegli[hidden]{display:none}
 
 /* --- la carta dei colori ------------------------------------------ */
 
-/* Le dodici tinte, che sono la prima domanda: QUALE colore. La riga va
-   a capo da sola -- tredici pezzi su una finestrella da 262 non ci
-   stanno in fila, e stringerli per farceli stare vorrebbe dire pezzi
-   da centrare col dito. */
-.sc-tinte{display:flex; flex-wrap:wrap; gap:6px}
-.sc-tinta{
-  width:24px; height:24px; padding:0; border:0; border-radius:0; cursor:pointer;
-  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.14);
-}
-/* Scelta: l'anello staccato, lo stesso dei bollini delle tinte. Serve
-   lo STACCO -- su un colore chiaro un contorno attaccato ci si
-   confonde. */
-.sc-tinta.on{box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent)}
+/* LE TINTE SONO UN NASTRO, non tredici bottoni.
 
-/* La griglia della tinta scelta: sei saturazioni per cinque chiarezze.
-   Quadrata perche' e' una carta di campioni, e un campione e' un
-   rettangolo di colore e basta. */
-.sc-griglia{display:grid; grid-template-columns:repeat(6, 1fr); gap:3px}
+   Andavano a capo, e il guaio non era che fossero due righe: era che la
+   seconda ne aveva sei e la prima sette, cioe' una fila smangiata in
+   mezzo a un pannello fatto di rettangoli pieni. Tredici strisce
+   attaccate su una riga sola sono invece una cosa che esiste davvero --
+   la striscia di colori stampata in fondo a una scatola -- e si legge
+   come un oggetto unico invece che come tredici pezzi sparsi.
+
+   Attaccate davvero, senza spazi: lo spazio fra due campioni di colore
+   e' il modo piu' rapido di far sembrare un bottone quello che e' un
+   colore. */
+.sc-tinte{display:flex; align-items:stretch; gap:0; height:30px}
+.sc-tinta{
+  flex:1 1 0; min-width:0; margin-top:6px;
+  padding:0; border:0; border-radius:0; cursor:pointer;
+  transition:margin-top .14s steps(2, end);
+}
+/* QUELLA SCELTA SPORGE. Un anello attorno a una striscia da ventuno
+   pixel la chiuderebbe fino a farla sparire; alzarla di sei invece la
+   fa sporgere come una linguetta, che e' esattamente quello che fa una
+   linguetta su una scatola. Nessun contorno, nessun colore in piu':
+   si vede dalla forma. */
+.sc-tinta.on{margin-top:0}
+.sc-tinta:hover{margin-top:2px}
+
+/* LA GRIGLIA E' UNA CARTA DI CAMPIONI, quindi e' UNA carta: trenta
+   quadrati staccati di tre pixel sono trenta bottoni, trenta quadrati
+   attaccati sono un cartoncino stampato. Il filo tutt'intorno e' lo
+   stesso della finestrella, cosi' il blocco ha un bordo invece di
+   sfrangiarsi sul fondo. */
+.sc-griglia{
+  display:grid; grid-template-columns:repeat(6, 1fr); gap:0;
+  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.16);
+}
 .sc-cella{
   aspect-ratio:1; padding:0; border:0; border-radius:0; cursor:pointer;
-  box-shadow:inset 0 0 0 1px rgba(var(--ombra-rgb),.10);
+  position:relative;
 }
-.sc-cella.on{box-shadow:0 0 0 2px var(--card), 0 0 0 3px var(--accent)}
+/* Il segno di quello scelto sta DENTRO la cella, se no spingerebbe via
+   le vicine o finirebbe sotto di loro: due fili concentrici, chiaro e
+   scuro, cosi' si vede sia su un campione pallido sia su uno carico. */
+.sc-cella.on{
+  z-index:1;
+  box-shadow:inset 0 0 0 2px var(--card), inset 0 0 0 4px var(--ink);
+}
+.sc-cella:hover{z-index:1; box-shadow:inset 0 0 0 2px rgba(var(--ink-rgb),.5)}
 
 /* --- il piede: la prova e l'esadecimale --------------------------- */
-.sc-piede{display:flex; align-items:center; gap:8px}
+/* La prova non e' un quadratino accanto a un campo: e' il COLORE
+   SCELTO, cioe' la risposta alla domanda per cui la finestrella e'
+   aperta. Prende tutta l'altezza del piede e il campo le sta accanto
+   come un'etichetta. */
+.sc-piede{display:flex; align-items:stretch; gap:0; height:38px}
 .sc-prova{
-  flex:none; width:30px; height:30px;
-  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.14);
+  flex:none; width:52px;
+  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.16);
 }
 /* L'esadecimale e' un CODICE, quindi mono e a cifre di larghezza
    fissa, come ogni altra cosa che si conta in questo sito. */
 .scegli .sc-esa{
   flex:1 1 auto; min-width:0;
-  font-family:var(--ff-mono); font-size:13px; letter-spacing:.04em;
+  font-family:var(--ff-mono); font-size:13px; letter-spacing:.06em;
+  text-align:center; text-transform:lowercase;
   color:var(--ink); background:rgba(var(--ink-rgb),.06);
-  border:0; border-radius:0; padding:8px 10px;
+  border:0; border-radius:0; padding:0 10px;
 }
 .scegli .sc-esa:focus{outline:none; box-shadow:inset 0 0 0 2px var(--accent)}
 
