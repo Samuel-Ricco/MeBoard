@@ -4139,15 +4139,38 @@ dicono come il file e' stato fatto e viaggiano a ogni visita.
 
 Due mega su 4G medio sono **tre secondi**, su 3G lento **quaranta**.
 
+#### "Piu' fluida" non e' una cosa che si chiede al file
+
+A 60 fotogrammi al secondo di fluidita' dentro non ce n'e' altra. Misurando la
+schermata d'attesa viene fuori che a spezzarla e' il **thread principale**: in
+quasi quattro secondi di caricamento ci sono **otto compiti lunghi per 786 ms
+complessivi**, i piu' grossi (198 e 129 ms) proprio in fondo, quando la scena si
+monta. Un'immagine animata avanza sul thread principale, quindi in quei momenti
+si inchioda -- e sono gelate che si vedono, non millisecondi teorici.
+
+E i keyframe ci si mettono in mezzo due volte: senza predizione fra fotogrammi
+il browser deve fare una decodifica VP8 **piena sessanta volte al secondo**, e
+quella CPU la toglie proprio al montaggio della scena che sta gia' bloccando
+tutto. Piu' fotogrammi al secondo qui possono voler dire **meno** fluidita'.
+
+La via d'uscita vera e' un **video** (WebM/VP9 con alfa) al posto di
+un'immagine: la pipeline media non passa dal thread principale, quindi continua
+a scorrere mentre la scena si costruisce, e con la predizione fra fotogrammi
+pesa una frazione. Serve pero' un encoder che qui non c'e' -- va esportato da
+dove e' uscita l'animazione.
+
 Due cose imparate misurando:
 
 - **Il soggetto non riempie il telaio.** Dentro i 402x379 il meeple occupa il
   55% in larghezza e il 52% in altezza, e il resto non e' spreco: nei fotogrammi
   in cui salta ci va a stare, quindi ritagliarlo gli taglierebbe la testa a meta'
   volo. Al palco di prima (130 px) sarebbe arrivato a settanta pixel dove il dado
-  ne faceva centodieci: il palco e' passato a **200x189** -- il rapporto
-  dell'animazione -- e il soggetto e' tornato alla misura giusta rispetto al
-  nome del sito.
+  ne faceva centodieci.
+- **La misura del palco e' legata al nativo, non scelta a occhio.** Sta a
+  **260x245**, e `--dk` al salto piu' largo (1,55) lo porta a **403**, cioe'
+  esattamente i 402 del file: il piu' grande che si possa fare senza che una
+  resa 3D cominci a sgranarsi su fondo nero. Il conto si rifa' da se' se cambia
+  il file o cambia `--dk`.
 - **Con `prefers-reduced-motion` non si puo' piu' rallentare.** Il dado non si
   fermava (e' un'attesa, e ferma non direbbe piu' niente) ma girava molto piu'
   piano. Un'immagine animata va alla sua velocita' e basta: quella regola e'

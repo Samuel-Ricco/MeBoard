@@ -1997,21 +1997,27 @@ body.ready #load{
    serve piu' niente: la resa 3D porta dentro la sua luce e la sua
    ombra gia' fatte.
 
-   IL PALCO E' PIU' GRANDE DI PRIMA, e non e' un ripensamento sulla
-   misura: dentro il telaio il meeple occupa il 55% in larghezza e il
-   52% in altezza, e il resto e' aria che serve all'animazione -- nei
-   fotogrammi in cui salta ci va a stare, e ritagliarla gli taglierebbe
-   la testa a meta' volo. Quindi al palco di prima il meeple sarebbe
-   arrivato a settanta pixel dove il dado ne faceva centodieci.
-   Duecento di telaio rimettono il soggetto alla misura di prima, che
-   e' la misura giusta rispetto al nome del sito qui sotto.
+   LA MISURA E' LEGATA ALLA RISOLUZIONE VERA DEL FILE, non scelta a
+   occhio. L'animazione e' 402x379: ingrandita oltre quella misura non
+   diventa piu' grande, diventa piu' morbida, e una resa 3D sgranata su
+   fondo nero si vede subito.
 
-   Cresce con `--dk` come il resto della schermata. */
+   Quindi il palco parte da 260 e cresce con `--dk` come il resto della
+   schermata, che al salto piu' largo (1,55) lo porta a 403 -- cioe'
+   esattamente il nativo. E' il piu' grande che si possa fare senza
+   perdere un pixel, e il conto si rifa' da se' se un giorno cambia il
+   file o cambia `--dk`.
+
+   Dentro il telaio il meeple occupa il 55% in larghezza, e quel vuoto
+   attorno non e' spreco: nei fotogrammi in cui salta ci va a stare, e
+   ritagliarlo gli taglierebbe la testa a meta' volo. Col palco a 260 il
+   soggetto legge a centoquaranta pixel, dove il vecchio dado ne faceva
+   centodieci. */
 .stage{
-  width:200px; height:189px; position:relative;    /* il rapporto della gif: 402x379 */
+  width:260px; height:245px; position:relative;    /* il rapporto del file: 402x379 */
   transform:scale(var(--dk,1));
   /* quello che il `transform` non prende in carico: l'ingombro */
-  margin:calc((var(--dk,1) - 1) * 94.5px) 0;
+  margin:calc((var(--dk,1) - 1) * 122.5px) 0;
 }
 /* RIEMPIE IL PALCO SENZA DEFORMARSI. L'animazione e' 402x379 -- quasi
    quadrata ma non quadrata -- e tirata a forza in un quadrato il
