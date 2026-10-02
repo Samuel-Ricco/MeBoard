@@ -4094,6 +4094,53 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### Due `await` di troppo si prendevano meta' del caricamento
+
+Cercando perche' la schermata d'attesa si inchiodava, il colpevole non era
+l'animazione: erano due attese in mezzo al `boot()`, tutte e due con scritto
+accanto che non bloccavano niente.
+
+Il metodo, che vale piu' del risultato: i compiti lunghi si leggono con
+`PerformanceObserver({entryTypes:['longtask']})`, ma l'attribuzione che danno e'
+inutile (`unknown:window`). Per sapere **dove** cadono basta pero' una cosa che
+il sito ha gia': `#load-msg` cambia testo a ogni passo. Un `MutationObserver`
+su quel nodo da' le fasi col loro orario, e ogni compito lungo si attribuisce
+alla fase in cui e' iniziato. Da li' si e' visto che "stampo le copertine" si
+prendeva **2973 ms su 4070**, e da li' un cronometro temporaneo attorno ai passi
+di `boot()` ha dato i nomi.
+
+| | prima |
+|---|---|
+| `piuNitide` | **1700 ms** |
+| `BGG.ping` | 635 ms |
+| `caricaMisure` | 451 ms |
+| `scaldaShader` | 178 ms |
+| `applyLibrary` | 113 ms |
+
+**`piuNitide` era il 42% del caricamento.** Fa fino a quattro giri di rete in
+fila -- scarica la copertina da BGG, cancella la vecchia, carica la nuova -- e
+`boot()` li aspettava tutti, con sopra scritto "non blocca l'avvio". Li pagava
+solo chi e' admin, a ogni singola apertura, per migliorare una copertina che si
+sta gia' guardando bene. Adesso sta dopo `ready`, accanto a `riparaCopertine`,
+che fa la stessa identica cosa e lo ha sempre fatto dopo.
+
+**Il ping invece non si sposta: si anticipa.** Le misure vere delle scatole
+vanno chieste PRIMA di costruirle, se no si rifanno tutte -- quella parte e'
+sul percorso critico per davvero. Ma il ping non dipende da niente di quello
+che ha intorno: chiede solo se il proxy risponde. Avviato in cima a `boot()` e
+aspettato dove serve, i suoi 635 ms (400 di taglio sul locale che tace, piu'
+la chiamata alla remota) passano sotto al lavoro che si stava facendo comunque.
+`BGG.ping()` e' memoizzato, quindi chiamarlo due volte non costa niente.
+
+**Risultato misurato: caricamento da 3,8-4,0 s a 1,5-1,8 s, tempo bloccato da
+786 a ~480 ms.**
+
+Quello che resta e' lavoro sincrono vero, non attese: **230 ms in un colpo solo
+su `applyLibrary`** (costruisce tutte le scatole) e ~90 su `scaldaShader` (che
+compila gli shader, ed e' il prezzo per non avere lo scatto al primo frame).
+Toglierli vuol dire spezzare la costruzione su piu' frame, che e' un lavoro di
+un'altra misura.
+
 ### Il dado di CSS e' diventato un'animazione
 
 La schermata d'attesa aveva un dado costruito a mano: una prospettiva, ventisei

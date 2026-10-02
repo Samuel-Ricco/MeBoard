@@ -10530,6 +10530,16 @@ async function boot(){
   bindProfilo();            // e' anche chi collega le due navigazioni
   bindPartite();
   RECE.carica();            // parte per conto suo: la aspetta solo il catalogo
+  /* IL PING PARTE QUI, e lo si aspetta seicento righe piu' in basso.
+     E' un giro di rete che non dipende da niente di quello che viene
+     dopo -- chiede solo se il proxy risponde -- e lasciato dov'era
+     costava 635 ms di attesa a vuoto in mezzo al caricamento: 400 di
+     taglio sul locale che tace, piu' la chiamata alla remota. Avviato
+     adesso, quei 635 passano sotto al lavoro che si stava facendo
+     comunque.
+     `BGG.ping()` e' memoizzato: chi lo richiede dopo ritrova questa
+     stessa promessa, o la risposta se e' gia' arrivata. */
+  const pingBgg = BGG.ping().catch(function(){ return { su: false }; });
   await PROFILO.carica();   // questo invece serve subito: puo' chiedere il nick
   // le partite servono al pannello della recensione, che si apre presto
   PARTITE.carica().then(function(){ PARTITE.caricaGiocatori(); });
@@ -10622,11 +10632,7 @@ async function boot(){
      Il `ping` ha gia' il suo limite di tempo, quindi su un sito senza
      proxy questa riga costa quattrocento millisecondi e non blocca
      niente. */
-  try { if ((await BGG.ping()).su) await caricaMisure(); } catch(e){}
-  /* Le copertine rimaste indietro sul tetto vecchio: quattro per volta,
-     e solo se chi guarda e' admin -- vedi "LE COPERTINE PIU' PICCOLE DEL
-     DOVUTO". Non blocca l'avvio e non dice niente se non fa niente. */
-  try { rifaiScatole(await piuNitide()); } catch(e){}
+  try { if ((await pingBgg).su) await caricaMisure(); } catch(e){}
   await wait(20); setProg(.72, TP('load.mensole'));
   applyLibrary({});
   await wait(20); setProg(.92, TP('load.lampada'));
@@ -10687,6 +10693,26 @@ async function boot(){
      aspetta -- il sito e' gia' in piedi e usabile -- e quando ha
      finito rifa' le scatole toccate e lo dice, perche' un'immagine
      che cambia da sola senza spiegazione e' peggio di una sbagliata. */
+  /* LE COPERTINE RIMASTE INDIETRO SUL TETTO VECCHIO: quattro per volta,
+     e solo se chi guarda e' admin -- vedi "LE COPERTINE PIU' PICCOLE
+     DEL DOVUTO".
+
+     Stava DENTRO il caricamento, con scritto accanto "non blocca
+     l'avvio", e lo bloccava: era `await piuNitide()`, cioe' fino a
+     quattro giri di rete in fila -- scarica da BGG, cancella il
+     vecchio, carica il nuovo -- uno dopo l'altro. Misurati: 1700 ms,
+     il 42% di tutto il caricamento, pagati da chi e' admin a ogni
+     singola apertura del sito, e per un lavoro che migliora una
+     copertina che si sta gia' guardando bene.
+
+     Adesso sta dove e' sempre stato il suo posto, qui sotto insieme a
+     `riparaCopertine`, che fa la stessa cosa e lo ha sempre fatto dopo:
+     il sito e' gia' in piedi, e quando finisce rifa' le scatole
+     toccate. */
+  piuNitide()
+    .then(function(ids){ if (ids.length) rifaiScatole(ids); })
+    .catch(function(e){ if (window.console) console.error('piuNitide:', e); });
+
   riparaCopertine().then(function(ids){
     if (!ids.length) return null;
     return loadCovers(true)
