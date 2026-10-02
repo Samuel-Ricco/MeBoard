@@ -4180,6 +4180,22 @@ function bindInput(){
      porta via meta' di `bindInput`. */
   const bDel = q('#del');
   if (bDel) armaBottone(bDel, 'pan.eliminaLungo', 'pan.eliminaOk', removeFocused);
+
+  /* ELIMINARE DAL MODULO DI CORREZIONE. Stessa meccanica di ogni altro
+     comando che distrugge nel sito -- due tempi sullo stesso pulsante,
+     niente `window.confirm` che bloccherebbe il rendering -- e lavora
+     su `inModifica`, cioe' sul gioco di cui si e' aperta la scheda. */
+  const bDelM = q('#m-del');
+  if (bDelM) armaBottone(bDelM, 'riga.eliminaGioco', 'stanza.menoOk', function(){
+    const id = inModifica;
+    if (!id) return;
+    closeAdd();              // chiude il modulo, e con lui `chiudiModifica`
+    LIB.remove(id);
+    disegnaMia();
+    updateConta();
+    ridisponi();
+    flash(TP('msg.giocoEliminato'));
+  });
   q('#panel').addEventListener('pointerup', function(e){ e.stopPropagation(); });
 
   let rt;
@@ -4522,6 +4538,11 @@ function apriModifica(game){
   q('#addlayer').setAttribute('aria-hidden','false');
   q('#add-h').textContent = TP('add.hCorreggi');
   q('#m-go').textContent = TP('add.salvaModifiche');
+  /* Il cestino esiste solo qui: aggiungendo un gioco non c'e' ancora
+     niente da buttare. E si riarma, se la volta prima era rimasto a
+     meta' -- `armaBottone` lascia la sua `__disarma` sul nodo. */
+  const bDelM = q('#m-del');
+  if (bDelM){ bDelM.hidden = false; if (bDelM.__disarma) bDelM.__disarma(); }
 
   const set = function(sel, v){ q(sel).value = v == null ? '' : String(v); };
   set('#m-title', game.title);       set('#m-bgg', game.bgg);
@@ -4543,6 +4564,11 @@ function chiudiModifica(){
   q('#addlayer').classList.remove('correzione');
   q('#add-h').innerHTML = T('add.h');
   q('#m-go').textContent = TP('add.metti');
+  /* Il cestino se ne va col gioco a cui apparteneva, e disarmato: se
+     restasse armato, riaprendo un ALTRO gioco il primo tocco lo
+     cancellerebbe senza aver chiesto niente. */
+  const bDelM = q('#m-del');
+  if (bDelM){ if (bDelM.__disarma) bDelM.__disarma(); bDelM.hidden = true; }
 }
 
 async function doSearch(){
@@ -6973,13 +6999,13 @@ function contenutoAzioni(g){
             le note; e' solo che quando le hanno scritte il menu non
             c'era ancora.
 
-            Sta PRIMA di eliminare e dopo i due gesti dello scaffale:
-            correggere e' la cosa piu' innocua delle tre, e quello che
-            distrugge resta ultimo. */
+            E' l'ULTIMA voce, perche' eliminare se n'e' andato: sta
+            dentro la scheda che questa voce apre -- vedi `#m-del` nel
+            markup. Questo menu si apre scorrendo un elenco, spesso col
+            pollice, e due comandi che si somigliano nel nome e per
+            niente nelle conseguenze non ci stanno bene vicini. */
          '<button type="button" data-fa="scheda">' +
-           ICO.matita + '<span>' + T('riga.scheda') + '</span></button>' +
-         '<button type="button" data-fa="elimina" class="elimina">' +
-           ICO.cestino + '<span>' + T('riga.eliminaGioco') + '</span></button>';
+           ICO.matita + '<span>' + T('riga.scheda') + '</span></button>';
 }
 
 /* L'elenco si divide in CARTELLE quando non si sta filtrando su un
@@ -8329,31 +8355,6 @@ function bindProfilo(){
       const g = LIB.get(id);
       chiudiAzioni(null);
       if (g) apriModifica(g);
-      return;
-    }
-    /* Eliminare e' l'unico gesto qui dentro che non si disfa: resta in
-       due tempi sul pulsante stesso, come tutti gli altri del sito.
-       `window.confirm` bloccherebbe il rendering, e una finestra di
-       sistema in mezzo a questa pagina stonerebbe. */
-    const del = e.target.closest('[data-fa="elimina"]');
-    if (del){
-      const dice = del.querySelector('span') || del;
-      if (del.classList.contains('armed')){
-        LIB.remove(id);
-        chiudiAzioni(null);
-        disegnaMia();
-        updateConta();
-        ridisponi();
-        flash(TP('msg.giocoEliminato'));
-      } else {
-        del.classList.add('armed');
-        dice.textContent = TP('stanza.menoOk');
-        setTimeout(function(){
-          if (!del.isConnected) return;
-          del.classList.remove('armed');
-          dice.textContent = TP('riga.eliminaGioco');
-        }, 3500);
-      }
       return;
     }
     /* La stellina si aggiorna in posto e l'elenco non si rifa'.

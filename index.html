@@ -955,6 +955,30 @@
           <small id="m-file-nota" data-i18n="add.copertinaNota">dal press kit dell&rsquo;editore, se ce l&rsquo;hai: Wikidata le copertine non le ha</small>
         </label>
         <button id="m-go" type="button" data-i18n="add.metti">metti sullo scaffale</button>
+
+        <!-- ELIMINARE STA QUI, e solo correggendo (`body`/`#addlayer`
+             in `correzione`): aggiungendo un gioco non c'e' ancora
+             niente da buttare.
+
+             Veniva dal menu a tre punti della riga, e li' stava male
+             per un motivo di gesto, non di gerarchia: quel menu si apre
+             scorrendo un elenco, spesso col pollice, e teneva accanto
+             due comandi che si somigliano nel nome e per niente nelle
+             conseguenze -- «rimuovi dallo scaffale», che si disfa in un
+             clic, ed «elimina il gioco», che no.
+
+             NON SI PUO' PERO' SEMPLICEMENTE TOGLIERE, ed e' gia'
+             successo una volta: il `#del` nel piede della scheda fa
+             «rimuovi dallo scaffale», quindi senza questo cancellare un
+             gioco dalla collezione non si potrebbe fare da nessuna
+             parte, e i giochi resterebbero li' per sempre. Qui invece
+             si arriva aprendo apposta la scheda di QUEL gioco: e' una
+             stanza in cui si entra, non una porta che si sfiora.
+
+             Resta rosso e in due tempi, come ogni altra cosa che
+             distrugge nel sito. -->
+        <button id="m-del" type="button" class="distruttivo" hidden
+                data-i18n="riga.eliminaGioco">elimina il gioco</button>
       </div>
     </details>
 

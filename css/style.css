@@ -2732,6 +2732,17 @@ body.elenco #conta b{color:var(--su-accent)}
 .distruttivo:hover{background:rgba(var(--rosso-rgb),.14); color:var(--rosso)}
 .distruttivo.armed{background:var(--rosso); color:var(--su-rosso); border-color:transparent}
 
+/* IL CESTINO DEL MODULO DI CORREZIONE. Sta sotto a "salva", staccato,
+   e largo quanto lui: e' l'ultima cosa della scheda, come ogni comando
+   che distrugge in ogni altro piede del sito.
+
+   `[hidden]` scritto a mano perche' in questo foglio ci sono gia'
+   finite regole che vincevano sul `display:none` del browser -- vedi
+   `.score[hidden]` -- e un pulsante che cancella non e' il posto dove
+   scoprirlo di nuovo. */
+#m-del{width:100%; margin:14px 0 0}
+#m-del[hidden]{display:none}
+
 /* Il piede di un pannello: annulla a sinistra, l'azione a destra, e la
    riga sta in fondo -- non una croce in un angolo. */
 .add-foot{
