@@ -4094,6 +4094,50 @@ Vale quanto quello che è cambiato, se no la prossima volta si riguarda tutto:
 - ~~Il ciclo a domanda~~ **fatto il 2026-09-04**, e provato: vedi «Il ciclo a
   domanda, e come si prova senza fotogrammi» qui sotto.
 
+### Spostare la stella ha disfatto una regola che dipendeva da dov'era
+
+La stella dei preferiti stava solo in "tutti i giochi", e passando all'altra
+vista il filtro **si spegneva da solo**. La ragione era buona finche' valeva la
+premessa: di la' la stella non c'era, quindi un filtro acceso sarebbe stato
+acceso **e invisibile**, e non ci sarebbe stato nemmeno il modo di spegnerlo --
+un elenco corto senza sapere perche'.
+
+Mettendola in tutte e due le viste quella premessa e' caduta, e con lei la
+regola: adesso l'interruttore si vede sempre, la riga sotto dice "filtrati fra i
+preferiti", e spegnere da soli un interruttore che si vede e' la cosa che non si
+spiega. Resta invece `scordaFiltri`, che azzera **uscendo dall'elenco**: li' il
+filtro sopravvivrebbe fino agli scaffali, dove non si vede davvero.
+
+Vale come promemoria: una regola scritta per compensare una posizione muore
+quando la posizione cambia. Cercare chi dipendeva dal vecchio posto fa parte
+dello spostamento.
+
+### La riga sotto la ricerca dice il perche', non il quanto
+
+Diceva *"14 giochi, 11 sugli scaffali. Tocca una riga per la scheda."* -- cioe'
+il numero che sta gia' sopra, grande, e un'istruzione che serve una volta sola
+nella vita e stava li' sempre. Quello che sopra **non** c'e' e' il motivo per cui
+i giochi sono quelli: quale ricerca, quale filtro. Adesso dice solo quello, e
+senza ricerca ne' filtro sparisce.
+
+Stessa potatura nel pannello della libreria ("legno e arredi di *questo
+mobile*" -- il pannello si apre gia' su quel mobile, e il nome e' nel campo due
+righe sopra) e nel profilo (la nota sotto il codice amico). Un'etichetta che
+spiega una cosa che si vede e' rumore che non sembra rumore.
+
+### Il meeple nella testata, ma non nella barra in basso
+
+La faccia era stata tolta dalla barra in basso per una ragione precisa: li' e'
+una voce di navigazione fra quattro, ed e' l'unica che non puo' accendersi di
+terracotta quando la scegli, perche' e' **un'immagine coi suoi colori dentro**.
+
+Nel tasto della testata quella ragione non vale -- e' un tasto solo, non ha uno
+stato "scelto" da mostrare fra pari -- e la propria faccia e' il modo piu' corto
+di dire "il tuo profilo". Con la faccia dentro, pero', il fondo del tasto non si
+vede piu': "sei qui" si dice con un anello tutt'intorno invece che col pieno.
+La sagoma resta sotto e si vede finche' il profilo non e' arrivato, che e' un
+giro di rete.
+
 ### La cura era piu' pesante del male: le cinque tendine della libreria
 
 Dentro "modifica libreria" c'erano cinque tendine -- faretti, scaffali, muro,

@@ -5604,14 +5604,21 @@ function nuovoGruppoInLinea(btn, game){
   li.addEventListener('blur', function(){ setTimeout(chiudi, 120); });
 }
 
-/* La barra dei filtri porta UNA cosa sola: i preferiti, e solo nella
-   vista "tutti i giochi".
+/* La barra dei filtri porta UNA cosa sola: i preferiti, in TUTTE E DUE
+   le viste.
 
    Le pastiglie per gruppo non ci sono piu'. Nella vista a gruppi le
    cartelle SONO gia' i gruppi: filtrare per gruppo dentro un elenco
    diviso per gruppi vuol dire dire la stessa cosa due volte, e da li'
    nasceva il difetto -- il filtro restava acceso passando a "tutti i
-   giochi", dove contraddice il nome della vista. */
+   giochi", dove contraddice il nome della vista.
+
+   I PREFERITI NON SONO UN GRUPPO, e quel difetto non ce l'hanno: "solo
+   i preferiti" vuol dire la stessa identica cosa nelle due viste, e
+   sparendo al cambio vista spariva un interruttore ACCESO senza dirlo
+   -- il filtro restava nello stato ma il modo di spegnerlo non c'era
+   piu'. Le cartelle vuote non si disegnano, quindi a filtro acceso la
+   vista a gruppi mostra i gruppi che hanno un preferito e basta. */
 function disegnaGruppiFiltro(){
   const el = q('#mia-gruppi');
   if (!el) return;
@@ -5622,7 +5629,7 @@ function disegnaGruppiFiltro(){
      che si tocca sulle righe, quindi chi la vede sa gia' cosa filtra.
      Il numero accanto dice quanti sono: un filtro che non dice quanto
      taglia e' un filtro che si prova e basta. */
-  el.innerHTML = (state.vista === 'tutti' && quanti)
+  el.innerHTML = quanti
     ? '<button type="button" class="filtro-pref' + (state.soloPreferiti ? ' on' : '') +
       '" data-pref="1" aria-pressed="' + (state.soloPreferiti ? 'true' : 'false') +
       '" title="' + esc(TP('mia.soloPreferiti')) + '" ' +
@@ -6199,7 +6206,6 @@ function disegnaStanza(){
      stanza, e vive in localStorage. */
   q('#st-suono').value = SUONI.volume();
   q('#st-suono-n').textContent = Math.round(SUONI.volume() * 100) + '%';
-  q('#st-quale').textContent = L ? L.nome : TP('stanza.nessunMobile');
 
   /* Il bollino MOSTRA il colore della tavolozza corrente ma SALVA
      l'identificativo di sempre (`x.v`): quello che finisce sul
@@ -7092,13 +7098,17 @@ function disegnaMia(){
     parola: T(l.length === 1 ? 'mia.gioco' : 'mia.giochi'),
     v: inVetrina
   });
+  /* QUESTA RIGA DICE SOLO IL PERCHE'. Il quanti e il quanti-esposti
+     stanno gia' sopra, grandi, ed erano la stessa cosa detta due volte
+     a due centimetri di distanza; "tocca una riga per la scheda" era
+     un'istruzione che serve una volta sola nella vita e stava li'
+     sempre.
+
+     Quello che sopra NON c'e' e' il motivo per cui i giochi sono
+     quelli: quale ricerca, quale filtro. Senza nessuno dei due non
+     c'e' niente da dire, e la riga sparisce. */
   q('#mia-msg').innerHTML = l.length
-    ? T('mia.riepilogo', {
-        n: l.length,
-        parola: T(l.length === 1 ? 'mia.gioco' : 'mia.giochi'),
-        perche: perche.length ? ' ' + perche.join(', ') : '',
-        v: inVetrina
-      })
+    ? (perche.length ? T('mia.filtrati', {perche: perche.join(', ')}) : '')
     : (perche.length ? T('mia.niente', {perche: perche.join(', ')}) : T('mia.vuota'));
 }
 
@@ -7131,11 +7141,22 @@ function setVista(v){
   if (v !== 'gruppi' && v !== 'tutti') return;
   if (v === state.vista){ disegnaViste(); return; }
   state.vista = v;
-  /* Passando di vista i filtri si azzerano: "solo i preferiti" e' un
-     taglio della vista in cui lo si e' scelto, e trovarselo acceso
-     nell'altra vuol dire vedere un elenco corto senza sapere perche'. */
+  /* Il filtro per gruppo si azzera passando di vista -- e' un taglio
+     della vista in cui lo si e' scelto.
+
+     I PREFERITI NO, E PRIMA SI'. La ragione per cui si spegnevano era
+     che trovarseli accesi nell'altra vista voleva dire vedere un
+     elenco corto senza sapere perche': la stella stava solo in "tutti
+     i giochi", quindi di la' il filtro era acceso e invisibile, e non
+     c'era nemmeno il modo di spegnerlo. Adesso la stella e' in tutte e
+     due e la riga sotto dice che sono filtrati, quindi quel motivo non
+     c'e' piu' -- e spegnere da soli un interruttore che si vede e' la
+     cosa che non si spiega.
+
+     Chiudendo l'elenco invece se ne vanno lo stesso: vedi
+     `scordaFiltri`, dove il filtro sopravvivrebbe a una schermata in
+     cui non si vede davvero, cioe' gli scaffali. */
   state.gruppo = '';
-  state.soloPreferiti = false;
   segnaVista();
   disegnaMia();
   // l'elenco entra dal lato da cui si e' arrivati
@@ -7361,10 +7382,25 @@ function disegnaProfilo(){
   q('#pro-codice').textContent = p.codice
     ? p.codice.replace(/(.{4})(.{4})/, '$1 $2') : '--';
   disegnaFaccia(q('#pro-avatar'), p.avatar, 160);
-  /* La faccia non e' piu' anche l'icona della barra in basso: era
-     l'unica delle quattro voci che non poteva accendersi di terracotta
+  /* LA FACCIA E' ANCHE IL TASTO DELLA TESTATA. Quel tasto porta al
+     PROPRIO profilo, e la propria faccia e' il modo piu' corto di
+     dirlo -- piu' corto di una sagoma che vale per chiunque.
+
+     Non e' il caso della barra in basso, da cui la faccia e' stata
+     tolta e dove non torna: li' e' una voce di navigazione fra
+     quattro, ed e' l'unica che non puo' accendersi di terracotta
      quando la scegli, perche' e' un'immagine coi suoi colori dentro.
-     Adesso li' c'e' una sagoma neutra, come per le altre tre. */
+     Questo e' un tasto solo, e non ha nessuno stato "scelto" da
+     mostrare.
+
+     Si ridisegna da se' a ogni giro di `disegnaProfilo`, cioe' anche
+     quando si esce dal laboratorio: cambiando colore al meeple cambia
+     anche qui, senza che nessuno glielo dica. */
+  const tastoFaccia = q('#pro-faccia');
+  if (tastoFaccia){
+    disegnaFaccia(tastoFaccia, p.avatar, 72);
+    q('#pro-apri').classList.add('con-faccia');
+  }
 }
 
 /* --- il laboratorio della faccia ------------------------------- */

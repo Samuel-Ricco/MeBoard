@@ -86,7 +86,19 @@
          per davvero. -->
     <button id="pro-apri" type="button" class="tondo dentro-only"
             data-i18n-title="testa.profiloTitolo" title="il tuo profilo"
-            data-i18n-aria="testa.profiloTitolo" aria-label="il tuo profilo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2zM4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg></button>
+            data-i18n-aria="testa.profiloTitolo" aria-label="il tuo profilo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2zM4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg><!--
+      LA FACCIA, NON UNA SAGOMA. Qui si va al PROPRIO profilo, e la
+      propria faccia e' il modo piu' corto di dirlo.
+
+      Era gia' stata tolta dalla barra in basso, ma per una ragione che
+      qui non vale: li' era una voce di navigazione fra quattro, e
+      l'unica che non potesse accendersi di terracotta quando la
+      scegli, perche' e' un'immagine coi suoi colori dentro. Questo
+      invece e' un tasto solo e non ha uno stato "scelto" da mostrare.
+
+      La sagoma resta sotto e si vede finche' la faccia non e' arrivata:
+      il profilo e' un giro di rete, e un tasto vuoto per mezzo secondo
+      e' un tasto rotto. --><canvas id="pro-faccia" aria-hidden="true"></canvas></button>
     <button id="mode" type="button" class="tool chip" data-i18n-title="testa.entra"
             title="entra" data-i18n="testa.entra">entra</button>
     <button id="esci" type="button" class="tool dentro-only" data-i18n-title="testa.esciTitolo"
@@ -192,9 +204,6 @@
   <details id="st-aspetto" class="st-tendina">
     <summary data-i18n="stanza.modifica">modifica libreria</summary>
     <div class="st-dentro">
-      <!-- spezzata attorno a `#st-quale`, che lo riempie il JS -->
-      <p class="st-quale"><i data-i18n="stanza.legnoDi">legno e arredi di</i> <b id="st-quale">questo mobile</b></p>
-
       <!-- UNA TAVOLOZZA SOLA, E CINQUE BERSAGLI.
 
            Qui c'erano cinque tendine dentro una tendina: per vedere
@@ -252,7 +261,6 @@
         </div>
       </div>
 
-      <p class="st-quale sotto" data-i18n="stanza.dellaStanza">luce, muro e pavimento sono della stanza intera</p>
       <p class="st-fondo">
         <span id="st-msg" data-i18n="stanza.siSalva">si salva da solo</span>
         <button id="st-reset" type="button">com&rsquo;era</button>
@@ -619,8 +627,6 @@
                   data-i18n-title="pro.copia" title="copia il codice"
                   data-i18n-aria="pro.copia" aria-label="copia il codice"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M8.5 8.5h11v11h-11zM15.5 8.5V5.5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"/></svg></button>
         </p>
-        <p class="pro-nota" data-i18n="pro.codiceNota">Dallo a chi vuoi che ti trovi. Non compare mai
-          nel profilo che vedono gli altri.</p>
     </div>
 
     <!-- costruttore del meeple: si apre da "cambia faccia" -->

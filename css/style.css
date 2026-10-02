@@ -786,6 +786,10 @@ body.sez-catalogo #vista-apri, body.sez-profilo #vista-apri{opacity:0 !important
 }
 body.elenco #mia{display:block}
 #mia-msg{margin:12px 0 0; font-size:12.5px; line-height:1.6; color:var(--ink-soft)}
+/* Senza ricerca e senza filtro non c'e' nessun perche' da dire, e la
+   riga e' vuota il piu' del tempo: un paragrafo vuoto non si vede ma il
+   suo margine si'. */
+#mia-msg:empty{display:none}
 #mia-msg b{color:var(--ink); font-weight:500}
 /* il contatore e' un pulsante: mentre l'elenco e' aperto, e' acceso */
 body.elenco #conta{background:var(--accent); color:var(--card); border-color:var(--accent)}
@@ -4988,6 +4992,23 @@ body.dentro #pro-apri{display:inline-flex}
 #pro-apri .ico{width:18px; height:18px}
 body.sez-profilo #pro-apri{background:var(--accent); color:var(--card)}
 @media (pointer:coarse){ #pro-apri{width:40px; height:40px} }
+
+/* LA FACCIA DENTRO AL TASTO. Riempie tutto il quadrato: l'avatar ha il
+   suo fondo, quindi un'imbottitura attorno lascerebbe due colori di
+   fondo concentrici invece di una faccia.
+
+   Si scambiano, non si sovrappongono: finche' il profilo non e'
+   arrivato -- ed e' un giro di rete -- resta la sagoma, che e' meglio
+   di un tasto vuoto per mezzo secondo. */
+#pro-faccia{display:none; width:100%; height:100%; object-fit:cover}
+#pro-apri.con-faccia #pro-faccia{display:block}
+#pro-apri.con-faccia .ico{display:none}
+/* Con la faccia dentro, il fondo del tasto non si vede piu': l'unico
+   posto dove dire "sei qui" e' tutt'intorno. */
+#pro-apri.con-faccia{background:none}
+body.sez-profilo #pro-apri.con-faccia{
+  background:none; box-shadow:0 0 0 2px var(--accent);
+}
 
 
 /* ============================================================
