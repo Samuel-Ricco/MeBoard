@@ -9977,6 +9977,12 @@ function updateBoxes(dt){
 }
 
 let last = 0;
+/* Quanto si e' gia' aspettato sul bordo con una scatola in mano, e da
+   che parte: cambiando lato si riparte da zero, se no si porterebbe
+   dietro l'attesa fatta dall'altra parte. */
+const SOSTA_BORDO = .42;        // secondi fermi sul bordo prima di cambiare mobile
+let bordoAtteso = 0, bordoVerso = 0;
+let zoomIeri = 1;
 let faseIeri = '';
 
 /* ===============================================================
@@ -10231,6 +10237,25 @@ function frame(now){
     adattaDensita();
   }
 
+  /* E ANCHE LO ZOOM RISCALA LA TARGA, non solo lo scorrimento.
+
+     `allineaComandi` proietta con la camera di adesso, e la camera
+     dipende da `state.zoom` tanto quanto da `state.scroll`. Era
+     richiamata solo quando scorreva, e si vedeva prendendo una
+     scatola: la presa allarga a 1,26, la targa veniva riscalata per
+     quella distanza, e al rilascio lo zoom tornava a 1 con un tween
+     che non passava di qui -- il nome del mobile restava GRANDE finche'
+     non si cambiava libreria, che e' l'unica cosa che rifaceva il
+     conto.
+
+     Si guarda il valore e non i punti in cui qualcuno lo scrive, per la
+     stessa ragione gia' scritta sopra per la fase: i punti si
+     dimenticano, il valore no. */
+  if (state.phase === 'browse' && Math.abs(state.zoom - zoomIeri) > .0005){
+    zoomIeri = state.zoom;
+    allineaComandi();
+  }
+
   /* Fuori dalla libreria la scena e' coperta da una pagina piatta. Il
      ciclo non si ferma -- non si e' mai fermato -- ma non si disegna
      quello che nessuno vede, e soprattutto non si fa un raycast per
@@ -10304,10 +10329,34 @@ function frame(now){
     const bordo = .70;
     const fuori = Math.abs(state.px) - bordo;
     if (fuori > 0){
+      /* SUL BORDO SI ASPETTA, E POI SI CAMBIA MOBILE INTERO.
+
+         Prima la vista scivolava di continuo finche' si restava sul
+         bordo, in proporzione a quanto si era fuori. Fedele al dito e
+         scomodo da usare: la libreria dove si voleva posare passava
+         sotto senza fermarsi, e per prenderla bisognava riportare la
+         mano indietro al momento giusto. Un gesto di precisione per
+         dire "questa".
+
+         Adesso e' a scatti, come spostando un'app fra due schermate:
+         si resta sul bordo, si aspetta un attimo, la vista salta al
+         mobile accanto e li' si FERMA. Per andare oltre si aspetta di
+         nuovo. Il tempo da aspettare cala quanto piu' si e' fuori --
+         chi sa dove sta andando spinge e ci arriva prima -- ma non si
+         azzera mai: la sosta e' il punto.
+
+         Il salto e' un cambio di `scrollTo`, non di `scroll`: a
+         portarcela e' l'inseguimento di sopra, quindi la vista ci
+         arriva scorrendo e non teletrasportata. */
       const verso = state.px > 0 ? 1 : -1;
-      state.scrollTo = clamp(
-        state.scrollTo + verso * (fuori / (1 - bordo)) * dt * 2.2, 0, maxScroll());
-    }
+      if (verso !== bordoVerso){ bordoVerso = verso; bordoAtteso = 0; }
+      bordoAtteso += dt * (1 + 1.4 * Math.min(1, fuori / (1 - bordo)));
+      if (bordoAtteso >= SOSTA_BORDO){
+        bordoAtteso = 0;
+        const meta = clamp(Math.round(state.scrollTo) + verso, 0, maxScroll());
+        state.scrollTo = meta;
+      }
+    } else { bordoAtteso = 0; bordoVerso = 0; }
     muoviPresa();
   }
 
