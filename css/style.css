@@ -326,16 +326,6 @@ body.visita .visita-only{display:inline-flex !important}
    toccando un cuore. Il numero e' a cifre tabulari: passando da 9 a 10
    non deve muoversi il cuore accanto. */
 #p-cuore{align-items:center; gap:7px}
-#p-cuore[aria-pressed="true"]{color:var(--wood); border-color:var(--wood)}
-#p-cuore .ico{transition:transform .18s var(--ease)}
-#p-cuore:active .ico{transform:scale(.88)}
-#p-cuore[aria-pressed="true"] .ico{animation:cuore-pop .32s var(--ease)}
-@keyframes cuore-pop{
-  0%{transform:scale(1)} 42%{transform:scale(1.28)} 100%{transform:scale(1)}
-}
-@media (prefers-reduced-motion:reduce){
-  #p-cuore[aria-pressed="true"] .ico{animation:none}
-}
 #p-cuore-n{
   font-family:var(--ff-display); font-weight:900; text-transform:uppercase; font-size:10.1px; letter-spacing:.02em;
   font-variant-numeric:tabular-nums;
@@ -4575,15 +4565,56 @@ body.muro-scuro.sez-collezione:not(.elenco) header{
 #cerca:focus, #mia-q:focus{border-color:var(--accent)}
 #cerca-x, #mia-q-x{right:8px}
 
-/* IL CUORE, rifatto: una pastiglia che si riempie invece di un contorno
-   che cambia colore. Da spento e' quieto come gli altri comandi del
-   piede; da acceso e' pieno, ed e' l'unico gesto che si puo' fare in
-   casa di un altro -- vale che si veda. */
-#p-cuore{border-radius:0; transition:background .18s var(--ease), color .18s var(--ease)}
-#p-cuore[aria-pressed="true"]{
-  background:var(--accent); color:var(--card); border-color:transparent;
+/* IL CUORE E' UN PEZZO FUSTELLATO, e acceso RESTA PREMUTO DENTRO.
+
+   Era una pastiglia che cambiava colore: corretta, e fuori dalla lingua
+   che parla tutto il resto del sito. Qui i pezzi sono tagliati a
+   fustella, posano sulla plancia con un'ombra piena e sfalsata, e
+   premendoli si spostano di due pixel mentre l'ombra si accorcia --
+   cioe' si leggono come oggetti, non come rettangoli colorati.
+
+   La parte che vale: acceso NON torna su. Resta spostato di due pixel
+   con l'ombra corta, cioe' **premuto dentro la plancia**, come un
+   bottone che e' scattato e ci e' rimasto. Una recensione che ti e'
+   piaciuta non e' un tasto di un altro colore: e' un tasto che hai
+   schiacciato, e si vede dalla forma prima che dal colore -- che e'
+   anche l'unica cosa che funziona per chi i colori non li distingue.
+
+   E' l'unico gesto che si puo' fare in casa di un altro, quindi vale
+   che si veda. */
+#p-cuore{
+  /* Il carattere da piede della scheda lo dava la regola con i tre id,
+     da cui adesso si e' chiamato fuori: se lo scrive da se'. */
+  font-family:var(--ff); font-weight:900; text-transform:uppercase;
+  background:none; color:var(--ink);
+  border:1px dashed var(--line); border-radius:0;
+  clip-path:var(--fustella); filter:var(--posa);
+  transition:background-color .18s var(--ease), color .18s var(--ease),
+             border-color .18s var(--ease), transform .12s var(--ease),
+             filter .12s var(--ease);
 }
-#p-cuore[aria-pressed="true"] #p-cuore-n{color:var(--card)}
+#p-cuore:hover{border-color:var(--ink); color:var(--ink)}
+#p-cuore:active{transform:translate(2px,2px); filter:var(--posa-giu)}
+/* DUE ID, e non e' vezzo: con uno solo il fondo e il bordo di questa
+   regola venivano scavalcati -- `transform` e `filter` della STESSA
+   regola passavano, quelle due no -- ed e' la terza volta che questo
+   foglio fa lo scherzo. Vedi la nota sulla corona delle partite. */
+#panel #p-cuore[aria-pressed="true"]{
+  background:var(--accent); color:var(--su-accent); border-color:transparent;
+  transform:translate(2px,2px); filter:var(--posa-giu);
+}
+#panel #p-cuore[aria-pressed="true"] #p-cuore-n{color:var(--su-accent)}
+
+/* IL COLPO DI TIMBRO. Un rimbalzo morbido qui stonava: in questo sito
+   le cose non rimbalzano, scattano -- le transizioni sono a `steps()` e
+   i bordi sono vivi. Tre scatti e il cuore e' stampato. */
+#p-cuore[aria-pressed="true"] .ico{animation:cuore-timbro .2s steps(3, end)}
+@keyframes cuore-timbro{
+  from{transform:scale(1.5)} to{transform:scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  #p-cuore[aria-pressed="true"] .ico{animation:none}
+}
 
 /* IL TASTO DEL PROFILO: un cerchio pieno, non un riquadro con gli
    angoli molto tondi. Con il bordo e l'imbottitura di `.tool` restava
@@ -5205,12 +5236,28 @@ input::placeholder, textarea::placeholder{
    di questa, che di classi ne porta due. Senza escluderlo, "rimuovi"
    nel piede della recensione diventava un filo come gli altri e
    perdeva l'unica cosa che lo distingue. */
-.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna){
+/* QUESTA RIGA PESA TRE ID, e li porta dentro i `:not()`.
+
+   Ogni `:not()` vale quello che contiene, quindi questo selettore sta a
+   (3,3,1) e batte qualunque cosa si scriva altrove con uno o due id: e'
+   la trappola gia' segnalata due volte nelle note, ed e' tornata una
+   terza. Il cuore ci e' caduto dentro per intero -- `transform` e
+   `filter` della sua regola passavano, `background`, `color` e
+   `border-color` no, perche' li li riscriveva questa. Due dichiarazioni
+   su cinque dalla stessa regola: il tipo di difetto che si guarda per
+   un'ora prima di sospettare la specificita'.
+
+   Chi ha una faccia sua si chiama fuori QUI, dove la regola e' scritta,
+   invece di rincorrerla con un id in piu' da un'altra parte -- che e'
+   gia' quello che si era fatto per `#p-segna`. Un elenco di eccezioni
+   in un posto solo si legge; una gara di specificita' sparsa per il
+   foglio no. */
+.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna):not(#p-cuore){
   background:none; color:var(--ink);
   border:1px dashed var(--line); border-radius:0;
   font-family:var(--ff); font-weight:900; text-transform:uppercase;
 }
-.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna):hover{
+.pan-foot button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna):not(#p-cuore):hover{
   background:rgba(var(--ink-rgb),.08); border-color:var(--accent); color:var(--accent);
 }
 

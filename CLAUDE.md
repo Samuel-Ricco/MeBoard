@@ -4258,6 +4258,29 @@ si toglie piu', perche' la storia se lo tiene. Si committa quello che il sito
 serve, non quello con cui e' stato fatto -- e le esportazioni a piena qualita'
 stanno li' accanto, da cui si ricava quella che va online.
 
+### La terza volta della regola con gli id nei `:not()`
+
+E' tornata, e stavolta con **tre** id. `.pan-foot
+button:not(.primario):not(.distruttivo):not(#close):not(#del):not(#p-segna)`
+sta a **(3,3,1)**, perche' ogni `:not()` vale quello che contiene: batte
+qualunque cosa si scriva altrove con uno o due id.
+
+Il modo in cui si e' manifestata merita di essere ricordato, perche' e' il
+motivo per cui ci e' voluta un'ora: della regola nuova del cuore passavano
+`transform` e `filter` e **non** passavano `background`, `color` e
+`border-color`. **Due dichiarazioni su cinque, dalla stessa regola.** Con mezza
+regola che funziona non si sospetta la specificita': si guarda il valore, la
+variabile, la cache, l'ordine -- e il selettore, che e' la risposta, e' l'ultima
+cosa che si controlla. Il segnale da riconoscere e' proprio quello: **se di una
+regola passa una parte e non un'altra, e' sempre un'altra regola che vince su
+quelle proprieta' li'**, mai la regola che "non si applica".
+
+La cura e' chiamarsi fuori **dove la regola e' scritta**, aggiungendo un
+`:not(#p-cuore)` all'elenco accanto a `#p-segna` che gia' c'era, invece di
+rincorrerla con un id in piu' da un'altra parte. Un elenco di eccezioni in un
+posto solo si legge; una gara di specificita' sparsa per il foglio no -- ed e'
+esattamente la gara che ha prodotto quella regola.
+
 ### Spostare la stella ha disfatto una regola che dipendeva da dov'era
 
 La stella dei preferiti stava solo in "tutti i giochi", e passando all'altra
