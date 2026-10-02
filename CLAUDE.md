@@ -4178,11 +4178,19 @@ dicono come il file e' stato fatto e viaggiano a ogni visita.
 
 | | fotogrammi | a 402x379 | a 800x760 |
 |---|---|---|---|
-| 60 al secondo | 180 | 1961 KB | 4033 KB |
-| **30 al secondo** | **90** | 975 KB | **2006 KB (online)** |
+| **60 al secondo** | **180** | 1961 KB | **4033 KB (online)** |
+| 30 al secondo | 90 | 975 KB | 2006 KB |
 | 20 al secondo | 60 | 653 KB | 1344 KB |
 | 15 al secondo | 45 | 490 KB | 1005 KB |
 | la gif di prima | 45 | 252 KB | |
+
+**La scelta e' 60 fotogrammi alla risoluzione piena, cioe' 3,94 MB**, ed e' una
+decisione presa sapendo il conto: su 4G medio sono circa sei secondi e mezzo
+prima che l'animazione dell'attesa possa cominciare ad aspettare, e il
+caricamento vero ne dura meno di due. Su rete lenta il meeple arriva quando il
+sito e' gia' in piedi. La fluidita' e la nitidezza qui valgono piu' del peso, e
+`tools/webp-dimagrisci.mjs` tiene la porta aperta per cambiare idea in una riga
+senza riesportare niente.
 
 #### I pixel che contano sono quelli fisici
 
