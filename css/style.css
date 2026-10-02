@@ -2013,15 +2013,15 @@ body.ready #load{
   /* quello che il `transform` non prende in carico: l'ingombro */
   margin:calc((var(--dk,1) - 1) * 94.5px) 0;
 }
-/* RIEMPIE IL PALCO SENZA DEFORMARSI. La gif e' 402x379 -- quasi
+/* RIEMPIE IL PALCO SENZA DEFORMARSI. L'animazione e' 402x379 -- quasi
    quadrata ma non quadrata -- e tirata a forza in un quadrato il
    meeple si schiaccerebbe. `contain` la fa entrare intera e lascia il
-   resto trasparente, che e' quello che la gif e' gia'.
+   resto trasparente, che e' quello che l'immagine e' gia'.
 
    `image-rendering:auto` detto esplicitamente perche' il resto del
    sito e' pixel art e in giro per il foglio ci sono regole che tengono
    i bordi netti: questa e' una resa 3D, e netta diventa scalettata. */
-.dado-gif{
+.load-anim{
   display:block; width:100%; height:100%; object-fit:contain;
   image-rendering:auto;
 }

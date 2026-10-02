@@ -33,7 +33,7 @@
      suo turno in fondo alla coda: senza questo il palco resta vuoto
      finche' non arriva, cioe' proprio nel momento in cui dovrebbe dire
      che sta succedendo qualcosa. -->
-<link rel="preload" href="img/meboard-loader.gif" as="image" type="image/gif">
+<link rel="preload" href="img/meboard-loader.webp" as="image" type="image/webp">
 <link rel="preload" href="fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/plexmono-500.woff2" as="font" type="font/woff2" crossorigin>
 </head>
@@ -884,14 +884,22 @@
          l'ombra a terra sincronizzata sul rimbalzo -- che non pesava
          niente da scaricare ma quattrocentosettanta righe di foglio.
 
-         La gif pesa 252 KB, ed e' il prezzo vero del cambio: e' sulla
-         PRIMA schermata, e deve arrivare prima di potersi muovere. Per
-         questo c'e' un `preload` nella testa, che la mette in coda
-         insieme al foglio di stile invece che dopo. `alt` vuoto e
-         `aria-hidden`: e' un'attesa che si guarda, non una figura che
-         racconta qualcosa, e chi usa un lettore di schermo ha gia' la
-         riga di testo qui sotto. -->
-    <img class="dado-gif" src="img/meboard-loader.gif" width="402" height="379"
+         E' una webp animata a 60 fotogrammi al secondo, con
+         l'alfa vera: i bordi del meeple sfumano sul fondo invece di
+         tagliarsi netti come faceva la gif, che la trasparenza ce
+         l'ha solo accesa o spenta.
+
+         IL PESO E' IL PREZZO: due mega sulla PRIMA schermata, che deve
+         arrivare prima di potersi muovere. Per questo c'e' un
+         `preload` nella testa, che la mette in coda insieme al foglio
+         di stile invece che dopo. Si assottiglia con
+         `tools/webp-dimagrisci.mjs`, che butta via fotogrammi senza
+         ricodificare niente.
+
+         `alt` vuoto e `aria-hidden`: e' un'attesa che si guarda, non
+         una figura che racconta qualcosa, e chi usa un lettore di
+         schermo ha gia' la riga di testo qui sotto. -->
+    <img class="load-anim" src="img/meboard-loader.webp" width="402" height="379"
          alt="" aria-hidden="true" decoding="async">
   </div>
   <div class="load-txt">
