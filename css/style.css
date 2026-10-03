@@ -3078,6 +3078,15 @@ body.sez-collezione:not(.elenco) header{
 
 /* L'ACCENTO: otto predefiniti e la ruota in fondo, la stessa forma del
    pannello della libreria. */
+/* DUE FILE, una per colore: l'etichetta a sinistra e i colori a
+   destra, come ogni altra riga di scelta del profilo. */
+.tav-fila{display:flex; align-items:center; gap:10px; margin:0 0 10px}
+.tav-fila:last-child{margin-bottom:0}
+.tav-fila-tit{
+  flex:none; min-width:74px;
+  font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-soft);
+}
 .tav-accenti{display:flex; flex-wrap:wrap; gap:9px; align-items:center}
 #profilo #pro-tema-lista .tav-acc{
   width:30px; height:30px; padding:0; border-radius:0; border:0; cursor:pointer;
@@ -5093,7 +5102,8 @@ body.wrap-su #wrap{display:flex}
   text-transform:uppercase; letter-spacing:-.04em; line-height:.9;
 }
 .brand b{font-size:clamp(19px,2.4vw,24px)}
-.brand b i, .gate-logo i{color:var(--rosso); font-style:normal}
+/* Il marchio e' decorazione, non allarme: prende il secondo colore. */
+.brand b i, .gate-logo i{color:var(--secondo); font-style:normal}
 .brand span{
   font-family:var(--ff-mono); font-size:9.5px; font-weight:600;
   letter-spacing:.16em; text-transform:uppercase;
@@ -5134,7 +5144,7 @@ body.wrap-su #wrap{display:flex}
    foglio. La barra e' il cartone nudo -- piu' scura delle schermate,
    che stanno un gradino sopra -- e non una superficie velata. */
 #tabbar{
-  background:var(--bg); border-top:2px solid var(--rosso);
+  background:var(--bg); border-top:2px solid var(--secondo);
   box-shadow:none;
 }
 #tabbar button{
@@ -5197,7 +5207,7 @@ body.wrap-su #wrap{display:flex}
 }
 /* Il filetto in cima al foglio: e' il taglio, come sulla barra in
    basso, e dice che il foglio finisce li'. */
-#panel{border-top:6px solid var(--rosso)}
+#panel{border-top:6px solid var(--secondo)}
 #p-title{font-size:clamp(30px,7vw,46px); line-height:.86; letter-spacing:-.04em}
 
 /* --- L'OCCHIELLO DI OGNI SCHERMATA ---------------------------------
@@ -5248,7 +5258,7 @@ body.wrap-su #wrap{display:flex}
    pagina che non veniva da nessuna parte. Sta sul rosso perche' e' il
    colore stampato dei comandi fisici della plancia, e perche' l'ocra
    sul binario del cursore -- che e' chiaro -- non si vedrebbe. */
-input[type="range"]{accent-color:var(--rosso)}
+input[type="range"]{accent-color:var(--secondo)}
 input[type="color"]{border:0; padding:0; background:none; cursor:pointer}
 
 /* --- le due (o tre) viste ------------------------------------------
@@ -5537,7 +5547,7 @@ input::placeholder, textarea::placeholder{
     transparent calc(100% / var(--n,1) - var(--rail-gap)) calc(100% / var(--n,1)));
   background-clip:padding-box;
 }
-.rail-bar i{height:8px; background:var(--rosso); transition:left .25s var(--ease), width .25s var(--ease)}
+.rail-bar i{height:8px; background:var(--secondo); transition:left .25s var(--ease), width .25s var(--ease)}
 .rail-bar:hover i, .rail-bar.presa i{background:var(--accent)}
 
 /* --- LA SCHEDA DEL GIOCO -------------------------------------------

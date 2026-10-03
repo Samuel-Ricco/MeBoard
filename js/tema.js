@@ -36,7 +36,8 @@
 const TEMA = (function(){
 
 const CHIAVE = 'meboard-tavolozza';     // la base: 'chiaro' o 'scuro'
-const CHIAVE_ACC = 'meboard-accento';   // l'accento scelto, o vuoto
+const CHIAVE_ACC = 'meboard-accento';   // il primario scelto, o vuoto
+const CHIAVE_SEC = 'meboard-secondo';   // il secondario scelto, o vuoto
 
 /* DUE MATERIALI E UN ACCENTO.
 
@@ -236,6 +237,26 @@ const VECCHIE = {
 
 let base = leggiBase();
 let accento = leggiAccento();
+let secondo = leggiSecondo();
+
+/* IL SECONDO COLORE.
+
+   Il rosso faceva due mestieri che non c'entrano niente fra loro: era
+   il filetto della barra, il bordo della scheda, i cursori e il
+   binario -- cioe' decorazione -- ed era anche il segnale di quello che
+   distrugge. Tingere il sito di rosso significava tingere anche
+   l'allarme, e un allarme del colore del sito non e' piu' un allarme.
+
+   Sono stati separati: il DECORATIVO diventa il secondo colore, che si
+   sceglie; il rosso resta a chi butta via qualcosa, e non si tocca.
+
+   Di suo il secondo E' il rosso di prima, quindi finche' non si sceglie
+   niente il sito e' identico a com'era. */
+function leggiSecondo(){
+  let v = '';
+  try { v = localStorage.getItem(CHIAVE_SEC) || ''; } catch (e) {}
+  return ESA.test(v) ? v.toLowerCase() : '';
+}
 
 /* LA CARTA NON SI SCEGLIE PIU'.
 
@@ -433,6 +454,13 @@ function scrivi(s, c, pre){
      ci si scrive sopra. Il rosso NON e' l'accento e non lo diventa mai:
      e' il filetto della barra e il bordo di quello che distrugge. */
   const rosso = stampa(STAMPA.rosso, c);
+  /* Il secondo passa dalla stessa `stampa` del rosso: un colore scelto
+     a mano su un fondo chiaro puo' essere illeggibile, ed e' lo stesso
+     conto che si fa gia' per l'accento. */
+  const sec = stampa(secondo || STAMPA.rosso, c);
+  v('secondo', sec);
+  v('secondo-rgb', tri(sec));
+  v('su-secondo', sopra(sec, c));
   const verde = stampa(STAMPA.verde, c);
   const ocra  = stampa(STAMPA.ocra,  c);
   v('rosso', rosso);
@@ -547,10 +575,17 @@ function scegliAccento(v, soloVista){
   applica();
 }
 
+function scegliSecondo(v, soloVista){
+  secondo = ESA.test(v || '') ? String(v).toLowerCase() : '';
+  if (!soloVista){ ricordaColore(secondo); salva(); }
+  applica();
+}
+
 function salva(){
   try {
     localStorage.setItem(CHIAVE, base);
     localStorage.setItem(CHIAVE_ACC, accento);
+    localStorage.setItem(CHIAVE_SEC, secondo);
   } catch (e) {}
 }
 
@@ -628,49 +663,56 @@ function disegnaSelettore(){
 
   lista.innerHTML = '';
 
-  // l'accento, che adesso e' l'unica scelta: i predefiniti, poi la ruota
-  const acc = document.createElement('div');
-  acc.className = 'tav-accenti';
-  const suo = accento || quale(base).c.accent;
-  /* Tre pastiglie, e sono gli ultimi tre usati. Quello scelto ADESSO ci
-     sta sempre dentro, perche' sceglierlo lo ha messo in testa alla
-     lista: la fila non puo' mostrarsi senza il colore che il sito
-     porta addosso in quel momento. */
-  coloriUsati().forEach(function(hex){
-    acc.appendChild(bollino(hex, accento === hex));
-  });
-  /* LA RUOTA E' DUE NODI: il campo che tiene il valore, nascosto, e il
-     pulsante che si vede. I due ascoltatori qui sotto guardano il
-     CAMPO -- `input[data-acc-ruota]` -- e non sono cambiati: e'
-     js/scegli.js a scriverci dentro e a mandargli `input` mentre si
-     sceglie e `change` alla chiusura, che e' quello che faceva il
-     selettore del sistema.
+  /* DUE COLORI, DUE FILE.
 
-     Questo file gira nel `<head>`, prima che js/scegli.js esista, e
-     va bene: un pulsante e' markup, e quel file serve solo quando lo
-     si preme. */
-  const r = document.createElement('input');
-  r.type = 'hidden';
-  r.className = 'ruota';
-  r.value = suo;
-  r.setAttribute('data-acc-ruota', '1');
-  acc.appendChild(r);
+     Il primario e' quello che il sito gia' chiamava accento: lo
+     scelto, l'acceso, quello che dice "sei qui". Il secondario e' il
+     rosso decorativo di prima -- il filetto della barra, il bordo
+     della scheda, i cursori, il binario -- che faceva lo stesso
+     mestiere di un allarme pur non essendolo.
 
-  const rb = document.createElement('button');
-  rb.type = 'button';
-  /* NON porta piu' addosso il colore scelto: porta l'arcobaleno. Col
-     colore sopra sembrava una quarta pastiglia -- una scelta gia' fatta
-     fra le altre -- e serviva un bordo tratteggiato per dire che non lo
-     era. Le sei strisce lo dicono da sole: qui non c'e' UN colore,
-     ci sono tutti. */
-  rb.className = 'ruota arcobaleno';
-  rb.innerHTML = ICO_ARCOBALENO;
-  rb.setAttribute('aria-haspopup', 'dialog');
-  rb.setAttribute('aria-expanded', 'false');
-  const tit = (typeof T === 'function') ? T('stanza.ruota') : 'colore';
-  rb.title = tit; rb.setAttribute('aria-label', tit);
-  acc.appendChild(rb);
-  lista.appendChild(acc);
+     Il rosso vero resta fuori da qui: non si sceglie, perche' un
+     allarme del colore che hai scelto non e' piu' un allarme. */
+  const fila = function(etichetta, quale_, scelto, marca){
+    const riga = document.createElement('div');
+    riga.className = 'tav-fila';
+    const tit = document.createElement('span');
+    tit.className = 'tav-fila-tit';
+    tit.textContent = nome(etichetta);
+    riga.appendChild(tit);
+    const acc = document.createElement('div');
+    acc.className = 'tav-accenti';
+    coloriUsati().forEach(function(hex){
+      const b = bollino(hex, scelto === hex);
+      b.setAttribute('data-per', marca);
+      acc.appendChild(b);
+    });
+    const r = document.createElement('input');
+    r.type = 'hidden';
+    r.className = 'ruota';
+    r.value = quale_;
+    r.setAttribute('data-acc-ruota', marca);
+    acc.appendChild(r);
+    const rb = document.createElement('button');
+    rb.type = 'button';
+    rb.className = 'ruota arcobaleno';
+    rb.setAttribute('data-per', marca);
+    rb.setAttribute('aria-haspopup', 'dialog');
+    rb.setAttribute('aria-expanded', 'false');
+    const t = (typeof T === 'function') ? T('stanza.ruota') : 'colore';
+    rb.title = t; rb.setAttribute('aria-label', t);
+    rb.innerHTML = ICO_ARCOBALENO;
+    acc.appendChild(rb);
+    riga.appendChild(acc);
+    return riga;
+  };
+
+  const suoPrimo = accento || quale(base).c.accent;
+  const suoSecondo = secondo || getComputedStyle(document.documentElement)
+    .getPropertyValue('--secondo').trim() || STAMPA.rosso;
+  lista.appendChild(fila('tema.primario', suoPrimo, accento, 'acc'));
+  lista.appendChild(fila('tema.secondario', suoSecondo, secondo, 'sec'));
+
 }
 
 function montaSelettore(){
@@ -680,9 +722,20 @@ function montaSelettore(){
   /* Un ascoltatore solo sull'elenco: i pulsanti si rifanno a ogni
      scelta, e attaccarne uno per voce vorrebbe dire rimetterli tutti
      ogni volta. */
+  /* QUALE DELLE DUE FILE. Ogni pastiglia e ogni ruota porta `data-per`
+     addosso -- `acc` o `sec` -- perche' i due gestori sono gli stessi e
+     a distinguerli non puo' essere la posizione: la fila si rifa' a
+     ogni scelta, e contarle vorrebbe dire sbagliare la prima volta che
+     se ne aggiunge una terza. */
+  const perQuale = function(el){
+    const p = el.closest('[data-per]');
+    return (p && p.getAttribute('data-per') === 'sec') ? 'sec' : 'acc';
+  };
   lista.addEventListener('click', function(e){
     const a = e.target.closest('button[data-acc]');
-    if (a) scegliAccento(a.getAttribute('data-acc'));
+    if (!a) return;
+    if (perQuale(a) === 'sec') scegliSecondo(a.getAttribute('data-acc'));
+    else scegliAccento(a.getAttribute('data-acc'));
   });
   /* La ruota manda `input` mentre si trascina: qui si vuole vedere il
      sito cambiare colore sotto il cursore, non dopo. E' la stessa
@@ -690,11 +743,15 @@ function montaSelettore(){
      niente sul database, si riscrivono delle variabili CSS. */
   lista.addEventListener('input', function(e){
     const r = e.target.closest('input[data-acc-ruota]');
-    if (r) scegliAccento(r.value, true);      // si vede, non si scrive
+    if (!r) return;                           // si vede, non si scrive
+    if (r.getAttribute('data-acc-ruota') === 'sec') scegliSecondo(r.value, true);
+    else scegliAccento(r.value, true);
   });
   lista.addEventListener('change', function(e){
     const r = e.target.closest('input[data-acc-ruota]');
-    if (r) scegliAccento(r.value);            // al rilascio si salva
+    if (!r) return;                           // al rilascio si salva
+    if (r.getAttribute('data-acc-ruota') === 'sec') scegliSecondo(r.value);
+    else scegliAccento(r.value);
   });
   if (typeof I18N !== 'undefined' && I18N.suCambio) I18N.suCambio(disegnaSelettore);
 }
@@ -744,6 +801,9 @@ return {
   accento: function(){ return accento; },
   esiste: function(v){ return !!scomponi(v); },
   tinte: function(){ return tinteDi(base, accento); },
-  scegli: scegli, scegliAccento: scegliAccento, suCambio: suCambio
+  scegli: scegli, scegliAccento: scegliAccento, scegliSecondo: scegliSecondo,
+  secondoOra: function(){ return secondo; },
+  accentoOra: function(){ return accento; },
+  suCambio: suCambio
 };
 })();
