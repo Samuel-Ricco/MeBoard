@@ -1173,6 +1173,10 @@ body.sez-partite #partite{display:block}
    facesse parte. */
 .pro-blocco{margin:0; border-top:1px dashed var(--line)}
 .pro-volume{padding-top:16px; border-top:1px dashed var(--line)}
+/* Il wrap nel profilo: una riga sua, col filo sopra come gli altri
+   blocchi, perche' non appartiene a nessuno di quelli attorno. */
+.pro-wrap-riga{margin:0; padding:16px 0 0; border-top:1px dashed var(--line)}
+.pro-wrap-riga .par-wrap{width:100%}
 .pro-blocco:first-of-type{margin-top:34px}
 .pro-blocco h3{margin:0}
 /* Il titolo E' il pulsante: tutta la riga si preme, non una freccetta

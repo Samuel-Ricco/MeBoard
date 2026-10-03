@@ -8041,6 +8041,24 @@ function slideWrap(){
   return sl.map(function(x){ x.anno = sl.anno; return x; });
 }
 
+/* I NOMI LUNGHI SBORDANO, quindi si accorciano qui e non nel CSS.
+
+   Una slide si salva anche come PNG, e li' non c'e' nessun `overflow`
+   che tagli: il testo esce dal riquadro e basta. Tagliarlo alla
+   sorgente vale per tutti e due i disegni, che e' l'unico modo perche'
+   quello che si vede e quello che si salva siano la stessa cosa.
+
+   Si taglia sulla PAROLA quando si puo': "Twilight Imperium: Fourth..."
+   si legge, "Twilight Imperium: Fou..." sembra un errore. */
+function accorcia(t, max){
+  const s = String(t || '').trim();
+  const M = max || 34;
+  if (s.length <= M) return s;
+  const corto = s.slice(0, M - 1);
+  const spazio = corto.lastIndexOf(' ');
+  return (spazio > M * 0.6 ? corto.slice(0, spazio) : corto).replace(/[\s,:;.-]+$/, '') + '…';
+}
+
 function slideWrapGrezze(){
   const tutte = PARTITE.tutte();
   const ore = oreGiocate(tutte);
@@ -8080,7 +8098,7 @@ function slideWrapGrezze(){
     return String(a.giocata_il || '').localeCompare(String(b.giocata_il || '')); })[0];
 
   const righeGiochi = classifica.slice(0, 3).map(function(g){
-    return { k: g.titolo, v: g.n };
+    return { k: accorcia(g.titolo, 26), v: g.n };
   });
 
   /* QUANDO. Nel disegno accanto all'occhiello c'e' l'anno, ed e' giusto
@@ -8120,28 +8138,55 @@ function slideWrapGrezze(){
       ? { t: 'wrap.ore', n: oreTesto(ore.minuti), tono: 1,
           s: TP(ore.quante === 1 ? 'wrap.suQuanteUna' : 'wrap.suQuante', {n: ore.quante}),
           righe: [ { k: TP('wrap.media'), v: minTesto(media) } ].concat(
-            lunghe[0] ? [{ k: TP('wrap.piuLunga'), v: lunghe[0].titolo + ' &middot; ' + minTesto(lunghe[0].minuti) }] : []) }
+            lunghe[0] ? [{ k: TP('wrap.piuLunga'), v: accorcia(lunghe[0].titolo, 22) + ' &middot; ' + minTesto(lunghe[0].minuti) }] : []) }
       : { t: 'wrap.ore', n: null, s: TP('wrap.oreNo'), tono: 1 },
 
-    piu ? { t: 'wrap.piuGiocato', n: piu.titolo, testo: true, tono: 2,
+    piu ? { t: 'wrap.piuGiocato', n: accorcia(piu.titolo), testo: true, tono: 2,
             s: TP(piu.n === 1 ? 'wrap.volta' : 'wrap.volte', {n: piu.n}),
             righe: righeGiochi }
         : { t: 'wrap.piuGiocato', n: null, s: TP('wrap.vuoto'), tono: 2 },
 
-    { t: 'wrap.collezione', n: String(giochi), tono: 3,
-      s: TP('wrap.suScaffali', {n: inVetrina}),
+    /* IL NUMERO GRANDE E' QUANTI NE HAI ESPOSTI, non quanti ne
+       possiedi. Quanti giochi hai e' un numero che sai gia' -- sta in
+       cima alla collezione ogni volta che la apri -- mentre quanti ne
+       stanno davvero sugli scaffali e' quello che il wrap puo' dirti e
+       tu non tieni a mente. Il totale resta, sotto, perche' serve a
+       capire il primo. */
+    { t: 'wrap.collezione', n: String(inVetrina), tono: 3,
+      s: TP('wrap.diQuanti', {n: giochi}),
       righe: [ { k: TP('wrap.mobili'), v: mobili },
                { k: TP('wrap.votati'), v: miei },
                { k: TP('wrap.desiderati'), v: desideri } ] },
+
+    /* I TUOI VOTI. Il wrap raccontava quanto hai giocato e con chi, e
+       niente di cosa ti e' piaciuto: la classifica che il sito ha e
+       nessun altro ha. Dieci e' quanto ne sta in una slide senza che
+       diventi un elenco da scorrere -- e le prime tre si leggono
+       comunque per prime. */
+    (function(){
+      const votati = LIB.all()
+        .filter(function(g){ return parseFloat(g.mioVoto) > 0; })
+        .sort(function(a, b){ return parseFloat(b.mioVoto) - parseFloat(a.mioVoto) ||
+          String(a.title).localeCompare(String(b.title), 'it'); });
+      if (!votati.length)
+        return { t: 'wrap.iTuoiVoti', n: null, s: TP('wrap.nessunVoto'), tono: 2 };
+      const somma = votati.reduce(function(m, g){ return m + parseFloat(g.mioVoto); }, 0);
+      const med = (somma / votati.length).toFixed(1).replace('.', ',');
+      return { t: 'wrap.iTuoiVoti', n: accorcia(votati[0].title), testo: true, tono: 2,
+               s: String(votati[0].mioVoto).replace('.', ',') + ' / 10',
+               righe: votati.slice(1, 10).map(function(g){
+                 return { k: accorcia(g.title), v: String(g.mioVoto).replace('.', ',') };
+               }).concat([{ k: TP('wrap.votoMedio'), v: med }]) };
+    })(),
 
     w.perc === null
       ? { t: 'wrap.winrate', n: null, s: TP('par.wrNick'), tono: 4 }
       : { t: 'wrap.winrate', n: w.perc + '%', tono: 4, anello: w.perc,
           s: TP(w.vinte === 1 ? 'wrap.suPartiteUna' : 'wrap.suPartite',
                 {v: w.vinte, g: w.gioc}),
-          righe: (forte ? [{ k: TP('wrap.meglio'), v: forte.titolo + ' &middot; ' + forte.perc + '%' }] : [])
+          righe: (forte ? [{ k: TP('wrap.meglio'), v: accorcia(forte.titolo, 20) + ' &middot; ' + forte.perc + '%' }] : [])
             .concat(debole && debole !== forte
-              ? [{ k: TP('wrap.peggio'), v: debole.titolo + ' &middot; ' + debole.perc + '%' }] : []) },
+              ? [{ k: TP('wrap.peggio'), v: accorcia(debole.titolo, 20) + ' &middot; ' + debole.perc + '%' }] : []) },
 
     amici.length
       ? { t: 'wrap.conChi', n: amici[0].nome, testo: true, tono: 6,
@@ -8490,6 +8535,27 @@ function bindWrap(){
   if (dop) dop.addEventListener('click', function(){ vaiSlide(wrapOra + 1, true); });
   const sav = q('#wrap-salva');
   if (sav) sav.addEventListener('click', salvaSlide);
+
+  /* TOCCARE A DESTRA O A SINISTRA CAMBIA SLIDE.
+
+     Le frecce stanno nel piede, cioe' lontane dal pollice su un
+     telefono tenuto in mano: per andare avanti si scendeva ogni volta
+     in fondo allo schermo. Toccare meta' schermo e' il gesto che fa
+     chiunque davanti a una cosa che si sfoglia, e qui non costava
+     niente perche' le slide non hanno nient'altro da toccare.
+
+     Il terzo centrale non fa niente: e' dove sta il numero grande, ed
+     e' anche il margine per chi voleva solo guardare. E si ignora
+     quello che parte da un pulsante -- salvare una slide non deve
+     anche cambiarla. */
+  const mazzo = q('#wrap-deck');
+  if (mazzo) mazzo.addEventListener('click', function(e){
+    if (e.target.closest('button, a')) return;
+    const r = mazzo.getBoundingClientRect();
+    const dove = (e.clientX - r.left) / r.width;
+    if (dove < .33) vaiSlide(wrapOra - 1, true);
+    else if (dove > .67) vaiSlide(wrapOra + 1, true);
+  });
 
   /* Scorrendo con il dito il puntino deve seguire: e' l'unica cosa che
      dice a che punto si e'. */
