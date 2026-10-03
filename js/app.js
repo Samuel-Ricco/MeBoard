@@ -121,7 +121,7 @@ const state = {
   soloPreferiti: false,        // mostra solo i giochi segnati
   vista: 'gruppi',             // come si guarda l'elenco: 'gruppi' o 'tutti'
   vcat: 'catalogo',            // nel catalogo: 'catalogo' o 'wishlist'
-  vpar: 'gioco',               // come si guardano le partite: 'gioco', 'data' o 'calendario'
+  vpar: 'data',                // come si guardano le partite: 'data', 'calendario' o 'gioco'
   cal: null,                   // il mese aperto nel calendario, {a, m}
   calGiorno: '',               // il giorno aperto sotto la griglia
   wrAperto: false,             // il winrate gioco per gioco e' aperto?
@@ -7915,7 +7915,7 @@ function azzeraSchermata(){
     if (b.nextElementSibling) b.nextElementSibling.hidden = true;
   });
   state.vista = 'tutti';
-  state.vpar = 'gioco';
+  state.vpar = 'data';
   state.cal = null; state.calGiorno = '';   // e il calendario riparte dall'ultima partita
   state.wrAperto = false;
 }
@@ -8894,12 +8894,25 @@ function rigaGiocata(p, conTitolo){
   const chi = (p.chi || []).map(function(x){
     return '<i class="' + (x.vincitore ? 'vince' : '') + '">' + esc(x.nome) + '</i>';
   }).join(', ');
+  /* DUE SEGNI SU OGNI PARTITA. Prima si apriva toccando la riga, e
+     cancellarla si poteva solo da dentro il modulo: un gesto nascosto
+     dietro un altro. La penna dice che si puo' correggere -- cosa che
+     la riga da sola non diceva -- e il cestino, in due tempi, toglie
+     senza passare da nessuna parte. */
   return '<li data-id="' + esc(p.id) + '">' +
     '<span class="gio-testa">' +
       (conTitolo ? '<b>' + esc(p.titolo) + '</b>' : '') +
       (quando ? '<span>' + esc(quando) + (ora ? ' &middot; ' + esc(ora) : '') + '</span>' : '') +
     '</span>' +
     (chi ? '<p class="gio-chi">' + chi + '</p>' : '') +
+    '<span class="gio-fa">' +
+      '<button type="button" class="g-fa" data-pamod="' + esc(p.id) + '" ' +
+        'title="' + esc(TP('par.correggi')) + '" aria-label="' + esc(TP('par.correggi')) + '">' +
+        ICO.matita + '</button>' +
+      '<button type="button" class="g-fa g-via" data-pavia="' + esc(p.id) + '" ' +
+        'title="' + esc(TP('par.cancella')) + '" aria-label="' + esc(TP('par.cancella')) + '">' +
+        ICO.cestino + '</button>' +
+    '</span>' +
   '</li>';
 }
 
@@ -8986,7 +8999,7 @@ function disegnaVistePartite(){
   });
   /* Tre linguette adesso, non due: l'indicatore si sposta di una
      larghezza per posto, e la larghezza gliela da' il CSS. */
-  const ordine = ['gioco', 'data', 'calendario'];
+  const ordine = ['data', 'calendario', 'gioco'];
   const ind = q('#par-viste .ind');
   if (ind) ind.style.transform =
     'translateX(' + (Math.max(0, ordine.indexOf(state.vpar)) * 100) + '%)';
@@ -9064,7 +9077,14 @@ function calendarioHtml(){
     const oggiQui = iso === oggi ? ' oggi' : '';
     nelMese += lista.length;
     if (!lista.length){
-      celle += '<span class="cal-g' + oggiQui + '"><b>' + g + '</b></span>';
+      /* ANCHE UN GIORNO VUOTO E' UN PULSANTE. Erano `<span>`, cioe'
+         morti: su un calendario toccare un giorno vuol dire "questo
+         giorno", e trovare che meta' dei giorni non risponde insegna
+         a non toccarli piu'. Qui toccarlo apre il modulo con la data
+         gia' scritta -- che e' la cosa che si voleva fare. */
+      celle += '<button type="button" class="cal-g libero' + oggiQui + '" data-giorno="' + iso + '"' +
+               ' title="' + esc(TP('cal.segnaQui')) + '" aria-label="' + esc(TP('cal.segnaQui')) + '">' +
+               '<b>' + g + '</b></button>';
       continue;
     }
     const vinte = PARTITE.winrate(lista).vinte;
@@ -9097,7 +9117,9 @@ function calendarioHtml(){
     '<div class="cal-gg">' + gg.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
     '<div class="cal-griglia">' + celle + '</div>' +
     (nelMese ? '' : '<p class="cal-vuoto">' + T('cal.nessunaQui') + '</p>') +
-    (scelte ? '<ul class="giocate cal-quel-giorno">' +
+    (scelte ? '<p class="cal-quel-piu"><button type="button" data-piugiorno="' +
+        esc(state.calGiorno) + '">' + ICO.piu + '<span>' + T('cal.segnaQui') + '</span></button></p>' +
+      '<ul class="giocate cal-quel-giorno">' +
         scelte.map(function(p){ return rigaGiocata(p, true); }).join('') + '</ul>' : '') +
     '</div>';
 }
@@ -10285,15 +10307,61 @@ function bindPartite(){
     if (g){
       e.stopPropagation();
       const iso = g.getAttribute('data-giorno');
+      /* UN GIORNO VUOTO APRE DIRETTAMENTE IL MODULO.
+
+         Toccare un giorno senza partite apriva un pannello che diceva
+         soltanto che non ce n'erano: un tocco per non sapere niente.
+         Ma toccare un giorno sul calendario e' gia' dire "questo
+         giorno", quindi se non c'e' niente da leggere si passa a
+         quello che si voleva fare -- segnare una partita -- con la
+         data gia' compilata.
+
+         Con delle partite invece si aprono, perche' guardarle e'
+         l'altra meta' della stessa domanda, e il modulo si raggiunge
+         dal piu' che compare li' sotto. */
+      const quante = PARTITE.tutte().filter(function(p){
+        return String(p.giocata_il || '').slice(0, 10) === iso;
+      }).length;
+      if (!quante){ apriPartita({ giocata_il: iso }); return; }
       // toccarlo di nuovo lo richiude: e' lo stesso gesto che l'ha aperto
       state.calGiorno = (state.calGiorno === iso) ? '' : iso;
       disegnaPartite();
+    }
+
+    /* E il piu' sotto le partite di quel giorno: stessa data gia'
+       scritta, perche' si e' appena detto quale. */
+    const piuG = e.target.closest('[data-piugiorno]');
+    if (piuG){
+      e.stopPropagation();
+      apriPartita({ giocata_il: piuG.getAttribute('data-piugiorno') });
     }
   });
 
   // riaprire una partita gia' segnata, da tutti e due gli elenchi
   ['#pro-partite', '#p-giocate'].forEach(function(sel){
-    q(sel).addEventListener('click', function(e){
+    q(sel).addEventListener('click', async function(e){
+      /* IL CESTINO PRIMA DI TUTTO: sta dentro la riga, e senza questo
+         il clic arriverebbe alla riga e aprirebbe la partita invece di
+         cancellarla. In due tempi, come ogni altra cosa che non si
+         disfa. */
+      const via = e.target.closest('[data-pavia]');
+      if (via){
+        e.stopPropagation();
+        if (!via.classList.contains('armed')){
+          via.classList.add('armed');
+          SUONI.gioca('tocco');
+          setTimeout(function(){
+            if (via.isConnected) via.classList.remove('armed');
+          }, 3500);
+          return;
+        }
+        try { await PARTITE.togli(via.getAttribute('data-pavia')); }
+        catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); return; }
+        disegnaPartite();
+        const ap = state.focused && state.focused.userData.game;
+        if (ap) disegnaGiocate(ap);
+        return;
+      }
       const li = e.target.closest('li[data-id]');
       if (!li) return;
       e.stopPropagation();

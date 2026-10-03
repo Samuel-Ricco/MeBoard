@@ -848,9 +848,14 @@
            giocato l'ultima volta). Stesso componente delle due viste
            della collezione. -->
       <div class="viste tre" id="par-viste" role="tablist">
-        <button type="button" data-vpar="gioco" role="tab" data-i18n="par.perGioco">per gioco</button>
+        <!-- L'ORDINE E' QUELLO DELLA DOMANDA. "Le ultime" e' cosa si
+             e' giocato di recente, ed e' la ragione per cui quasi
+             sempre si apre questa schermata; il calendario e' la
+             stessa cosa guardata nel mese; "per gioco" e' la domanda
+             piu' stretta -- quante volte a QUESTO -- e viene dopo. -->
         <button type="button" data-vpar="data" role="tab" data-i18n="par.perData">le ultime</button>
         <button type="button" data-vpar="calendario" role="tab" data-i18n="par.perCalendario">calendario</button>
+        <button type="button" data-vpar="gioco" role="tab" data-i18n="par.perGioco">per gioco</button>
         <i class="ind" aria-hidden="true"></i>
       </div>
 

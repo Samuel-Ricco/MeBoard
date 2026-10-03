@@ -1236,6 +1236,42 @@ body.sez-partite #partite{display:block}
 .gio-testa{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
 .gio-testa b{font-size:14px; font-weight:500; color:var(--ink)}
 .gio-testa span{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft)}
+/* I DUE SEGNI DI UNA PARTITA, in fondo alla riga: tenui finche' non li
+   cerchi, e il cestino armato si riempie di rosso come ogni altra cosa
+   che butta via qualcosa. */
+.gio-fa{
+  position:absolute; right:8px; top:8px;
+  display:flex; gap:2px;
+}
+.gio-fa .g-fa{
+  width:30px; height:30px; padding:0; border:0; border-radius:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; color:var(--ink-soft); line-height:0;
+  transition:color .18s var(--ease), background-color .18s var(--ease);
+}
+.gio-fa .g-fa .ico{width:15px; height:15px}
+.gio-fa .g-fa:hover{color:var(--ink); background:rgba(var(--ink-rgb),.1)}
+.gio-fa .g-via:hover{color:var(--rosso); background:rgba(var(--rosso-rgb),.12)}
+.gio-fa .g-via.armed{background:var(--rosso); color:var(--su-rosso)}
+.giocate > li{position:relative; padding-right:70px}
+
+/* Il piu' sotto le partite di un giorno del calendario. */
+/* Un giorno libero e' un pulsante ma non lo grida: resta tenue come
+   prima, e si accende solo quando ci passi sopra. */
+.cal-g.libero{background:none; border:0; cursor:pointer; font:inherit; color:inherit}
+.cal-g.libero:hover{background:rgba(var(--ink-rgb),.08); color:var(--accent)}
+
+.cal-quel-piu{margin:10px 0 0}
+.cal-quel-piu button{
+  display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+  padding:9px 12px; border:1px dashed var(--line); border-radius:0;
+  background:none; color:var(--ink);
+  font-family:var(--ff); font-weight:900; font-size:10.5px;
+  letter-spacing:.07em; text-transform:uppercase;
+}
+.cal-quel-piu button:hover{border-color:var(--accent); color:var(--accent)}
+.cal-quel-piu .ico{width:15px; height:15px}
+
 .gio-chi{margin:5px 0 0; font-size:13px; color:var(--ink-soft); line-height:1.7}
 .gio-chi i{font-style:normal}
 .gio-chi .vince{
@@ -4821,12 +4857,14 @@ body.sez-profilo #pro-apri{background:var(--accent); color:var(--card)}
 #pro-faccia{display:none; width:100%; height:100%; object-fit:cover}
 #pro-apri.con-faccia #pro-faccia{display:block}
 #pro-apri.con-faccia .ico{display:none}
-/* Con la faccia dentro, il fondo del tasto non si vede piu': l'unico
-   posto dove dire "sei qui" e' tutt'intorno. */
-#pro-apri.con-faccia{background:none}
-body.sez-profilo #pro-apri.con-faccia{
-  background:none; box-shadow:0 0 0 2px var(--accent);
-}
+/* NIENTE COLORE DIETRO LA FACCIA. Il tasto aveva un fondo, e nel
+   profilo si accendeva dell'accento con un anello attorno: su un meeple
+   che ha gia' il suo fondo erano due fondi concentrici, e l'anello
+   faceva da terzo. La faccia e' gia' il tasto -- si riconosce perche'
+   e' la tua -- e "sei nel profilo" lo dice la navigazione, che e' il
+   posto dove si guarda per saperlo. */
+#pro-apri.con-faccia,
+body.sez-profilo #pro-apri.con-faccia{background:none; box-shadow:none}
 
 
 /* ============================================================

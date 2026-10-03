@@ -502,6 +502,9 @@ it: {
   /* --- partite e giocatori --- */
   'par.aria':           'le tue partite',
   'par.occhiello':      'le tue partite',
+  'par.correggi':       'correggi questa partita',
+  'par.cancella':       'cancella questa partita',
+  'cal.segnaQui':       'segna una partita in questo giorno',
   'par.perGioco':       'per gioco',
   'par.perData':        'le ultime',
   'par.perCalendario': 'calendario',
@@ -1199,6 +1202,9 @@ en: {
 
   'par.aria':           'your plays',
   'par.occhiello':      'your plays',
+  'par.correggi':       'edit this play',
+  'par.cancella':       'delete this play',
+  'cal.segnaQui':       'log a play on this day',
   'par.perGioco':       'by game',
   'par.perData':        'most recent',
   'par.perCalendario': 'calendar',
