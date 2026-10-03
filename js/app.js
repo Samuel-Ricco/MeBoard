@@ -8056,7 +8056,7 @@ function accorcia(t, max){
   if (s.length <= M) return s;
   const corto = s.slice(0, M - 1);
   const spazio = corto.lastIndexOf(' ');
-  return (spazio > M * 0.6 ? corto.slice(0, spazio) : corto).replace(/[\s,:;.-]+$/, '') + '…';
+  return (spazio > M * 0.6 ? corto.slice(0, spazio) : corto).replace(/[\s,:;.-]+$/, '') + '\u2026';
 }
 
 function slideWrapGrezze(){
