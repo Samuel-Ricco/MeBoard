@@ -52,6 +52,8 @@ it: {
   'meta.descrizione':   'Una libreria di giochi da tavolo in 3D: scorri gli scaffali, prendi una scatola, leggi la recensione. E un catalogo da sfogliare senza account.',
 
   /* --- la testata --- */
+  'testa.allaLibreria': 'torna alla libreria',
+  'pan.indietro':       'torna indietro',
   'testa.tagline':      'recensioni di giochi da tavolo',
   'nav.aria':           'sezioni del sito',
   'nav.libreria':       'libreria',
@@ -768,6 +770,8 @@ en: {
   'meta.titolo':        'MeBoard &mdash; board game reviews',
   'meta.descrizione':   'A board game collection in 3D: slide along the shelves, take a box down, read the review. Plus a catalogue you can browse without an account.',
 
+  'testa.allaLibreria': 'back to the shelf',
+  'pan.indietro':       'back',
   'testa.tagline':      'board game reviews',
   'nav.aria':           'site sections',
   'nav.libreria':       'shelves',

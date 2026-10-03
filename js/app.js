@@ -6575,6 +6575,89 @@ function bindClicFuori(){
    aprire il menu della stanza mentre era aperta la scheda delle
    librerie, e le due finestre si accavallavano. Aprirne uno chiude
    tutti gli altri, sempre. */
+/* ===============================================================
+   IL TASTO INDIETRO CHIUDE QUELLO CHE E' APERTO, NON IL SITO
+
+   Da browser il sito era una pagina sola che non ha mai toccato la
+   storia: aprivi una scheda, tre pannelli e un modulo, premevi indietro
+   e uscivi dal sito intero. Su telefono quel tasto e' una gesture di
+   sistema che si fa senza pensarci, quindi non era un dettaglio: era il
+   modo piu' rapido di perdere quello che stavi facendo.
+
+   NON si aggancia ogni apertura. Sarebbero una ventina di punti da
+   ricordarsi, e il ventunesimo che qualcuno aggiungera' domani se lo
+   dimenticherebbe -- e' la stessa ragione per cui `allineaComandi`
+   guarda il VALORE dello zoom e non i punti in cui qualcuno lo scrive.
+   Qui si guarda il DOCUMENTO: alla pressione si cerca la cosa piu'
+   in alto che sia aperta, e si chiude quella.
+
+   La scaletta e' l'ordine in cui le cose stanno una sopra l'altra, dal
+   menu di una riga fino alla sezione: e' lo stesso ordine con cui le
+   chiuderebbe Escape, e lo stesso in cui le ha aperte chi guarda.
+
+   Il segnaposto nella storia si rimette a ogni chiusura, cosi' il tasto
+   continua a funzionare per tutta la pila. Quando non c'e' piu' niente
+   da chiudere non si rimette, e il tasto fa quello che ha sempre fatto:
+   esce. Uscire deve restare possibile. */
+function montaIndietro(){
+  if (!window.history || !window.history.pushState) return;
+
+  /* La scaletta: `c_e` dice se quella cosa e' aperta, `chiudi` la
+     chiude. Si legge dall'alto, e la prima che risponde vince. */
+  const scaletta = [
+    { c_e: function(){ return !!document.querySelector('.riga-azioni:not([hidden])'); },
+      chiudi: function(){ chiudiAzioni(null); } },
+    { c_e: function(){ return document.body.classList.contains('cella-su'); },
+      chiudi: chiudiCella },
+    { c_e: function(){ return q('#addlayer').classList.contains('on'); },
+      chiudi: closeAdd },
+    { c_e: function(){ return q('#mialayer').classList.contains('on'); },
+      chiudi: chiudiMia },
+    { c_e: function(){ return q('#partitalayer').classList.contains('on'); },
+      chiudi: chiudiPartita },
+    { c_e: function(){ return q('#gruppilayer').classList.contains('on'); },
+      chiudi: chiudiGestioneGruppi },
+    { c_e: function(){ return q('#wrap') && q('#wrap').getAttribute('aria-hidden') === 'false'; },
+      chiudi: chiudiWrap },
+    { c_e: function(){ return document.body.classList.contains('vista'); },
+      chiudi: chiudiVista },
+    { c_e: function(){ return document.body.classList.contains('arreda'); },
+      chiudi: chiudiArreda },
+    { c_e: function(){ return document.body.classList.contains('elenco'); },
+      chiudi: chiudiElenco },
+    /* La scheda di un gioco: e' una schermata a tutti gli effetti, e
+       chiuderla e' esattamente quello che ci si aspetta. */
+    { c_e: function(){ return state.phase === 'review' || state.phase === 'focus'; },
+      chiudi: function(){ unfocus(); } },
+    /* E per ultima la sezione: da catalogo, partite o profilo si torna
+       alla libreria, che e' da dove si e' partiti. */
+    { c_e: function(){ return state.sezione && state.sezione !== 'collezione'; },
+      chiudi: function(){ setSezione('collezione'); } }
+  ];
+
+  function qualcosaDiAperto(){
+    for (let i = 0; i < scaletta.length; i++){
+      try { if (scaletta[i].c_e()) return scaletta[i]; } catch(e){}
+    }
+    return null;
+  }
+
+  function segnaposto(){
+    try { history.pushState({ meboard: 1 }, ''); } catch(e){}
+  }
+
+  /* Un segnaposto c'e' da subito: senza, la primissima pressione
+     uscirebbe prima ancora di avere qualcosa da chiudere. */
+  segnaposto();
+
+  window.addEventListener('popstate', function(){
+    const x = qualcosaDiAperto();
+    if (!x) return;                 // niente da chiudere: si esce davvero
+    try { x.chiudi(); } catch(e){ if (window.console) console.error('indietro:', e); }
+    segnaposto();                   // e il tasto resta buono per quella sotto
+  });
+}
+
 function chiudiPannelli(tranne){
   if (tranne !== 'vista')   chiudiVista();
   if (tranne !== 'arreda')  chiudiArreda();
@@ -6640,7 +6723,11 @@ function apriArreda(){
   sincronizzaPannello();
   document.body.classList.add('arreda');
   q('#stanza').setAttribute('aria-hidden', 'false');
-  q('#st-msg').textContent = TP('stanza.siSalva');
+  /* Vuoto: "si salva da solo" lo fa ogni pannello del sito, e dirlo in
+     uno solo fa pensare che altrove non succeda. Qui ci restano le
+     cose che vanno dette davvero -- sto salvando, non ci sono
+     riuscito -- che compaiono quando succedono. */
+  q('#st-msg').textContent = '';
 }
 
 function chiudiArreda(){
@@ -10719,6 +10806,12 @@ async function boot(){
   if (mancati.length) flash(TP('msg.aggancioNo', {n: mancati.join(', ')}));
 
   setSort(state.sort);
+  montaIndietro();
+  const marchio = q('#brand');
+  if (marchio) marchio.addEventListener('click', function(){
+    setSezione('collezione');
+    SUONI.gioca('tocco');
+  });
   requestAnimationFrame(frame);
   setProg(1, 'ci siamo');
 

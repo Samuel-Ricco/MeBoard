@@ -210,7 +210,16 @@ header{
    stanza, il testo scuro ci si legge sopra da solo, e la sfumatura si
    notava piu' del problema che risolveva. */
 body.ready header{opacity:1; transform:none}
-.brand{display:flex; align-items:baseline; gap:12px; pointer-events:auto}
+/* E' UN PULSANTE, quindi va spogliato di quello che il browser mette
+   addosso ai pulsanti: fondo, bordo, imbottitura e testo centrato. Di
+   suo resta solo il dito del cursore, che e' l'unica cosa che vogliamo
+   in piu' rispetto a prima. */
+.brand{
+  display:flex; align-items:baseline; gap:12px; pointer-events:auto;
+  background:none; border:0; padding:0; margin:0; text-align:left;
+  font:inherit; color:inherit; cursor:pointer;
+}
+.brand:active{transform:translate(1px,1px)}
 .brand b{
   font-family:var(--ff); font-weight:600;
   font-size:clamp(17px,2.1vw,21px); letter-spacing:-.015em; line-height:1.15;
@@ -1394,11 +1403,19 @@ body.review #stanza-apri{display:none !important}
 }
 body.arreda #stanza{opacity:1; visibility:visible; transform:none; transition-delay:0s}
 #stanza .eyebrow{margin:0 0 14px}
+/* LA FRECCIA STA A SINISTRA, perche' una freccia che punta a sinistra
+   messa a destra non si legge come "indietro": si legge come un errore.
+   E l'occhiello si sposta per farle posto, invece di passarci sotto. */
 #stanza-x{
-  position:absolute; top:6px; right:8px; cursor:pointer; font-size:17px; line-height:1;
-  color:var(--ink-soft); background:rgba(var(--ink-rgb),.06); border:0; padding:4px 6px; border-radius:var(--r-s);
+  position:absolute; top:6px; left:8px; cursor:pointer; line-height:0;
+  color:var(--ink-soft); background:rgba(var(--ink-rgb),.06); border:0;
+  padding:5px 6px; border-radius:var(--r-s);
+  transition:color .18s var(--ease), background-color .18s var(--ease);
 }
-#stanza-x:hover{color:var(--wood)}
+#stanza-x .ico{width:17px; height:17px}
+#stanza-x:hover{color:var(--ink); background:rgba(var(--ink-rgb),.12)}
+#stanza-x:active{transform:translate(2px,2px)}
+#stanza .eyebrow{padding-left:34px}
 .st-riga{display:flex; align-items:center; gap:12px; margin:0 0 11px}
 .st-riga.alto{align-items:flex-start}
 .st-riga>span:first-child{

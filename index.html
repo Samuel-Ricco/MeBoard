@@ -44,10 +44,21 @@
 <div id="vig"></div>
 
 <header>
-  <div class="brand">
+  <!-- IL MARCHIO E' UNA PORTA. In quasi ogni sito il nome in alto a
+       sinistra riporta a casa, e qui casa e' lo scaffale: chi ci prova
+       lo fa senza pensarci, e trovandolo morto prende la via lunga
+       dalla barra in basso.
+
+       E' un `button` e non un `<a href="#">`: non c'e' nessun indirizzo
+       da seguire -- si cambia sezione nella stessa pagina -- e un
+       collegamento che non porta da nessuna parte e' una promessa che
+       il tasto destro e la rotella del mouse non mantengono. -->
+  <button type="button" class="brand" id="brand"
+          data-i18n-title="testa.allaLibreria" title="torna alla libreria"
+          data-i18n-aria="testa.allaLibreria" aria-label="torna alla libreria">
     <b>Me<i>Board</i></b>
     <span data-i18n="testa.tagline">recensioni di giochi da tavolo</span>
-  </div>
+  </button>
 
   <nav id="sezioni" data-i18n-aria="nav.aria" aria-label="sezioni del sito">
     <button type="button" data-sez="collezione" class="on" data-i18n="nav.libreria">libreria</button>
@@ -172,7 +183,11 @@
      insieme: chi rinomina non sta scegliendo un legno, e chi riordina
      non sta facendo ne' l'una ne' l'altra cosa. -->
 <aside id="stanza" aria-hidden="true" data-i18n-aria="stanza.aria" aria-label="la tua libreria">
-  <button id="stanza-x" type="button" data-i18n-aria="pan.chiudi" aria-label="chiudi">&times;</button>
+  <!-- UNA FRECCIA, NON UNA CROCE. Una croce dice "butta via quello che
+       hai fatto", e qui non c'e' niente da buttare: si salva tutto
+       mentre lo fai, quindi si torna indietro e basta. -->
+  <button id="stanza-x" type="button" class="indietro"
+          data-i18n-aria="pan.indietro" aria-label="torna indietro"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
   <p class="eyebrow" data-i18n="stanza.occhiello">la libreria</p>
 
   <!-- Il piede sta FUORI da quello che scorre, come nella scheda: con
@@ -267,8 +282,12 @@
         </div>
       </div>
 
+      <!-- "si salva da solo" non si scrive: qui si salva tutto da solo,
+           in ogni pannello del sito, e dirlo in uno solo fa pensare che
+           altrove non succeda. Resta `#st-msg`, vuoto, perche' il JS ci
+           scrive gli errori -- quelli vanno detti. -->
       <p class="st-fondo">
-        <span id="st-msg" data-i18n="stanza.siSalva">si salva da solo</span>
+        <span id="st-msg"></span>
         <button id="st-reset" type="button">com&rsquo;era</button>
       </p>
     </div>
@@ -277,7 +296,6 @@
   <details id="st-ordine" class="st-tendina">
     <summary data-i18n="stanza.ordina">ordina librerie</summary>
     <div class="st-dentro">
-      <p class="st-quale" data-i18n="stanza.ordineParete">l&rsquo;ordine qui e&rsquo; l&rsquo;ordine lungo la parete</p>
       <ul id="st-lista"></ul>
     </div>
   </details>
