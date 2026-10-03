@@ -4317,7 +4317,9 @@ body.visita #vis-torna{display:inline-flex; align-items:center}
   width:34px; height:34px; min-height:0; padding:0; margin:0;
   display:inline-flex; align-items:center; justify-content:center; gap:0;
   border:0; border-radius:0; cursor:pointer;
-  background:var(--rosso); color:var(--su-rosso);
+  /* Chiudere non distrugge niente: la croce e' decorazione forte, non
+     un allarme. */
+  background:var(--secondo); color:var(--su-secondo);
   box-shadow:var(--ombra-lieve);
   font-size:0; letter-spacing:0;
   transition:background-color .2s var(--ease), color .2s var(--ease),
@@ -5551,7 +5553,7 @@ input::placeholder, textarea::placeholder{
 .cat-cerca button{
   font-family:var(--ff); font-weight:900; font-size:11px;
   letter-spacing:.1em; text-transform:uppercase;
-  color:var(--su-rosso); background:var(--rosso);
+  color:var(--su-secondo); background:var(--secondo);
   border:0; border-radius:0; padding:0 16px;
   box-shadow:var(--ombra-lieve);
 }
@@ -5742,9 +5744,11 @@ input::placeholder, textarea::placeholder{
    Il filo da tre pixel al centro non serve piu' -- la traccia adesso e'
    il gradiente dei segmenti -- e il cursore riempie il suo segmento. */
 .rail-bar::before{display:none}
+/* Il cursore del binario dice DOVE SEI fra le librerie: e' un segno
+   di posizione, non di pericolo. */
 #rail-thumb{
   top:0; margin-top:0; height:8px;
-  background:var(--rosso);
+  background:var(--secondo);
 }
 .rail-bar:hover #rail-thumb, .rail-bar.presa #rail-thumb{background:var(--accent)}
 /* Nel disegno il binario attraversa lo schermo: sono i pezzi di una
@@ -5850,19 +5854,23 @@ input::placeholder, textarea::placeholder{
    Il pieno resta a quello che CONFERMA -- entra, salva, scrivi la tua
    recensione -- e il rosso pieno a quello che, premuto la seconda
    volta, butta via. */
+/* AGGIUNGERE E DESIDERARE non distruggono niente -- sono il contrario
+   -- quindi niente rosso: prendono il secondo colore come il resto
+   della decorazione. Erano rossi perche' il rosso era l'unico colore
+   forte che il sito avesse oltre all'accento. */
 .aggiungi, .cat-azioni .desidero{
-  background:none; color:var(--rosso);
-  border:1px dashed rgba(var(--rosso-rgb),.7); border-radius:0;
+  background:none; color:var(--secondo);
+  border:1px dashed rgba(var(--secondo-rgb),.7); border-radius:0;
   clip-path:none; filter:none;
 }
 .aggiungi:hover, .cat-azioni .desidero:hover{
-  background:rgba(var(--rosso-rgb),.12); color:var(--rosso);
-  border-color:var(--rosso);
+  background:rgba(var(--secondo-rgb),.12); color:var(--secondo);
+  border-color:var(--secondo);
 }
 .aggiungi:active{transform:translate(2px,2px); filter:none}
 /* Preso: il taglio e' fatto, e il pezzo si stacca. */
 .cat-azioni .desidero[aria-pressed="true"]{
-  background:var(--rosso); color:var(--su-rosso); border-color:transparent;
+  background:var(--secondo); color:var(--su-secondo); border-color:transparent;
   clip-path:var(--fustella);
 }
 
