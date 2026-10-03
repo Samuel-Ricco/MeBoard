@@ -654,14 +654,32 @@
     </div>
 
     <!-- costruttore del meeple: si apre da "cambia faccia" -->
+    <!-- SPOGLIATO. C'erano un titolo ("La tua faccia"), una frase che
+         diceva cosa fossero le due file ("Un meeple, il tuo colore e il
+         tuo fondo") e due etichette. Quattro scritte per due file di
+         colori, sopra una faccia grande che si vede cambiare mentre
+         scegli: la cosa che spiegavano era gia' a schermo. Restano le
+         due parole che distinguono una fila dall'altra, che sono
+         l'unica cosa che il disegno non dice da se'. -->
     <div id="pro-faccia-lab" hidden>
-      <h3 data-i18n="pro.facciaH">La tua faccia</h3>
-      <p class="pro-lab-nota" data-i18n="pro.facciaNota">Un meeple, il tuo colore e il tuo fondo.</p>
       <p class="pro-lab-riga"><span data-i18n="pro.labMeeple">meeple</span><span id="lab-corpi" class="pastiglie tinte"></span></p>
       <p class="pro-lab-riga"><span data-i18n="pro.labFondo">fondo</span><span id="lab-fondi" class="pastiglie tinte"></span></p>
+      <!-- UN SEGNO PER PARTE. "salva la faccia" e "lascia perdere"
+           erano due frasi di peso uguale per due gesti opposti; e qui
+           sotto c'e' gia' la faccia che fa vedere il risultato, quindi
+           le parole spiegavano quello che si stava guardando.
+
+           La spunta salva. La croce e' rossa e in due tempi, come ogni
+           altra cosa che butta via qualcosa nel sito: quello che si
+           perde e' il colore che hai appena provato, e perderlo per un
+           tocco distratto e' proprio il caso in cui serve la conferma. -->
       <p class="pro-lab-fondo">
-        <button id="lab-salva" type="button" data-i18n="pro.labSalva">salva la faccia</button>
-        <button id="lab-annulla" type="button" class="chiaro" data-i18n="pro.labAnnulla">lascia perdere</button>
+        <button id="lab-salva" type="button" class="segno"
+                data-i18n-aria="pro.labSalva" aria-label="salva la faccia"
+                data-i18n-title="pro.labSalva" title="salva la faccia"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+        <button id="lab-annulla" type="button" class="segno distruttivo"
+                data-i18n-aria="pro.labAnnulla" aria-label="lascia perdere"
+                data-i18n-title="pro.labAnnulla" title="lascia perdere"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg></button>
       </p>
     </div>
 

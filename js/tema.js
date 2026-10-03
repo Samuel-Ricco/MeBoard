@@ -135,6 +135,89 @@ const ACCENTI = [
   '#0f7d86', '#bf2f80', '#c86a3c', '#4a6b8a'
 ];
 
+/* ===============================================================
+   GLI ULTIMI TRE COLORI USATI
+
+   Ogni fila di colori del sito -- l'accento, i cinque pezzi della
+   stanza, il meeple -- mostrava sei predefiniti e la ruota in fondo.
+   Sei scelte gia' fatte che nessuno aveva fatto: belle la prima volta,
+   ingombranti dalla seconda, e soprattutto SEMPRE LE STESSE anche per
+   chi il suo colore ce l'aveva gia' scelto da un pezzo e lo voleva
+   rimettere altrove.
+
+   Adesso le pastiglie sono tre, e sono gli ultimi tre che hai usato:
+   la fila smette di proporre e comincia a ricordare. Chi ha vestito il
+   sito di verde oliva lo ritrova pronto quando sceglie il muro.
+
+   UNA LISTA SOLA PER TUTTO IL SITO, non una per punto: il colore non e'
+   una proprieta' dello scaffale o del meeple, e' una tua scelta che si
+   sposta da una cosa all'altra -- che e' esattamente il gesto per cui
+   questa lista esiste.
+
+   Nasce con tre accenti dentro, se no la prima volta la fila sarebbe
+   vuota e non si capirebbe che cosa sia. */
+const CHIAVE_REC = 'meboard-colori-usati';
+const QUANTI_REC = 3;
+let recenti = null;
+
+function leggiRecenti(){
+  let v = [];
+  try {
+    const t = localStorage.getItem(CHIAVE_REC);
+    if (t) v = JSON.parse(t);
+  } catch (e) { v = []; }
+  if (!Array.isArray(v)) v = [];
+  v = v.filter(function(x){ return ESA.test(String(x)); })
+       .map(function(x){ return String(x).toLowerCase(); });
+  /* I buchi si riempiono con gli accenti, in coda: cosi' la fila ha
+     sempre tre pastiglie anche a lista corta, e man mano che si sceglie
+     i predefiniti vengono spinti fuori da quello che si e' usato. */
+  for (let i = 0; v.length < QUANTI_REC && i < ACCENTI.length; i++){
+    if (v.indexOf(ACCENTI[i]) < 0) v.push(ACCENTI[i]);
+  }
+  return v.slice(0, QUANTI_REC);
+}
+
+function coloriUsati(){
+  if (!recenti) recenti = leggiRecenti();
+  return recenti.slice();
+}
+
+/* Si chiama a ogni colore scelto, da qualunque fila. Quello appena
+   usato va in testa; se c'era gia' si sposta e basta, invece di
+   comparire due volte. */
+function ricordaColore(hex){
+  const c = String(hex || '').toLowerCase();
+  if (!ESA.test(c)) return coloriUsati();
+  if (!recenti) recenti = leggiRecenti();
+  const i = recenti.indexOf(c);
+  if (i >= 0) recenti.splice(i, 1);
+  recenti.unshift(c);
+  recenti = recenti.slice(0, QUANTI_REC);
+  try { localStorage.setItem(CHIAVE_REC, JSON.stringify(recenti)); } catch (e) {}
+  return coloriUsati();
+}
+
+/* L'ARCOBALENO DELLA RUOTA, a strisce piene e non sfumate.
+
+   La ruota non offre un colore: li offre tutti, e un bollino di un
+   colore solo non lo diceva -- sembrava un settimo predefinito, e
+   infatti serviva un bordo tratteggiato attorno per distinguerlo.
+   Sei strisce lo dicono da sole.
+
+   Piene, non sfumate: qui non c'e' una sfumatura in tutto il sito, e
+   mettercela proprio sull'icona che apre la tavolozza sarebbe la prima
+   cosa che si nota e l'unica fuori posto. */
+const ICO_ARCOBALENO =
+  '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+  '<rect x="2"  y="3" width="3.33" height="18" fill="#e23d28"/>' +
+  '<rect x="5.33" y="3" width="3.33" height="18" fill="#f0b429"/>' +
+  '<rect x="8.67" y="3" width="3.33" height="18" fill="#2f9e6b"/>' +
+  '<rect x="12" y="3" width="3.33" height="18" fill="#2a63c4"/>' +
+  '<rect x="15.33" y="3" width="3.33" height="18" fill="#7350a6"/>' +
+  '<rect x="18.67" y="3" width="3.33" height="18" fill="#bf2f80"/>' +
+  '</svg>';
+
 const ESA = /^#[0-9a-fA-F]{6}$/;
 const iscritti = [];
 
@@ -457,7 +540,10 @@ function scegli(v){
    degli amici. Si guarda dal vivo, si salva al rilascio. */
 function scegliAccento(v, soloVista){
   accento = ESA.test(v || '') ? String(v).toLowerCase() : '';
-  if (!soloVista) salva();
+  /* Si ricorda solo quando si SALVA, non mentre si trascina nella
+     tavolozza: se no i tre usati si riempirebbero dei venti colori
+     passati sotto il dito prima di quello buono. */
+  if (!soloVista){ ricordaColore(accento); salva(); }
   applica();
 }
 
@@ -546,7 +632,11 @@ function disegnaSelettore(){
   const acc = document.createElement('div');
   acc.className = 'tav-accenti';
   const suo = accento || quale(base).c.accent;
-  ACCENTI.forEach(function(hex){
+  /* Tre pastiglie, e sono gli ultimi tre usati. Quello scelto ADESSO ci
+     sta sempre dentro, perche' sceglierlo lo ha messo in testa alla
+     lista: la fila non puo' mostrarsi senza il colore che il sito
+     porta addosso in quel momento. */
+  coloriUsati().forEach(function(hex){
     acc.appendChild(bollino(hex, accento === hex));
   });
   /* LA RUOTA E' DUE NODI: il campo che tiene il valore, nascosto, e il
@@ -568,8 +658,13 @@ function disegnaSelettore(){
 
   const rb = document.createElement('button');
   rb.type = 'button';
-  rb.className = 'ruota' + (accento && ACCENTI.indexOf(accento) < 0 ? ' on' : '');
-  rb.style.backgroundColor = suo;
+  /* NON porta piu' addosso il colore scelto: porta l'arcobaleno. Col
+     colore sopra sembrava una quarta pastiglia -- una scelta gia' fatta
+     fra le altre -- e serviva un bordo tratteggiato per dire che non lo
+     era. Le sei strisce lo dicono da sole: qui non c'e' UN colore,
+     ci sono tutti. */
+  rb.className = 'ruota arcobaleno';
+  rb.innerHTML = ICO_ARCOBALENO;
   rb.setAttribute('aria-haspopup', 'dialog');
   rb.setAttribute('aria-expanded', 'false');
   const tit = (typeof T === 'function') ? T('stanza.ruota') : 'colore';
@@ -640,6 +735,8 @@ function ruolo(nome, tavolozza){
 
 return {
   BASI: BASI, ACCENTI: ACCENTI, ruolo: ruolo,
+  coloriUsati: coloriUsati, ricordaColore: ricordaColore,
+  ICO_ARCOBALENO: ICO_ARCOBALENO,
   /* `corrente()` torna la forma composta: e' quella che si salva, ed e'
      quella che un amico legge. */
   corrente: function(){ return componi(base, accento); },

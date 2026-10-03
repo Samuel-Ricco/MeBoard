@@ -6238,24 +6238,25 @@ function disegnaStanza(){
      database e' "il legno", non un marrone -- se no cambiando
      tavolozza la stanza salvata perderebbe la scelta. */
   const gruppo = function(sel, lista, valore, testo, chiave, ruota){
-    /* I BOLLINI RESTANO, E ACCANTO C'E' LA RUOTA.
+    /* TRE PASTIGLIE E L'ARCOBALENO.
 
-       I predefiniti non sono un ripiego: sono sei legni che esistono, e
-       chi non ha voglia di scegliere un colore ne tocca uno e ha finito.
-       La ruota e' per chi il colore ce l'ha in mente -- ed e' l'ultima
-       della fila, perche' e' l'unica che non offre una scelta gia'
-       fatta ma la chiede.
+       C'erano sei predefiniti: sei legni, sei muri, sei pavimenti, tutti
+       scelti da noi. Belli la prima volta e ingombranti dalla seconda, e
+       soprattutto ciechi a quello che la persona aveva gia' scelto
+       altrove nel sito. Adesso sono gli ULTIMI TRE USATI, la stessa
+       lista per tutte le file -- vedi `coloriUsati` in js/tema.js -- e
+       la ruota in fondo porta l'arcobaleno invece di un colore.
 
-       Il bollino acceso e' quello scelto; se il colore non e' nessuno
-       dei sei -- cioe' viene dalla ruota -- non si accende nessun
-       bollino e la ruota porta quel colore addosso. */
-    const scelto = lista.some(function(x){ return x.v === valore; });
-    const html = lista.map(function(x){
-      const on = valore === x.v ? ' class="on"' : '';
-      const mostra = chiave ? STANZA.tinta(chiave, x.v) : x.v;
-      const stile = testo ? '' : ' style="background:' + esc(mostra) + '"';
-      const nome = TP(x.n);          // `n` e' una chiave, non una parola
-      return '<button type="button" data-v="' + esc(x.v) + '" title="' + esc(nome) + '"' +
+       Le file di TESTO (gli arredi delle celle, che sono parole e non
+       colori) non c'entrano niente con tutto questo e restano come
+       erano: li' le voci sono scelte, non tinte. */
+    const valori = testo ? lista.map(function(x){ return x.v; }) : TEMA.coloriUsati();
+    const html = valori.map(function(v){
+      const x = testo ? lista.find(function(y){ return y.v === v; }) : null;
+      const on = String(valore) === String(v) ? ' class="on"' : '';
+      const nome = testo ? TP(x.n) : v;
+      const stile = testo ? '' : ' style="background:' + esc(v) + '"';
+      return '<button type="button" data-v="' + esc(v) + '" title="' + esc(nome) + '"' +
              on + stile + '>' + (testo ? esc(nome) : '') + '</button>';
     }).join('');
     /* LA RUOTA E' DUE COSE: un campo NASCOSTO che tiene il valore -- e
@@ -6267,10 +6268,10 @@ function disegnaStanza(){
     const suoColore = chiave ? STANZA.tinta(chiave, valore) : valore;
     const conRuota = ruota
       ? '<input type="hidden" class="ruota" value="' + esc(suoColore) + '">' +
-        '<button type="button" class="ruota' + (scelto ? '' : ' on') + '" ' +
-        'style="background-color:' + esc(suoColore) + '" ' +
+        '<button type="button" class="ruota arcobaleno" ' +
         'aria-haspopup="dialog" aria-expanded="false" ' +
-        'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '"></button>'
+        'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '">' +
+        TEMA.ICO_ARCOBALENO + '</button>'
       : '';
     q(sel).innerHTML = html + conRuota;
   };
@@ -6656,6 +6657,39 @@ function montaIndietro(){
     try { x.chiudi(); } catch(e){ if (window.console) console.error('indietro:', e); }
     segnaposto();                   // e il tasto resta buono per quella sotto
   });
+}
+
+/* OGNI COLORE SCELTO SI RICORDA, da qualunque fila venga.
+
+   Le file di colori sono tre -- l'accento nel profilo, le cinque
+   superfici della libreria, il meeple -- e ognuna ha i suoi gestori
+   sparsi. Agganciarsi a tutti vorrebbe dire ricordarsene in sei punti,
+   piu' il settimo di domani: si ascolta il DOCUMENTO, come per il tasto
+   indietro.
+
+   Due sole cose contano, e sono le due in cui un colore viene SCELTO:
+   una pastiglia toccata, e la tavolozza chiusa (`change` sul campo
+   della ruota). Il `change` e non l'`input`: mentre si trascina passano
+   venti colori sotto il dito, e ricordarli tutti riempirebbe la lista
+   di tinte che nessuno ha voluto.
+
+   `TEMA.coloriUsati` fa da sola la deduplica e il taglio a tre. */
+function montaColoriUsati(){
+  if (typeof TEMA === 'undefined' || !TEMA.ricordaColore) return;
+  const ESA6 = /^#[0-9a-fA-F]{6}$/;
+
+  document.addEventListener('click', function(e){
+    const b = e.target.closest('.pastiglie button[data-v], .tav-accenti button[data-acc]');
+    if (!b) return;
+    const v = b.getAttribute('data-v') || b.getAttribute('data-acc') || '';
+    if (ESA6.test(v)) TEMA.ricordaColore(v);
+  }, true);
+
+  document.addEventListener('change', function(e){
+    const r = e.target.closest('input.ruota');
+    if (!r) return;
+    if (ESA6.test(r.value || '')) TEMA.ricordaColore(r.value);
+  }, true);
 }
 
 function chiudiPannelli(tranne){
@@ -7538,8 +7572,11 @@ function disegnaPastiglie(){
      `{corpo, fondo}` come esadecimali e basta, e le pastiglie erano
      l'unica cosa che li teneva su una lista. */
   const gruppo = function(sel, valori, campo, testo){
-    const scelto = valori.some(function(v){ return String(labAvatar[campo]) === String(v); });
-    const html = valori.map(function(v){
+    /* Tre pastiglie -- gli ultimi colori usati, gli stessi di tutto il
+       resto del sito -- e l'arcobaleno in fondo. Le file di TESTO (il
+       segno sul meeple) non sono colori e restano com'erano. */
+    const quali = testo ? valori : TEMA.coloriUsati();
+    const html = quali.map(function(v){
       const on = String(labAvatar[campo]) === String(v) ? ' class="on"' : '';
       const stile = testo ? '' : ' style="background:' + esc(v) + '"';
       return '<button type="button" data-v="' + esc(v) + '"' + on + stile + '>' +
@@ -7548,9 +7585,9 @@ function disegnaPastiglie(){
     const suo = labAvatar[campo] || '#000000';
     q(sel).innerHTML = html + (testo ? '' :
       '<input type="hidden" class="ruota" value="' + esc(suo) + '">' +
-      '<button type="button" class="ruota' + (scelto ? '' : ' on') + '" ' +
-      'style="background-color:' + esc(suo) + '" aria-haspopup="dialog" aria-expanded="false" ' +
-      'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '"></button>');
+      '<button type="button" class="ruota arcobaleno" aria-haspopup="dialog" aria-expanded="false" ' +
+      'title="' + esc(TP('stanza.ruota')) + '" aria-label="' + esc(TP('stanza.ruota')) + '">' +
+      TEMA.ICO_ARCOBALENO + '</button>');
     /* `button[data-v]` e non `button`: da quando la ruota E' un
        pulsante, "tutti i pulsanti di questa fila" comprendeva anche
        lei. Il risultato era che toccarla scriveva `null` nel colore --
@@ -8339,7 +8376,25 @@ function bindProfilo(){
   });
 
   q('#pro-cambia').addEventListener('click', apriLab);
-  q('#lab-annulla').addEventListener('click', chiudiLab);
+  /* LA CROCE E' IN DUE TEMPI. `armaBottone` qui non va: riscrive
+     l'`innerHTML` del pulsante con una parola, e questo pulsante e' un
+     segno, non una parola -- si porterebbe via la croce. Stessa
+     meccanica, scritta per un'icona: il primo tocco arma, il secondo
+     butta via, e dopo tre secondi e mezzo si disarma da sola. */
+  const labX = q('#lab-annulla');
+  let labXT = 0;
+  labX.addEventListener('click', function(){
+    if (labX.classList.contains('armed')){
+      clearTimeout(labXT);
+      labX.classList.remove('armed');
+      chiudiLab();
+      return;
+    }
+    labX.classList.add('armed');
+    SUONI.gioca('tocco');
+    clearTimeout(labXT);
+    labXT = setTimeout(function(){ labX.classList.remove('armed'); }, 3500);
+  });
   q('#lab-salva').addEventListener('click', async function(){
     const av = labAvatar;
     try { await PROFILO.salvaAvatar(av); flash(TP('msg.facciaSalvata')); }
@@ -10807,6 +10862,7 @@ async function boot(){
 
   setSort(state.sort);
   montaIndietro();
+  montaColoriUsati();
   const marchio = q('#brand');
   if (marchio) marchio.addEventListener('click', function(){
     setSezione('collezione');

@@ -1076,6 +1076,26 @@ body.sez-partite #partite{display:block}
   background:var(--card); border-radius:var(--r-s);
 }
 .pastiglie button.on{outline:2px solid var(--accent); outline-offset:1px}
+/* I DUE SEGNI DEL LABORATORIO: una spunta e una croce, non due frasi.
+   Quadrati e della stessa misura, perche' sono due gesti pari e
+   opposti; la croce e' rossa e armata mostra il pieno, come ogni altra
+   cosa che butta via qualcosa qui dentro. */
+.pro-lab-fondo .segno{
+  width:42px; height:42px; padding:0; border-radius:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:1px dashed var(--line); color:var(--ink);
+  transition:background-color .18s var(--ease), color .18s var(--ease),
+             border-color .18s var(--ease), transform .1s var(--ease);
+}
+.pro-lab-fondo .segno .ico{width:20px; height:20px}
+.pro-lab-fondo .segno:active{transform:translate(2px,2px)}
+.pro-lab-fondo #lab-salva:hover{border-color:var(--accent); color:var(--accent)}
+.pro-lab-fondo #lab-annulla{color:var(--rosso); border-color:rgba(var(--rosso-rgb),.7)}
+.pro-lab-fondo #lab-annulla:hover{background:rgba(var(--rosso-rgb),.14)}
+.pro-lab-fondo #lab-annulla.armed{
+  background:var(--rosso); color:var(--su-rosso); border-color:transparent;
+}
+
 .pro-lab-fondo{display:flex; gap:10px; margin:18px 0 0}
 #lab-salva, #ami-go, #nick-ok{
   font-family:var(--ff); font-size:11.5px; font-weight:900; letter-spacing:.09em;
@@ -2977,15 +2997,15 @@ body.sez-collezione:not(.elenco) header{
 #profilo #pro-tema-lista .tav-acc.on{
   box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent);
 }
+/* Anche qui la ruota porta l'arcobaleno e non un colore: stessa misura
+   delle pastiglie accanto, nessun bordo da spiegare. */
 #pro-tema-lista .ruota{
-  width:30px; height:30px; padding:5px; border-radius:0; cursor:pointer;
-  background-clip:content-box; border:1.5px dashed rgba(var(--ink-rgb),.34);
+  width:30px; height:30px; padding:0; border-radius:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:0;
   -webkit-appearance:none; appearance:none;
 }
-#pro-tema-lista .ruota.on{
-  border-style:solid; border-color:transparent;
-  box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent);
-}
+#pro-tema-lista .ruota .ico{width:20px; height:20px}
 
 @media (pointer:coarse){
   .tavolozze > summary{padding:11px 12px}
@@ -3219,17 +3239,28 @@ body.arreda #stanza{transform:none}
    lo shorthand riazzera `background-clip`, cioe' cancellerebbe il
    rientro dal lato del markup senza che si veda perche'. */
 input.ruota{display:none}
+/* L'ARCOBALENO NON HA PIU' BISOGNO DI SPIEGARSI. Il bordo tratteggiato
+   e il rientro servivano a dire "questo non e' un colore scelto, e'
+   dove li scegli": col colore addosso la ruota era indistinguibile da
+   una pastiglia, e il tratteggio era la toppa. Adesso porta sei strisce
+   e lo dice da se', quindi il fondo e il bordo se ne vanno e resta il
+   segno, grande quanto le pastiglie accanto. */
 .pastiglie.tinte .ruota, #stanza .pastiglie .ruota{
-  width:34px; height:34px; padding:5px; border-radius:0; cursor:pointer;
-  background-clip:content-box; border:1.5px dashed rgba(var(--ink-rgb),.34);
+  width:34px; height:34px; padding:0; border-radius:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:0;
   -webkit-appearance:none; appearance:none;
 }
-/* Scelto dalla ruota: l'anello dell'accento, come per i bollini, cosi'
-   si vede che a comandare e' lei e non uno dei predefiniti. */
-.pastiglie.tinte .ruota.on, #stanza .pastiglie .ruota.on{
-  border-style:solid; border-color:transparent;
-  box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--accent);
+.ruota.arcobaleno .ico{width:22px; height:22px}
+.ruota.arcobaleno{
+  box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.14);
+  transition:transform .12s var(--ease);
 }
+.ruota.arcobaleno:hover{transform:scale(1.06)}
+.ruota.arcobaleno:active{transform:scale(.94)}
+/* Non c'e' piu' nessuno stato "scelto" sulla ruota: non e' una scelta,
+   e' una porta. Quello che hai scelto si vede acceso fra le pastiglie,
+   o -- se non e' fra le tre -- sulla cosa stessa che stai colorando. */
 
 .pastiglie.testo button{
   width:auto; height:auto; border-radius:0; padding:8px 14px;
