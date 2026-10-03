@@ -5121,8 +5121,12 @@ function rigaCatalogo(v, i){
 
   /* Le misure, tutte battute a macchina: il voto di BGG apre la fila
      perche' su una riga di catalogo e' il dato che si confronta. */
+  /* L'anno va SENZA etichetta: un numero di quattro cifre fra 1900 e
+     oggi e' gia' una data e nient'altro, e "2024 ANNO" si legge come
+     un errore di battitura. Gli altri l'etichetta ce l'hanno perche'
+     senza non si distinguerebbero: 4 cosa, 90 cosa. */
   const spec = [[v.bggScore, T('rec.votoBgg')], [v.players, T('spec.giocatori')],
-                [v.time, T('spec.minuti')], [v.year, T('spec.anno')]]
+                [v.time, T('spec.minuti')], [v.year, '']]
     .filter(function(x){ return x[0]; })
     .map(function(x){ return '<li><b>' + esc(x[0]) + '</b>' + x[1] + '</li>'; }).join('');
 
@@ -7648,8 +7652,16 @@ function disegnaAmici(){
     T('ami.chiedeAmicizia'));
 
   elenco('#pro-amici', PROFILO.amici(),
-    '<button type="button" data-fa="libreria">' + T('ami.suaLibreria') + '</button>' +
-    '<button type="button" class="no" data-fa="togli">' + T('ami.togli') + '</button>', '');
+    /* L'ICONA DELLA LIBRERIA, non la frase. E' la stessa che apre lo
+       scaffale nella barra in basso, quindi dice "vai a vedere il suo"
+       senza bisogno di parole -- e su una riga che porta gia' nome e
+       meeple, due parole in piu' erano la terza cosa da leggere. */
+    '<button type="button" data-fa="libreria" class="segno" title="' + esc(TP('ami.suaLibreria')) +
+      '" aria-label="' + esc(TP('ami.suaLibreria')) + '">' + ICO.scaffale + '</button>' +
+    /* E togliere un amico e' una croce in due tempi: e' la cosa che non
+       si disfa, e stava accanto all'altra con lo stesso peso. */
+    '<button type="button" class="no segno" data-fa="togli" title="' + esc(TP('ami.togli')) +
+      '" aria-label="' + esc(TP('ami.togli')) + '">' + ICO.chiudi + '</button>', '');
 
   elenco('#pro-attesa', PROFILO.inAttesa(),
     '<button type="button" class="no" data-fa="togli">' + T('ami.ritira') + '</button>',
@@ -7699,10 +7711,19 @@ function suggerisciNick(p){
   return n.split(' ')[0].replace(/[^\w \-.']/g, '').slice(0, 20);
 }
 
+function contaNick(){
+  const c = q('#nick-conta'), i = q('#nick-q');
+  if (!c || !i) return;
+  const max = parseInt(i.getAttribute('maxlength'), 10) || 0;
+  c.textContent = i.value.length + '/' + max;
+  c.classList.toggle('pieno', max && i.value.length >= max);
+}
+
 function apriNick(cambio){
   const p = PROFILO.mio();
   if (!p) return;
   q('#nick-q').value = cambio ? (p.nick || '') : suggerisciNick(p);
+  contaNick();
   q('#nick-msg').textContent = '';
   q('#nick').classList.add('on');
   q('#nick').setAttribute('aria-hidden', 'false');
@@ -8571,7 +8592,24 @@ function bindProfilo(){
           return;
         }
         if (fa === 'accetta') await PROFILO.accetta(id);
-        if (fa === 'togli')   await PROFILO.togli(id);
+        if (fa === 'togli'){
+          /* IN DUE TEMPI. Un amico tolto va richiesto di nuovo e
+             aspettato, quindi non e' un gesto che si disfa da soli: il
+             primo tocco arma la croce, il secondo toglie, e dopo tre
+             secondi e mezzo si disarma. Vale per tutte e tre le file --
+             rifiutare una richiesta e ritirarne una sono la stessa
+             croce -- perche' il gestore e' uno solo. */
+          if (!b.classList.contains('armed')){
+            b.disabled = false;
+            b.classList.add('armed');
+            SUONI.gioca('tocco');
+            setTimeout(function(){
+              if (b.isConnected) b.classList.remove('armed');
+            }, 3500);
+            return;
+          }
+          await PROFILO.togli(id);
+        }
         disegnaAmici();
       } catch(err){
         b.disabled = false;
@@ -10863,6 +10901,8 @@ async function boot(){
   setSort(state.sort);
   montaIndietro();
   montaColoriUsati();
+  const nickQ = q('#nick-q');
+  if (nickQ) nickQ.addEventListener('input', contaNick);
   const marchio = q('#brand');
   if (marchio) marchio.addEventListener('click', function(){
     setSezione('collezione');

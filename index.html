@@ -735,10 +735,6 @@
          Il volume vero resta nel pannello della libreria, accanto a
          luce e faretti. Qui c'e' l'interruttore, che e' la domanda che
          ci si fa da fermi -- lo voglio o no -- e non "quanto forte". -->
-    <p class="lingua" id="pro-suono-riga" role="group">
-      <span class="lingua-tit" data-i18n="pro.suono">suono</span>
-      <button id="pro-suono" type="button" aria-pressed="true"></button>
-    </p>
 
     <!-- LA TENDINA DELLE TAVOLOZZE. E' un `<details>` e non un
          `<select>`: il selettore del sistema operativo non somiglia a
@@ -755,11 +751,20 @@
      chi ascolta, sta in `localStorage` e non viaggia con nessuno. Sta
      accanto al suo interruttore, che e' l'altra meta' della stessa
      scelta. -->
+<!-- UNA RIGA SOLA PER IL SUONO. C'erano due righe: un interruttore che
+     diceva "acceso"/"spento" e, da un'altra parte, il cursore del
+     volume. Sono la stessa scelta -- quanto forte, e se lo voglio --
+     e un volume a zero e' gia' "spento": due comandi che possono
+     contraddirsi raccontando la stessa cosa.
+
+     L'altoparlante sta a destra del cursore, dove finisce il gesto: lo
+     spegne del tutto e lo riaccende a com'era. -->
 <p class="pro-volume">
   <span data-i18n="stanza.suono">suono</span>
   <input id="st-suono" type="range" min="0" max="1" step="0.02" value="0.6"
          data-i18n-aria="stanza.suonoAria" aria-label="volume dei suoni">
   <b id="st-suono-n">60%</b>
+  <button id="pro-suono" type="button" class="altoparlante" aria-pressed="true"></button>
 </p>
 
 <details class="tavolozze" id="pro-tema">
@@ -855,9 +860,14 @@
     <h2 data-i18n="nick.h">Come ti chiamiamo?</h2>
     <p class="nick-nota" data-i18n="nick.nota">Il nick e' come ti vedono gli amici. Si cambia quando
       vuoi dal profilo.</p>
+    <!-- IL LIMITE SI VEDE MENTRE SCRIVI. `maxlength` ferma e basta: si
+         continua a battere e non compare niente, e per un attimo si
+         pensa che la tastiera non funzioni. Il contatore dice quanto
+         resta, e arrivato a zero dice perche' si e' fermato. -->
     <div class="nick-riga">
       <input id="nick-q" type="text" maxlength="12" autocomplete="off"
              spellcheck="false" data-i18n-aria="nick.aria" aria-label="il tuo nick">
+      <b id="nick-conta" aria-hidden="true">0/12</b>
       <button id="nick-ok" type="button" data-i18n="nick.ok">avanti</button>
     </div>
     <p id="nick-msg"></p>
@@ -1033,10 +1043,6 @@
   <div class="add-card" role="dialog" aria-labelledby="gru-h">
     <p class="eyebrow" data-i18n="gru.occhiello">etichette</p>
     <h2 id="gru-h" data-i18n="gru.h">I tuoi gruppi</h2>
-    <p class="mia-nota" data-i18n="gru.nota">Un gioco pu&ograve; stare in pi&ugrave; gruppi, e i gruppi
-      attraversano le librerie: rispondono a <b>che cos&rsquo;&egrave;</b>, non a
-      dove sta.</p>
-
     <div class="pro-aggiungi">
       <input id="gru-nuovo" type="text" data-i18n-ph="gru.ph" maxlength="30" placeholder="party games, strategici&hellip;"
              autocomplete="off" maxlength="30" data-i18n-aria="gru.aria" aria-label="nome del gruppo">

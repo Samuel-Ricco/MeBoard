@@ -514,13 +514,39 @@ sblocca();
    fabbrica ogni volta. */
 let prima = vol || VOL_DEF;
 
+/* UN ALTOPARLANTE, NON DUE PAROLE.
+
+   Diceva "acceso" / "spento", e stava su una riga sua lontana dal
+   cursore del volume: due comandi per la stessa cosa, che potevano
+   anche contraddirsi -- volume a zero e scritto "acceso".
+
+   Adesso e' il segno di sempre, a destra del cursore: col suono le
+   onde ci sono, senza c'e' la croce. Si legge senza leggere, e in
+   qualunque lingua. */
+const ALTOP_SU =
+  '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+  '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+  'stroke-linejoin="round" d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z"/>' +
+  '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+  'd="M15.5 9.5a4 4 0 0 1 0 5M18 7a7.5 7.5 0 0 1 0 10"/></svg>';
+const ALTOP_GIU =
+  '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+  '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+  'stroke-linejoin="round" d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z"/>' +
+  '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+  'd="M16 10l5 4M21 10l-5 4"/></svg>';
+
 function disegnaInterruttore(){
   const b = document.getElementById('pro-suono');
   if (!b) return;
   const su = vol > 0;
   b.setAttribute('aria-pressed', su ? 'true' : 'false');
-  b.textContent = (typeof T === 'function') ? T(su ? 'pro.suonoOn' : 'pro.suonoOff')
-                                           : (su ? 'acceso' : 'spento');
+  b.classList.toggle('muto', !su);
+  b.innerHTML = su ? ALTOP_SU : ALTOP_GIU;
+  const che = (typeof T === 'function') ? T(su ? 'pro.suonoOn' : 'pro.suonoOff')
+                                        : (su ? 'acceso' : 'spento');
+  b.title = che;
+  b.setAttribute('aria-label', che);
 }
 
 function montaInterruttore(){

@@ -1110,7 +1110,11 @@ body.sez-partite #partite{display:block}
 }
 #lab-annulla:hover{color:var(--ink); border-color:var(--accent)}
 
+/* OGNI BLOCCO HA IL SUO FILO SOPRA, giocatori compresi: senza, quella
+   sezione si attaccava a quella del suono e si leggeva come se ne
+   facesse parte. */
 .pro-blocco{margin:0; border-top:1px dashed var(--line)}
+.pro-volume{padding-top:16px; border-top:1px dashed var(--line)}
 .pro-blocco:first-of-type{margin-top:34px}
 .pro-blocco h3{margin:0}
 /* Il titolo E' il pulsante: tutta la riga si preme, non una freccetta
@@ -4563,6 +4567,40 @@ body.muro-scuro.sez-collezione:not(.elenco) header{
   color:var(--ink-soft);
 }
 .pro-volume input[type=range]{flex:1; min-width:0}
+/* L'altoparlante chiude la riga: stessa altezza del cursore, nessun
+   riquadro -- e' un segno, non un pulsante da leggere. Muto diventa
+   tenue, perche' spento deve SEMBRARE spento. */
+.pro-volume .altoparlante{
+  flex:none; padding:4px; border:0; background:none; cursor:pointer;
+  color:var(--ink); line-height:0; border-radius:var(--r-s);
+  transition:color .18s var(--ease), background-color .18s var(--ease);
+}
+.pro-volume .altoparlante .ico{width:19px; height:19px}
+.pro-volume .altoparlante:hover{background:rgba(var(--ink-rgb),.1)}
+.pro-volume .altoparlante.muto{color:var(--ink-soft)}
+.pro-volume .altoparlante:active{transform:translate(1px,1px)}
+
+/* IL CONTATORE DEL NICK. Tenue finche' c'e' spazio, acceso quando non
+   ce n'e' piu': e' li' per spiegare perche' la tastiera ha smesso. */
+#nick-conta{
+  flex:none; font-family:var(--ff-mono); font-size:11px;
+  color:var(--ink-soft); font-variant-numeric:tabular-nums;
+}
+#nick-conta.pieno{color:var(--accent)}
+
+/* I DUE SEGNI SU UNA RIGA DI AMICO: quadrati e pari, come la spunta e
+   la croce del laboratorio. La croce armata si riempie di rosso. */
+#pro-amici .segno, #pro-richieste .segno, #pro-attesa .segno{
+  width:34px; height:34px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  line-height:0;
+}
+#pro-amici .segno .ico, #pro-richieste .segno .ico, #pro-attesa .segno .ico{
+  width:17px; height:17px;
+}
+#pro-amici .no.armed, #pro-richieste .no.armed, #pro-attesa .no.armed{
+  background:var(--rosso); color:var(--su-rosso); border-color:transparent;
+}
 .pro-volume b{
   flex:none; font-family:var(--ff-display); font-weight:900; text-transform:uppercase; font-size:12px; letter-spacing:.02em;
   color:var(--ink-soft); font-variant-numeric:tabular-nums;
@@ -5332,7 +5370,15 @@ input::placeholder, textarea::placeholder{
   letter-spacing:-.035em; text-transform:uppercase; color:var(--ink);
 }
 .testa-n:empty{display:none}
-.testa-n i{font-style:normal; color:rgba(var(--ink-rgb),.42)}
+/* LA SECONDA RIGA E' PIU' PICCOLA. Erano due righe della stessa
+   misura, e si leggevano come due titoli pari: ma "14 giochi" e' la
+   risposta, e "11 esposti" e' una nota a margine di quella risposta --
+   quanti di quei quattordici si vedono sullo scaffale. Stessa gerarchia
+   che hanno gia' i colori: il grigio dice che e' il secondo. */
+.testa-n i{
+  font-style:normal; color:rgba(var(--ink-rgb),.42);
+  font-size:.62em; letter-spacing:-.02em;
+}
 /* Il riepilogo sotto e' passato a didascalia: dice PERCHE' sono quelli
    -- quale ricerca, quale filtro -- e il quanto lo dice il numero. */
 #mia-msg, #cat-msg{font-size:12px; color:var(--ink-soft)}
