@@ -974,6 +974,7 @@ function buildCabinet(){
   cabGroup = g;
   scene.add(g);
   sfumaTarghe();          // gia' dal primo fotogramma, non al primo scorrimento
+  segnaScorta();
 
   /* LA TARGA APPENA FATTA VA SUBITO SCALATA.
 
@@ -2803,6 +2804,15 @@ function allineaComandi(){
 const camXFor = s => s * PASSO_LIB;
 
 // L'ultima libreria: oltre ci sarebbe solo parete
+/* IL PIU' SI VEDE SOLO SUL MOBILE DI SCORTA. Sta sul `body` e non sul
+   pulsante perche' il CSS lo nasconde insieme a tutto il resto quando
+   si apre una scheda, e una classe sola decide per tutti. */
+function segnaScorta(){
+  const vere = LIB.librerie().length;
+  document.body.classList.toggle('su-scorta',
+    state.phase === 'browse' && Math.round(state.scroll) >= vere);
+}
+
 function maxScroll(){
   return Math.max(0, state.libs - 1);
 }
@@ -4184,21 +4194,6 @@ function bindInput(){
   const bDel = q('#del');
   if (bDel) armaBottone(bDel, 'pan.eliminaLungo', 'pan.eliminaOk', removeFocused);
 
-  /* ELIMINARE DAL MODULO DI CORREZIONE. Stessa meccanica di ogni altro
-     comando che distrugge nel sito -- due tempi sullo stesso pulsante,
-     niente `window.confirm` che bloccherebbe il rendering -- e lavora
-     su `inModifica`, cioe' sul gioco di cui si e' aperta la scheda. */
-  const bDelM = q('#m-del');
-  if (bDelM) armaBottone(bDelM, 'riga.eliminaGioco', 'stanza.menoOk', function(){
-    const id = inModifica;
-    if (!id) return;
-    closeAdd();              // chiude il modulo, e con lui `chiudiModifica`
-    LIB.remove(id);
-    disegnaMia();
-    updateConta();
-    ridisponi();
-    flash(TP('msg.giocoEliminato'));
-  });
   q('#panel').addEventListener('pointerup', function(e){ e.stopPropagation(); });
 
   let rt;
@@ -4329,9 +4324,16 @@ function bindTools(){
 function setSort(mode){
   state.sort = mode;
   try { localStorage.setItem('meboard-ordine', mode); } catch(e){}
+  let suo = '';
   qa('#sortmenu button').forEach(function(b){
-    b.classList.toggle('on', b.getAttribute('data-sort') === mode);
+    const e = b.getAttribute('data-sort') === mode;
+    b.classList.toggle('on', e);
+    if (e) suo = b.textContent.trim();
   });
+  /* Chiusa, la tendina dice gia' quale ordine e' in uso: aprirla solo
+     per sapere dove si e' sarebbe aprirla per niente. */
+  const ora = q('#vista-ordine-ora');
+  if (ora) ora.textContent = suo;
   ridisponi();
   if (document.body.classList.contains('elenco')) disegnaMia();
 }
@@ -4541,11 +4543,9 @@ function apriModifica(game){
   q('#addlayer').setAttribute('aria-hidden','false');
   q('#add-h').textContent = TP('add.hCorreggi');
   q('#m-go').textContent = TP('add.salvaModifiche');
-  /* Il cestino esiste solo qui: aggiungendo un gioco non c'e' ancora
-     niente da buttare. E si riarma, se la volta prima era rimasto a
-     meta' -- `armaBottone` lascia la sua `__disarma` sul nodo. */
-  const bDelM = q('#m-del');
-  if (bDelM){ bDelM.hidden = false; if (bDelM.__disarma) bDelM.__disarma(); }
+  /* Il cestino qui non c'e' piu': e' tornato nel menu della riga, dove
+     adesso le due rimozioni si distinguono per nome. Due porte per un
+     gesto che non si disfa sono una di troppo. */
 
   const set = function(sel, v){ q(sel).value = v == null ? '' : String(v); };
   set('#m-title', game.title);       set('#m-bgg', game.bgg);
@@ -4567,11 +4567,6 @@ function chiudiModifica(){
   q('#addlayer').classList.remove('correzione');
   q('#add-h').innerHTML = T('add.h');
   q('#m-go').textContent = TP('add.metti');
-  /* Il cestino se ne va col gioco a cui apparteneva, e disarmato: se
-     restasse armato, riaprendo un ALTRO gioco il primo tocco lo
-     cancellerebbe senza aver chiesto niente. */
-  const bDelM = q('#m-del');
-  if (bDelM){ if (bDelM.__disarma) bDelM.__disarma(); bDelM.hidden = true; }
 }
 
 async function doSearch(){
@@ -7187,15 +7182,26 @@ function contenutoAzioni(g){
             le note; e' solo che quando le hanno scritte il menu non
             c'era ancora.
 
-            E' l'ULTIMA voce, perche' eliminare se n'e' andato: sta
-            dentro la scheda che questa voce apre -- vedi `#m-del` nel
-            markup. Questo menu si apre scorrendo un elenco, spesso col
-            pollice, e due comandi che si somigliano nel nome e per
-            niente nelle conseguenze non ci stanno bene vicini. */
+            Sta PRIMA delle due rimozioni: correggere e' la cosa
+            piu' innocua, e quello che toglie resta in fondo. */
          '<button type="button" data-fa="gruppi">' +
            ICO.etichetta + '<span>' + T('riga.aiGruppi') + '</span></button>' +
          '<button type="button" data-fa="scheda">' +
-           ICO.matita + '<span>' + T('riga.scheda') + '</span></button>';
+           ICO.matita + '<span>' + T('riga.scheda') + '</span></button>' +
+         /* LE DUE RIMOZIONI, DETTE PER INTERO.
+
+            Erano "rimuovi" ed "elimina il gioco": due parole diverse
+            per due gesti che si somigliano, e che la prima non
+            distingueva da niente -- rimuovi da dove? Il guaio non era
+            che fossero vicine, era che non si capiva quale fosse
+            quale, e per un po' la seconda e' stata spostata altrove
+            per questo. Adesso dicono dove tolgono: dalla LIBRERIA, che
+            e' lo scaffale e si disfa in un tocco, o dalla COLLEZIONE,
+            che e' tutto e non si disfa.
+
+            La seconda resta ultima, rossa e in due tempi. */
+         '<button type="button" data-fa="elimina" class="elimina">' +
+           ICO.cestino + '<span>' + T('riga.eliminaGioco') + '</span></button>';
 }
 
 /* LA SCATOLA DEI GRUPPI, dentro il menu della riga.
@@ -8714,6 +8720,31 @@ function bindProfilo(){
           disegnaMia();
         })
         .catch(function(err){ flash(TP('msg.nonRiuscito', {e: err.message})); });
+      return;
+    }
+
+    /* RIMUOVERE DALLA COLLEZIONE: due tempi sul pulsante stesso, come
+       ogni altra cosa che non si disfa. `window.confirm` bloccherebbe
+       il rendering, e una finestra di sistema qui stonerebbe. */
+    const del = e.target.closest('[data-fa="elimina"]');
+    if (del){
+      const dice = del.querySelector('span') || del;
+      if (del.classList.contains('armed')){
+        LIB.remove(id);
+        chiudiAzioni(null);
+        disegnaMia();
+        updateConta();
+        ridisponi();
+        flash(TP('msg.giocoEliminato'));
+      } else {
+        del.classList.add('armed');
+        dice.textContent = TP('stanza.menoOk');
+        setTimeout(function(){
+          if (!del.isConnected) return;
+          del.classList.remove('armed');
+          dice.textContent = TP('riga.eliminaGioco');
+        }, 3500);
+      }
       return;
     }
 
@@ -10660,6 +10691,7 @@ function frame(now){
       seguiCella();          // il menu della cella e' ancorato a un cubo che si muove
       allineaComandi();      // la camera si e' spostata: la proiezione e' un'altra
       sfumaTarghe();         // il nome che conta e' quello del mobile inquadrato
+      segnaScorta();         // e il piu' si vede solo sul mobile di scorta
       rifaiOmbre();          // la luce di finestra segue camBase: l'ombra si sposta
       sporcaMirino();        // sotto il puntatore adesso c'e' un'altra scatola
     }
@@ -11105,6 +11137,17 @@ async function boot(){
   setSort(state.sort);
   montaIndietro();
   montaColoriUsati();
+  const piuLib = q('#lib-piu');
+  if (piuLib) piuLib.addEventListener('click', function(){
+    piuLib.disabled = true;
+    LIB.creaLibreria('').then(function(L){
+      disegnaLibrerie();
+      ridisponi();
+      flash(TP('msg.libNuova', {n: L.nome}));
+    }).catch(function(e){
+      flash(TP('msg.libNonCreata', {e: e.message}));
+    }).then(function(){ piuLib.disabled = false; });
+  });
   const nickQ = q('#nick-q');
   if (nickQ) nickQ.addEventListener('input', contaNick);
   const marchio = q('#brand');

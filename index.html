@@ -138,7 +138,8 @@
 
 <aside id="vista" aria-hidden="true" data-i18n-aria="vista.aria" aria-label="cosa vedi sullo scaffale">
   <button id="vista-x" type="button" data-i18n-aria="pan.chiudi" aria-label="chiudi">&times;</button>
-  <p class="eyebrow" data-i18n="vista.occhiello">la vista</p>
+  <!-- Via l'occhiello "la vista": il pannello si apre da un imbuto, e
+       un imbuto dice gia' che si sta filtrando. -->
 
   <div class="cercawrap">
     <input id="cerca" type="text" data-i18n-ph="vista.cercaPh" maxlength="60" placeholder="cerca un gioco&hellip;"
@@ -148,20 +149,46 @@
             data-i18n-aria="vista.pulisciAria" aria-label="pulisci">&times;</button>
   </div>
 
-  <p class="vista-tit" data-i18n="vista.ordinaPer">ordina per</p>
-  <div id="sortmenu" role="menu" class="vista-scelte">
-    <button type="button" data-sort="mio" role="menuitem" data-i18n="sort.mio">il mio ordine</button>
-    <button type="button" data-sort="aggiunta" role="menuitem" data-i18n="sort.aggiunta">data di aggiunta</button>
-    <button type="button" data-sort="nome" role="menuitem" data-i18n="sort.nome">nome</button>
-    <button type="button" data-sort="voto" role="menuitem" data-i18n="sort.votoBgg">voto BGG</button>
-    <button type="button" data-sort="votoMio" role="menuitem" data-i18n="sort.votoMio">il mio voto</button>
-  </div>
+  <!-- CERCARE RESTA IN CHIARO, ORDINARE VA IN UNA TENDINA.
 
-  <!-- Il nome del mobile non sta piu' in fondo allo schermo, ma la porta
-       per crearne e rinominarne deve restare da qualche parte: e' qui. -->
-  <p class="vista-tit dentro-only" data-i18n="vista.ilMobile">il mobile</p>
-  <button id="vista-mobili" type="button" class="dentro-only vista-riga"></button>
+       Sono due cose di peso diverso che stavano una sotto l'altra con
+       lo stesso peso: cercare un gioco e' quello che si fa quasi
+       sempre, scegliere un ordine e' quello che si fa una volta e poi
+       resta cosi' per mesi. Cinque voci sempre aperte sotto il campo
+       facevano del pannello un elenco, e del campo una riga fra le
+       altre.
+
+       Chiusa dice gia' quale ordine e' in uso, che e' l'unica cosa che
+       serve sapere senza aprirla. -->
+  <details class="vista-ordine">
+    <summary><span data-i18n="vista.ordinaPer">ordina per</span><b id="vista-ordine-ora"></b></summary>
+    <div id="sortmenu" role="menu" class="vista-scelte">
+      <button type="button" data-sort="mio" role="menuitem" data-i18n="sort.mio">il mio ordine</button>
+      <button type="button" data-sort="aggiunta" role="menuitem" data-i18n="sort.aggiunta">data di aggiunta</button>
+      <button type="button" data-sort="nome" role="menuitem" data-i18n="sort.nome">nome</button>
+      <button type="button" data-sort="voto" role="menuitem" data-i18n="sort.votoBgg">voto BGG</button>
+      <button type="button" data-sort="votoMio" role="menuitem" data-i18n="sort.votoMio">il mio voto</button>
+    </div>
+  </details>
 </aside>
+
+<!-- IL PIU' SUL MOBILE DI SCORTA.
+
+     In fondo alla fila c'e' sempre un mobile vuoto e trasparente: ci si
+     trascina dentro una scatola e la libreria nasce. Il gesto c'era, ma
+     non si vedeva -- chi scorreva fin li' trovava un mobile finto e
+     nessun modo di dire "si', voglio questo", e per farne uno doveva
+     passare dal pannello.
+
+     Compare solo quando quel mobile e' quello inquadrato, perche' e'
+     l'unico momento in cui vuol dire qualcosa. -->
+<!-- NIENTE `dentro-only`: quella classe porta un `!important` che
+     vince su tutto -- sta scritto nelle note -- e accendeva il piu'
+     anche sui mobili veri. La condizione "sei dentro" sta nella sua
+     regola, insieme a "sei sul mobile di scorta". -->
+<button id="lib-piu" type="button"
+        data-i18n-title="vista.nuovaLib" title="aggiungi una libreria"
+        data-i18n-aria="vista.nuovaLib" aria-label="aggiungi una libreria"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg></button>
 
 <!-- ARREDARE LA STANZA. Un pannello che sta SOPRA la scena e non la
      copre: si sceglie e si vede subito, che e' l'unico modo di
@@ -1002,29 +1029,6 @@
         </label>
         <button id="m-go" type="button" data-i18n="add.metti">metti sullo scaffale</button>
 
-        <!-- ELIMINARE STA QUI, e solo correggendo (`body`/`#addlayer`
-             in `correzione`): aggiungendo un gioco non c'e' ancora
-             niente da buttare.
-
-             Veniva dal menu a tre punti della riga, e li' stava male
-             per un motivo di gesto, non di gerarchia: quel menu si apre
-             scorrendo un elenco, spesso col pollice, e teneva accanto
-             due comandi che si somigliano nel nome e per niente nelle
-             conseguenze -- «rimuovi dallo scaffale», che si disfa in un
-             clic, ed «elimina il gioco», che no.
-
-             NON SI PUO' PERO' SEMPLICEMENTE TOGLIERE, ed e' gia'
-             successo una volta: il `#del` nel piede della scheda fa
-             «rimuovi dallo scaffale», quindi senza questo cancellare un
-             gioco dalla collezione non si potrebbe fare da nessuna
-             parte, e i giochi resterebbero li' per sempre. Qui invece
-             si arriva aprendo apposta la scheda di QUEL gioco: e' una
-             stanza in cui si entra, non una porta che si sfiora.
-
-             Resta rosso e in due tempi, come ogni altra cosa che
-             distrugge nel sito. -->
-        <button id="m-del" type="button" class="distruttivo" hidden
-                data-i18n="riga.eliminaGioco">elimina il gioco</button>
       </div>
     </details>
 

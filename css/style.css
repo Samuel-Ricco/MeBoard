@@ -1451,6 +1451,43 @@ body.vista #vista{opacity:1; visibility:visible; transform:none; transition-dela
 }
 .aggiungi:hover{background:var(--accent); color:var(--card); border-style:solid}
 
+/* IL PIU' DEL MOBILE DI SCORTA. Sta al centro, sopra alla scena, dove
+   sta il mobile che si guarda: e' l'unico comando del sito che punta a
+   una cosa DENTRO la scena invece che a un pannello, e in un angolo si
+   scollegherebbe da quello a cui si riferisce.
+
+   Non c'e' finche' non si e' davvero sul mobile vuoto. */
+#lib-piu{
+  position:fixed; z-index:4; left:50%; top:52%; transform:translate(-50%,-50%);
+  width:56px; height:56px; padding:0; border-radius:0; cursor:pointer;
+  display:none; align-items:center; justify-content:center;
+  color:var(--ink); background:rgba(var(--card-rgb),.86);
+  border:2px dashed var(--line);
+  transition:border-color .18s var(--ease), color .18s var(--ease);
+}
+#lib-piu .ico{width:26px; height:26px}
+body.dentro.su-scorta #lib-piu{display:inline-flex}
+body.review #lib-piu, body.elenco #lib-piu, body.arreda #lib-piu,
+body.vista #lib-piu, body.visita #lib-piu{display:none !important}
+#lib-piu:hover{border-color:var(--accent); color:var(--accent)}
+
+/* La tendina dell'ordine: chiusa dice gia' quale ordine e' in uso, che
+   e' l'unica cosa che serve sapere senza aprirla. */
+.vista-ordine{margin:14px 0 0}
+.vista-ordine > summary{
+  display:flex; align-items:baseline; gap:8px; cursor:pointer; list-style:none;
+  padding:9px 10px; border-radius:var(--r-s);
+  font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-soft); background:rgba(var(--ink-rgb),.06);
+}
+.vista-ordine > summary::-webkit-details-marker{display:none}
+.vista-ordine > summary b{
+  margin-left:auto; font-family:var(--ff-text); font-weight:500;
+  letter-spacing:.04em; text-transform:none; color:var(--ink);
+}
+.vista-ordine > summary:hover{color:var(--ink)}
+.vista-ordine .vista-scelte{padding-top:6px}
+
 #stanza-apri{
   position:fixed; z-index:5; left:clamp(12px,2.4vw,28px); bottom:24px;
   font-size:17px; line-height:1; cursor:pointer; color:var(--ink-soft);
@@ -2821,16 +2858,6 @@ body.elenco #conta b{color:var(--su-accent)}
 .distruttivo:hover{background:rgba(var(--rosso-rgb),.14); color:var(--rosso)}
 .distruttivo.armed{background:var(--rosso); color:var(--su-rosso); border-color:transparent}
 
-/* IL CESTINO DEL MODULO DI CORREZIONE. Sta sotto a "salva", staccato,
-   e largo quanto lui: e' l'ultima cosa della scheda, come ogni comando
-   che distrugge in ogni altro piede del sito.
-
-   `[hidden]` scritto a mano perche' in questo foglio ci sono gia'
-   finite regole che vincevano sul `display:none` del browser -- vedi
-   `.score[hidden]` -- e un pulsante che cancella non e' il posto dove
-   scoprirlo di nuovo. */
-#m-del{width:100%; margin:14px 0 0}
-#m-del[hidden]{display:none}
 
 /* Il piede di un pannello: annulla a sinistra, l'azione a destra, e la
    riga sta in fondo -- non una croce in un angolo. */
