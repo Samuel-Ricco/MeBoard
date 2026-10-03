@@ -265,6 +265,9 @@ const ICO = {
   /* Nel catalogo il gesto e' uno solo -- aggiungilo -- e su una riga
      che si scorre una parola in piu' e' rumore: un "+" lo dice meglio.
      Cosa faccia per esteso resta nel `title`. */
+  /* I gruppi sono ETICHETTE, non contenitori: il segno e' un cartellino
+     con il suo buco, non una cartella. */
+  etichetta: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 11.2V4.5h6.7L20 13.8 13.8 20z"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>',
   piu:      '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>',
   spunta:   '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   /* Le due frecce del binario, riusate dal calendario: e' lo stesso
@@ -6696,6 +6699,52 @@ function montaColoriUsati(){
   }, true);
 }
 
+/* RINOMINARE DOVE IL NOME STA SCRITTO.
+
+   Il nome di un gruppo si cambiava da un pannello a parte: si usciva
+   dall'elenco, si cercava la riga giusta in una lista diversa e si
+   tornava. Qui il titolo diventa un campo al suo posto, e si conferma
+   con Invio o uscendo dal campo. Esc lascia perdere.
+
+   Il campo nasce con il nome gia' selezionato: rinominare quasi sempre
+   vuol dire riscrivere, non correggere una lettera. */
+function rinominaGruppoQui(cartella, G){
+  if (!cartella) return;
+  const riga = cartella.querySelector('.cartella-riga');
+  const tit = cartella.querySelector('.cartella-tit');
+  if (!riga || !tit || riga.querySelector('input')) return;
+
+  const campo = document.createElement('input');
+  campo.type = 'text';
+  campo.className = 'cartella-nome';
+  campo.value = G.nome;
+  campo.maxLength = 24;
+  campo.setAttribute('aria-label', TP('gru.rinomina'));
+  tit.hidden = true;
+  riga.insertBefore(campo, riga.firstChild);
+  campo.focus();
+  campo.select();
+
+  let chiuso = false;
+  const finisci = async function(salva){
+    if (chiuso) return;
+    chiuso = true;
+    const nuovo = campo.value.trim();
+    campo.remove();
+    tit.hidden = false;
+    if (!salva || !nuovo || nuovo === G.nome) return;
+    try { await LIB.rinominaGruppo(G.id, nuovo); }
+    catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); }
+    disegnaMia();
+  };
+  campo.addEventListener('keydown', function(ev){
+    ev.stopPropagation();          // le lettere non vanno alle scorciatoie della scena
+    if (ev.key === 'Enter'){ ev.preventDefault(); finisci(true); }
+    if (ev.key === 'Escape'){ ev.preventDefault(); finisci(false); }
+  });
+  campo.addEventListener('blur', function(){ finisci(true); });
+}
+
 function chiudiPannelli(tranne){
   if (tranne !== 'vista')   chiudiVista();
   if (tranne !== 'arreda')  chiudiArreda();
@@ -6703,7 +6752,11 @@ function chiudiPannelli(tranne){
      l'ordine di quello che l'elenco mostra, e si apre proprio sopra di
      lui. Aprendolo si chiudeva l'elenco sotto, cioe' si buttava via la
      cosa che si stava filtrando. */
-  if (tranne !== 'elenco' && tranne !== 'vista') chiudiElenco();
+  /* Ne' i GRUPPI: il loro pannello si apre DA dentro l'elenco, sui
+     gruppi che l'elenco sta mostrando. Chiudendolo, creare un gruppo
+     riportava allo scaffale -- si toccava "aggiungi gruppo", si
+     scriveva il nome, e la collezione spariva da sotto. */
+  if (tranne !== 'elenco' && tranne !== 'vista' && tranne !== 'gruppi') chiudiElenco();
   if (tranne !== 'mia')     chiudiMia();
   if (tranne !== 'partita') chiudiPartita();
   if (tranne !== 'add')     closeAdd();
@@ -7018,7 +7071,7 @@ function scaffaleRiga(g){
          '</span>';
 }
 
-function rigaMia(g){
+function rigaMia(g, gruppoId){
   const cop = g.cover
     ? '<img src="' + esc(g.cover) + '" alt="" loading="lazy" decoding="async">'
     : '<span class="senza">' + esc(String(g.title || '?').slice(0, 1).toUpperCase()) + '</span>';
@@ -7040,6 +7093,16 @@ function rigaMia(g){
        finestrella si ancora al PULSANTE, non alla riga -- se no, con le
        informazioni aperte sotto, uscirebbe mezzo schermo piu' in giu'
        di dove si e' premuto. */
+    /* DENTRO UNA CARTELLA C'E' ANCHE LA CROCE. Toglie il gioco da
+       QUEL gruppo e da nessun altro -- un gioco sta in piu' gruppi, e
+       una croce che li togliesse tutti sarebbe la stessa icona per due
+       gesti diversi. Fuori dalle cartelle non c'e': li' non esiste un
+       "questo gruppo" da cui togliere. */
+    (gruppoId && gruppoId !== '__senza'
+      ? '<button type="button" class="riga-fuorigruppo" data-fuorig="' + esc(gruppoId) + '" ' +
+        'title="' + esc(TP('gru.togliDa')) + '" aria-label="' + esc(TP('gru.togliDa')) + '">' +
+        ICO.chiudi + '</button>'
+      : '') +
     '<div class="riga-menuwrap">' +
       '<button type="button" class="riga-menu" data-fa="menu" aria-expanded="false" ' +
         'aria-label="cosa posso farci">' + ICO.menu + '</button>' +
@@ -7129,8 +7192,31 @@ function contenutoAzioni(g){
             markup. Questo menu si apre scorrendo un elenco, spesso col
             pollice, e due comandi che si somigliano nel nome e per
             niente nelle conseguenze non ci stanno bene vicini. */
+         '<button type="button" data-fa="gruppi">' +
+           ICO.etichetta + '<span>' + T('riga.aiGruppi') + '</span></button>' +
          '<button type="button" data-fa="scheda">' +
            ICO.matita + '<span>' + T('riga.scheda') + '</span></button>';
+}
+
+/* LA SCATOLA DEI GRUPPI, dentro il menu della riga.
+
+   Un gioco sta in piu' gruppi, quindi non e' una scelta fra tante: e'
+   un elenco di interruttori. Quelli in cui gia' sta sono ACCESI e non
+   si possono premere -- per toglierlo c'e' la croce sulla sua riga
+   dentro la cartella, che e' il posto dove si vede che ci sta.
+
+   Senza nemmeno un gruppo la scatola non si apre: si dice come se ne fa
+   uno, perche' un elenco vuoto non spiega niente. */
+function contenutoAiGruppi(g){
+  const tutti = LIB.gruppi();
+  if (!tutti.length) return '<p class="vuoto">' + T('gru.nessunoAncora') + '</p>';
+  const suoi = LIB.gruppiDi(g.id);
+  return '<div class="riga-gruppi">' + tutti.map(function(G){
+    const dentro = suoi.indexOf(G.id) >= 0;
+    return '<button type="button" data-ag="' + esc(G.id) + '"' +
+           (dentro ? ' class="on" disabled' : '') + '>' +
+           esc(G.nome) + '</button>';
+  }).join('') + '</div>';
 }
 
 /* L'elenco si divide in CARTELLE quando non si sta filtrando su un
@@ -7202,27 +7288,62 @@ function disegnaMia(){
        la vista accanto, piu' rumore. Chiuse si legge subito quali gruppi
        ci sono e quanti giochi hanno, che e' la domanda per cui uno apre
        questa vista. Quale si e' aperta se lo ricorda. */
-    const cartella = function(id, nome, dentro){
-      if (!dentro.length) return '';
-      /* Chiuse, sempre. Ricordarsele aperte fra una visita e l'altra
-         faceva ritrovare la vista a gruppi trasformata nell'elenco
-         intero con dei titoli in mezzo, cioe' la vista accanto. */
-      const su = false;
+    /* LA CARTELLA E' ANCHE IL POSTO DOVE SI GESTISCE IL GRUPPO.
+
+       I comandi stavano in un pannello a parte, aperto da "modifica
+       gruppi": per rinominare un gruppo si usciva dall'elenco, si
+       cercava la riga giusta in una lista diversa, e si tornava. Il
+       gruppo pero' e' li', col suo nome scritto e i suoi giochi sotto:
+       e' quello il posto in cui viene da toccarlo.
+
+       Tre segni accanto al titolo, nell'ordine in cui pesano: il piu'
+       aggiunge, la penna rinomina, il cestino -- in due tempi -- butta
+       via il gruppo. Il cestino sta per ultimo, come ogni altra cosa
+       che distrugge nel sito.
+
+       I GRUPPI VUOTI SI VEDONO. Prima sparivano, e creandone uno non
+       succedeva niente a schermo: si era appena fatta una cosa che non
+       esisteva da nessuna parte, e l'unico modo di metterci dentro un
+       gioco era passare dal pannello. Una cartella vuota invece e'
+       proprio l'invito a riempirla, e il piu' ce l'ha accanto. */
+    const cartella = function(id, nome, dentro, vero){
+      const su = false;          // chiuse, sempre: vedi sotto
+      const comandi = vero
+        ? '<span class="cartella-fa">' +
+            '<button type="button" class="c-fa" data-gpiu="' + esc(id) + '" ' +
+              'title="' + esc(TP('gru.aggiungiGiochi')) + '" aria-label="' + esc(TP('gru.aggiungiGiochi')) + '">' +
+              ICO.piu + '</button>' +
+            '<button type="button" class="c-fa" data-gnome="' + esc(id) + '" ' +
+              'title="' + esc(TP('gru.rinomina')) + '" aria-label="' + esc(TP('gru.rinomina')) + '">' +
+              ICO.matita + '</button>' +
+            '<button type="button" class="c-fa c-via" data-gvia="' + esc(id) + '" ' +
+              'title="' + esc(TP('gru.elimina')) + '" aria-label="' + esc(TP('gru.elimina')) + '">' +
+              ICO.cestino + '</button>' +
+          '</span>'
+        : '';
       return '<div class="cartella" data-c="' + esc(id) + '">' +
-        '<button type="button" class="cartella-tit" aria-expanded="' + (su ? 'true' : 'false') + '">' +
-          esc(nome) + '<span>' + dentro.length + '</span></button>' +
+        '<div class="cartella-riga">' +
+          '<button type="button" class="cartella-tit" aria-expanded="' + (su ? 'true' : 'false') + '">' +
+            esc(nome) + '<span>' + dentro.length + '</span></button>' +
+          comandi +
+        '</div>' +
         '<ol class="righe compatta"' + (su ? '' : ' hidden') + '>' +
-          dentro.map(rigaMia).join('') +
+          (dentro.length
+            ? dentro.map(function(g){ return rigaMia(g, id); }).join('')
+            : '<li class="cartella-vuota">' + T('gru.vuoto') + '</li>') +
         '</ol></div>';
     };
 
     let html = gruppi.map(function(G){
       return cartella(G.id, G.nome, l.filter(function(g){
         return LIB.gruppiDi(g.id).indexOf(G.id) >= 0;
-      }));
+      }), true);
     }).join('');
-    html += cartella('__senza', TP('mia.senzaGruppo'),
-                     l.filter(function(g){ return !LIB.gruppiDi(g.id).length; }));
+    /* "senza gruppo" non e' un gruppo: non si rinomina, non si butta
+       via, e vuoto non si mostra -- vuoto vuol dire che ogni gioco sta
+       da qualche parte, che e' una buona notizia e non una cartella. */
+    const orfani = l.filter(function(g){ return !LIB.gruppiDi(g.id).length; });
+    if (orfani.length) html += cartella('__senza', TP('mia.senzaGruppo'), orfani, false);
     q('#mia-list').innerHTML = html;
   }
 
@@ -8462,15 +8583,75 @@ function bindProfilo(){
     setSezione('profilo');
   });
 
-  q('#mia-list').addEventListener('click', function(e){
+  q('#mia-list').addEventListener('click', async function(e){
+    /* I TRE COMANDI DELLA CARTELLA, prima della tendina: stanno dentro
+       `.cartella-riga` accanto al titolo, e senza questo controllo il
+       clic arriverebbe al titolo e aprirebbe il gruppo invece di
+       rinominarlo. */
+    const gPiu = e.target.closest('[data-gpiu]');
+    if (gPiu){
+      /* Riusa il selettore che c'e' gia' nel pannello dei gruppi: e' lo
+         stesso lavoro -- spuntare giochi in una lista -- e averne due
+         vorrebbe dire tenerne due. */
+      gruppoAperto = gPiu.getAttribute('data-gpiu');
+      apriGestioneGruppi();
+      gruppoAperto = gPiu.getAttribute('data-gpiu');
+      disegnaGiochiDelGruppo();
+      return;
+    }
+
+    const gNome = e.target.closest('[data-gnome]');
+    if (gNome){
+      const id = gNome.getAttribute('data-gnome');
+      const G = LIB.gruppi().find(function(x){ return x.id === id; });
+      if (!G) return;
+      rinominaGruppoQui(gNome.closest('.cartella'), G);
+      return;
+    }
+
+    const gVia = e.target.closest('[data-gvia]');
+    if (gVia){
+      /* In due tempi, come ogni altra cosa che butta via qualcosa. Un
+         gruppo cancellato non si disfa: i giochi restano, l'etichetta
+         no. */
+      if (!gVia.classList.contains('armed')){
+        gVia.classList.add('armed');
+        SUONI.gioca('tocco');
+        setTimeout(function(){
+          if (gVia.isConnected) gVia.classList.remove('armed');
+        }, 3500);
+        return;
+      }
+      const id = gVia.getAttribute('data-gvia');
+      try { await LIB.togliGruppo(id); }
+      catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); return; }
+      disegnaMia();
+      return;
+    }
+
+    /* LA CROCE SU UNA RIGA: toglie da QUESTO gruppo e basta. */
+    const fuoriG = e.target.closest('[data-fuorig]');
+    if (fuoriG){
+      const li = fuoriG.closest('li[data-id]');
+      const gid = fuoriG.getAttribute('data-fuorig');
+      if (!li) return;
+      try { await LIB.segnaGruppo(li.getAttribute('data-id'), gid, false); }
+      catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); return; }
+      SUONI.gioca('spento');
+      disegnaMia();
+      return;
+    }
+
     // le tendine dei gruppi
     const tit = e.target.closest('.cartella-tit');
     if (tit){
       const su = tit.getAttribute('aria-expanded') === 'true';
       tit.setAttribute('aria-expanded', su ? 'false' : 'true');
-      const ol = tit.nextElementSibling;
+      /* L'`ol` NON e' piu' il fratello del titolo: fra i due c'e' la
+         riga che tiene titolo e comandi insieme. Si cerca dentro la
+         cartella, che e' vero comunque vada il markup. */
+      const ol = tit.closest('.cartella').querySelector('ol');
       if (ol) ol.hidden = su;
-      const c = tit.closest('.cartella').getAttribute('data-c');
       // aperta o chiusa vale per questa volta, non per le prossime
       return;
     }
@@ -8513,6 +8694,29 @@ function bindProfilo(){
     /* Il menu si chiude PRIMA di aprire il modulo: sono due cose che
        stanno tutte e due sopra l'elenco, e lasciarne una dietro
        all'altra vuol dire ritrovarsela aperta uscendo. */
+    /* LA SCATOLA DEI GRUPPI prende il posto del menu invece di aprirsi
+       accanto: e' la stessa finestrella, un passo piu' dentro. */
+    const aiG = e.target.closest('[data-fa="gruppi"]');
+    if (aiG){
+      const g = LIB.get(id);
+      const box = li.querySelector('.riga-azioni');
+      if (g && box) box.innerHTML = contenutoAiGruppi(g);
+      return;
+    }
+    const nelG = e.target.closest('[data-ag]');
+    if (nelG){
+      const gid = nelG.getAttribute('data-ag');
+      nelG.disabled = true;
+      LIB.segnaGruppo(id, gid, true)
+        .then(function(){
+          SUONI.gioca('acceso');
+          chiudiAzioni(null);
+          disegnaMia();
+        })
+        .catch(function(err){ flash(TP('msg.nonRiuscito', {e: err.message})); });
+      return;
+    }
+
     const sch = e.target.closest('[data-fa="scheda"]');
     if (sch){
       const g = LIB.get(id);

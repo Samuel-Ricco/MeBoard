@@ -650,6 +650,64 @@ body.cella-su #cella{display:flex}
 /* --- cartelle nell'elenco: ogni gruppo e' una tendina -------------- */
 .cartella{margin:18px 0 0}
 .cartella:first-child{margin-top:10px}
+/* LA RIGA DELLA CARTELLA: il titolo si allarga, i comandi stanno in
+   fondo. Sono segni e non parole -- tre parole accanto a un nome di
+   gruppo sarebbero piu' lunghe del gruppo. */
+.cartella-riga{display:flex; align-items:stretch; gap:4px}
+.cartella-riga .cartella-tit{flex:1; min-width:0}
+.cartella-fa{display:flex; align-items:stretch; gap:2px; flex:none}
+.cartella-fa .c-fa{
+  width:34px; padding:0; border:0; border-radius:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; color:var(--ink-soft); line-height:0;
+  transition:color .18s var(--ease), background-color .18s var(--ease);
+}
+.cartella-fa .c-fa .ico{width:16px; height:16px}
+.cartella-fa .c-fa:hover{color:var(--ink); background:rgba(var(--ink-rgb),.08)}
+.cartella-fa .c-fa:active{transform:translate(1px,1px)}
+.cartella-fa .c-via:hover{color:var(--rosso); background:rgba(var(--rosso-rgb),.12)}
+.cartella-fa .c-via.armed{background:var(--rosso); color:var(--su-rosso)}
+
+/* Il campo che prende il posto del titolo mentre si rinomina. */
+.cartella-nome{
+  flex:1; min-width:0; font-family:var(--ff); font-weight:900; font-size:12px;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink); background:rgba(var(--ink-rgb),.08);
+  border:0; border-radius:0; padding:0 10px;
+}
+.cartella-nome:focus{outline:none; box-shadow:inset 0 0 0 2px var(--accent)}
+
+/* Un gruppo vuoto lo dice, invece di essere una tendina che si apre sul
+   niente. */
+.cartella-vuota{
+  padding:12px 4px; font-family:var(--ff-text); font-size:12.5px;
+  color:var(--ink-soft); grid-template-columns:none !important; display:block !important;
+}
+
+/* La croce che toglie da QUESTO gruppo, in fondo alla riga accanto ai
+   tre punti: tenue finche' non la cerchi, rossa quando la sfiori. */
+.riga-fuorigruppo{
+  flex:none; width:32px; padding:0; border:0; background:none; cursor:pointer;
+  color:var(--ink-soft); line-height:0; border-radius:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:color .18s var(--ease), background-color .18s var(--ease);
+}
+.riga-fuorigruppo .ico{width:15px; height:15px}
+.riga-fuorigruppo:hover{color:var(--rosso); background:rgba(var(--rosso-rgb),.12)}
+
+/* La scatola dei gruppi dentro il menu di una riga: etichette, e
+   quelle in cui il gioco gia' sta sono accese e spente al tocco. */
+.riga-gruppi{display:flex; flex-wrap:wrap; gap:5px; padding:3px}
+.riga-gruppi button{
+  padding:7px 10px; border:1px dashed var(--line); border-radius:0; cursor:pointer;
+  font-family:var(--ff); font-weight:900; font-size:10px; letter-spacing:.06em;
+  text-transform:uppercase; background:none; color:var(--ink);
+}
+.riga-gruppi button:hover:not(:disabled){border-color:var(--accent); color:var(--accent)}
+.riga-gruppi button.on{
+  background:var(--accent); color:var(--su-accent); border-color:transparent; cursor:default;
+}
+
 .cartella-tit{
   width:100%; display:flex; align-items:baseline; gap:10px; cursor:pointer;
   font-family:var(--ff-display); font-weight:900; text-transform:uppercase; font-size:15.8px; letter-spacing:.02em;
