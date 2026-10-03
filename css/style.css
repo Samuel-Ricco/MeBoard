@@ -4988,6 +4988,24 @@ body.wrap-su #wrap{display:flex}
 /* IL NUMERO, che e' il motivo per cui esiste una slide. A sinistra e
    grande quanto la larghezza consente: centrato in mezzo alla slide
    sembrava una citazione, appoggiato a sinistra sembra stampato. */
+/* LA COPERTINA DENTRO UNA SLIDE. Riquadro fisso e `contain`: le
+   scatole non hanno tutte lo stesso rapporto, e stirarle sarebbe
+   peggio che non metterle. Ombra piena come ogni pezzo posato. */
+.wrap-cop{
+  display:block; width:132px; height:132px; object-fit:contain;
+  object-position:left center; margin:0 0 14px;
+  /* La slide e' una colonna che stira i figli: senza questo il
+     riquadro si allargava a tutta la slide. L'immagine dentro restava
+     giusta -- `contain` non la deforma -- ma un elemento largo cinque
+     volte il suo contenuto e' una trappola per la prossima regola che
+     qualcuno ci scrivera' sopra. */
+  /* `width` da sola non basta: la slide e' un contenitore flex e la
+     crescita la scavalca. `max-width` no -- e' il tetto, e nessun
+     `flex-grow` ci passa sopra. */
+  align-self:flex-start; flex:none; max-width:132px;
+  filter:drop-shadow(3px 3px 0 rgba(0,0,0,.42));
+}
+
 .wrap-n{
   margin:14px 0 0; font-family:var(--ff-display); font-weight:900;
   text-transform:uppercase;

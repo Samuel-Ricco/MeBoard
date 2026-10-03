@@ -8059,6 +8059,33 @@ function accorcia(t, max){
   return (spazio > M * 0.6 ? corto.slice(0, spazio) : corto).replace(/[\s,:;.-]+$/, '') + '\u2026';
 }
 
+/* LA COPERTINA DI UN GIOCO NOMINATO IN UNA SLIDE.
+
+   Torna l'IMMAGINE GIA' CARICATA (`g.img`) e non solo l'indirizzo: il
+   PNG si dipinge su un canvas, e li' un `src` non basta -- serve
+   qualcosa di gia' decodificato, se no al momento di disegnare non c'e'
+   ancora niente. E' la stessa immagine che sta sulle scatole, quindi e'
+   gia' in memoria e non si scarica niente di nuovo.
+
+   NON CONTAMINA IL CANVAS: `loadCovers` mette `crossOrigin` prima di
+   `src` su tutto quello che arriva da Supabase -- gli serviva gia' per
+   le texture WebGL -- quindi `toDataURL` continua a funzionare. Era la
+   domanda da farsi prima di scrivere una riga: una slide che non si
+   salva piu' sarebbe stata un peggioramento travestito da aggiunta.
+
+   Si cerca per id BGG e, se non c'e', per titolo: le partite segnate a
+   mano un id non ce l'hanno. */
+function copertinaDi(titolo, bgg){
+  const tutti = LIB.all();
+  let g = null;
+  if (bgg) g = tutti.find(function(x){ return String(x.bgg) === String(bgg); });
+  if (!g && titolo){
+    const t = String(titolo).trim().toLowerCase();
+    g = tutti.find(function(x){ return String(x.title || '').trim().toLowerCase() === t; });
+  }
+  return (g && g.img && g.img.naturalWidth) ? g.img : null;
+}
+
 function slideWrapGrezze(){
   const tutte = PARTITE.tutte();
   const ore = oreGiocate(tutte);
@@ -8072,7 +8099,7 @@ function slideWrapGrezze(){
   const conta = {};
   tutte.forEach(function(p){
     const k = p.bgg ? 'b' + p.bgg : 't' + p.titolo;
-    const v = conta[k] || (conta[k] = { titolo: p.titolo, n: 0 });
+    const v = conta[k] || (conta[k] = { titolo: p.titolo, bgg: p.bgg || '', n: 0 });
     v.n++;
   });
   const classifica = Object.keys(conta).map(function(k){ return conta[k]; })
@@ -8143,7 +8170,7 @@ function slideWrapGrezze(){
 
     piu ? { t: 'wrap.piuGiocato', n: accorcia(piu.titolo), testo: true, tono: 2,
             s: TP(piu.n === 1 ? 'wrap.volta' : 'wrap.volte', {n: piu.n}),
-            righe: righeGiochi }
+            cop: copertinaDi(piu.titolo, piu.bgg), righe: righeGiochi }
         : { t: 'wrap.piuGiocato', n: null, s: TP('wrap.vuoto'), tono: 2 },
 
     /* IL NUMERO GRANDE E' QUANTI NE HAI ESPOSTI, non quanti ne
@@ -8173,6 +8200,7 @@ function slideWrapGrezze(){
       const somma = votati.reduce(function(m, g){ return m + parseFloat(g.mioVoto); }, 0);
       const med = (somma / votati.length).toFixed(1).replace('.', ',');
       return { t: 'wrap.iTuoiVoti', n: accorcia(votati[0].title), testo: true, tono: 2,
+               cop: (votati[0].img && votati[0].img.naturalWidth) ? votati[0].img : null,
                s: String(votati[0].mioVoto).replace('.', ',') + ' / 10',
                righe: votati.slice(1, 10).map(function(g){
                  return { k: accorcia(g.title), v: String(g.mioVoto).replace('.', ',') };
@@ -8254,6 +8282,12 @@ function disegnaWrap(){
         '<p class="wrap-t">' + T(x.t) + '</p>' +
         (x.anno ? '<span class="wrap-anno">' + esc(x.anno) + '</span>' : '') +
       '</div>' +
+      /* LA COPERTINA, dove c'e'. Una slide che dice "il gioco piu'
+         giocato" e poi solo il nome scritto e' la cosa che si ricorda
+         meno: la scatola la riconosci prima di leggerla. Sta sopra al
+         titolo, perche' e' il titolo in immagine. */
+      (x.cop ? '<img class="wrap-cop" src="' + esc(x.cop.src) + '" alt="" ' +
+               'decoding="async">' : '') +
       (x.n !== null
         ? '<p class="wrap-n' + (x.testo ? ' testo' : '') + '">' + esc(x.n) + '</p>'
         : '') +
@@ -8355,6 +8389,25 @@ function salvaSlide(){
     x.textAlign = 'right';
     x.fillText(et, W - M - 18, y);
     x.textAlign = 'left';
+  }
+
+  /* LA COPERTINA NEL PNG. Quello che si guarda e quello che si salva
+     devono essere la stessa cosa: una copertina solo a schermo
+     renderebbe la slide pubblicata piu' povera di quella vista.
+
+     Dentro un riquadro fisso e con le proporzioni sue: le scatole non
+     sono tutte uguali -- Carcassonne e' stretta e alta, Twilight
+     Imperium quadrata -- e stirarle sarebbe peggio che non metterle.
+     Il `try` perche' un'immagine mezza caricata fa saltare `drawImage`,
+     e una slide che non si salva e' peggio di una senza figura. */
+  if (sl.cop && sl.cop.naturalWidth){
+    try {
+      const LATO = 300;
+      const r = Math.min(LATO / sl.cop.naturalWidth, LATO / sl.cop.naturalHeight);
+      const cw = Math.round(sl.cop.naturalWidth * r);
+      const ch = Math.round(sl.cop.naturalHeight * r);
+      x.drawImage(sl.cop, W - M - cw, y + 40, cw, ch);
+    } catch (e) {}
   }
 
   /* IL NUMERO. A sinistra e grande: e' il motivo per cui una slide
