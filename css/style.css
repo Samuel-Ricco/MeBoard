@@ -2059,7 +2059,18 @@ body.visita #p-fuori{display:none !important}
   background:rgba(var(--ink-rgb),.04); border:0; padding:8px 10px; border-radius:var(--r-s);
 }
 .add-form input:focus{outline:none; border-color:var(--accent)}
-.add-form button{grid-column:1/-1; margin-top:6px}
+/* IL FIGLIO DIRETTO, non un pulsante qualunque.
+
+   Questa regola veste il tasto che chiude il modulo -- "salva", in
+   fondo, largo quanto la griglia -- e lo prendeva per tipo invece che
+   per posto. Da quando il campo della data e' un `<button>` dentro la
+   sua etichetta, prendeva anche lui: `grid-column` li' non vuol dire
+   niente, ma quei sei pixel di margine sopra lo spingevano giu' e la
+   casella della data si leggeva sei pixel piu' bassa di quella accanto.
+
+   Il `>` dice quello che la regola ha sempre inteso: il pulsante della
+   griglia, non ogni pulsante che ci finisce dentro. */
+.add-form > button{grid-column:1/-1; margin-top:6px}
 .add-form label.wide{grid-column:1/-1}
 .add-form textarea{
   min-width:0; width:100%; resize:vertical; min-height:120px;
@@ -6270,11 +6281,26 @@ input::placeholder, textarea::placeholder{
    posizione: `#partitalayer #pa-quando` sono due id, e due id battono
    un id piu' tre `:not()` in qualunque ordine. */
 .campo-quando{display:flex; flex-direction:column}
+/* IL CAMPO NASCOSTO NON DEVE CONTARE COME FIGLIO.
+
+   Dentro l'etichetta ci sono tre cose -- la scritta, il campo che tiene
+   la data in ISO, e il pulsante -- e l'etichetta e' una colonna flex
+   con il suo spazio fra una e l'altra. Un figlio che non si vede ma
+   c'e' fa pagare quello spazio DUE volte, e il pulsante scende. Detto
+   qui perche' il browser lo nasconde gia' da se', ma questo foglio ha
+   gia' avuto regole che hanno rimesso in piedi cose che il browser
+   nascondeva. */
+.campo-quando input[type="hidden"]{display:none}
 #partitalayer #pa-quando{
   display:flex; align-items:center; gap:8px; width:100%;
   font-family:var(--ff); font-size:14px; font-weight:500;
   letter-spacing:0; text-transform:none;
   color:var(--ink); background:rgba(var(--ink-rgb),.05);
+  /* L'IMBOTTITURA E' QUELLA DEL CAMPO ACCANTO, misurata e non dedotta:
+     `.add-form input` dice 8px, ma dentro `#partitalayer` quel valore
+     e' scavalcato e i campi veri ne hanno 12. Prendere il numero dalla
+     regola generica invece che dal vicino lasciava la casella della
+     data sei pixel piu' bassa dell'altra. */
   border:0; border-radius:var(--r-s); padding:12px 14px;
   cursor:pointer; text-align:left;
 }
