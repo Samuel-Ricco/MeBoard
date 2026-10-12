@@ -1255,16 +1255,17 @@ body.sez-partite #partite{display:block}
 .cal-g.libero{background:none; border:0; cursor:pointer; font:inherit; color:inherit}
 .cal-g.libero:hover{background:rgba(var(--ink-rgb),.08); color:var(--accent)}
 
+/* Un piu' e basta: la frase la diceva gia' il pulsante sopra il
+   calendario. Stessa misura del piu' dei gruppi -- un segno solo, in
+   tutto il sito, per "aggiungine uno qui". */
 .cal-quel-piu{margin:10px 0 0}
 .cal-quel-piu button{
-  display:inline-flex; align-items:center; gap:8px; cursor:pointer;
-  padding:9px 12px; border:1px dashed var(--line); border-radius:0;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  width:38px; height:38px; padding:0; border:1px dashed var(--line); border-radius:0;
   background:none; color:var(--ink);
-  font-family:var(--ff); font-weight:900; font-size:10.5px;
-  letter-spacing:.07em; text-transform:uppercase;
 }
 .cal-quel-piu button:hover{border-color:var(--accent); color:var(--accent)}
-.cal-quel-piu .ico{width:15px; height:15px}
+.cal-quel-piu .ico{width:17px; height:17px}
 
 /* Chi ha vinto e quanti erano, su una riga sola: non e' piu' un elenco
    di nomi che va a capo, quindi non serve il respiro fra le righe. */
@@ -3970,7 +3971,19 @@ body.browse:not(.elenco):not(.ferma):not(.sez-catalogo):not(.sez-profilo) .rail-
   .pa-chi li{flex-wrap:wrap; row-gap:7px}
   .pa-chi .chi-nome{flex:1 1 100%; order:-1}
   .pa-chi .nome{white-space:normal}     /* una riga tutta sua: puo' andare a capo */
-  .pa-chi .punti{flex:1 1 auto; width:auto; min-width:58px}
+  /* IL CAMPO DEI PUNTI NON CRESCE.
+
+     Era `flex:1 1 auto`, cioe' si prendeva tutto lo spazio avanzato:
+     duecento pixel di casella per quattro cifre, e la calcolatrice e la
+     croce spinte su una TERZA riga. Cosi' ogni persona al tavolo era alta
+     centoquaranta pixel, e una partita in quattro non ci stava a schermo.
+
+     Il conto, su 375: 34 di faccia + 14 di posto + 72 di punti + 32 di
+     calcolatrice + 30 di croce, piu' quattro vuoti da 7, fanno 210 su 317
+     disponibili. Due righe per persona, e la calcolatrice torna attaccata
+     al campo che riempie -- che e' il motivo per cui sta li'. */
+  .pa-chi .punti{flex:0 0 72px; width:72px; min-width:0}
+  .pa-chi button.conta{width:30px; height:30px}
 }
 
 /* ===================================================================
@@ -4521,6 +4534,11 @@ body.visita #vis-torna{display:inline-flex; align-items:center}
 .pa-chi button.conta{
   flex:none; color:var(--ink-soft); background:none; border:0;
   opacity:.5; transition:opacity .18s var(--ease), color .18s var(--ease);
+  /* La misura va detta: senza, prende l'imbottitura dei pulsanti del
+     pannello (10/14) e viene quarantotto, cioe' mezzo pulsante piu'
+     larga della corona e della croce che le stanno in fila. */
+  width:32px; height:32px; padding:0; border-radius:var(--r-s);
+  display:inline-flex; align-items:center; justify-content:center;
 }
 .pa-chi button.conta:hover, .pa-chi button.conta:focus-visible{opacity:1; color:var(--accent)}
 
@@ -4643,9 +4661,17 @@ body.muro-scuro.sez-collezione:not(.elenco) header{
 .cal-seg .ico path{fill:currentColor; stroke-width:1.2}
 /* Un punto per partita, fino a tre: oltre non si contano piu' a colpo
    d'occhio, e il numero esatto sta nel `title` e nel giorno aperto. */
+/* COLORATI, non dell'inchiostro del numero.
+
+   Erano `currentColor`: su un giorno giocato il colore e' quello del
+   numero, quindi i segni venivano della stessa crema della cifra sopra
+   e si leggevano come un refuso tipografico invece che come "qui si e'
+   giocato". Il giorno vinto aveva gia' la corona nel colore: questi
+   sono la stessa informazione senza la vittoria, e vogliono lo stesso
+   trattamento. */
 .cal-punto{
   width:4px; height:4px; border-radius:0;
-  background:currentColor; opacity:.75;
+  background:var(--accent); opacity:1;
 }
 
 .cal-vuoto{

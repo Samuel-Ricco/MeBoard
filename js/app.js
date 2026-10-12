@@ -9263,6 +9263,17 @@ function vinceDi(partite){
   if (!ordine.length) return '';
   const primo = per[ordine[0]];
   if (ordine.length > 1 && per[ordine[1]] === primo) return TP('par.nessunoStacca');
+  /* "VINCE GIULIA" E' UNA REGOLA, E DA UNA PARTITA SOLA NON SI RICAVA.
+
+     Il presente dice "a questo gioco vince lei", cioe' una cosa che vale
+     nel tempo; con una partita in tutto quello che si sa e' che quella
+     volta ha vinto lei, e scriverlo al presente e' affermare una cosa
+     che non e' stata misurata. Al passato e' solo il fatto.
+
+     Vale sul numero di PARTITE, non di vittorie: tre partite vinte tutte
+     da lei sono una regola anche se le altre due le hanno vinte in
+     parita' -- e' il caso che il ramo qui sopra ha gia' escluso. */
+  if (partite.length < 2) return TP('par.haVinto', {n: ordine[0]});
   return primo > 1 ? TP('par.vinceN', {n: ordine[0], q: primo})
                    : TP('par.vince', {n: ordine[0]});
 }
@@ -9414,8 +9425,18 @@ function calendarioHtml(){
     '<div class="cal-gg">' + gg.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
     '<div class="cal-griglia">' + celle + '</div>' +
     (nelMese ? '' : '<p class="cal-vuoto">' + T('cal.nessunaQui') + '</p>') +
-    (scelte ? '<p class="cal-quel-piu"><button type="button" data-piugiorno="' +
-        esc(state.calGiorno) + '">' + ICO.piu + '<span>' + T('cal.segnaQui') + '</span></button></p>' +
+    /* IL SECONDO "SEGNA UNA PARTITA" E' UN PIU'.
+
+       Aprendo un giorno la frase compariva due volte nella stessa
+       schermata: una sopra il calendario e una sotto, e la seconda --
+       "segna una partita IN QUESTO GIORNO" -- diceva in sei parole
+       l'unica cosa che il posto in cui sta gia' dice. Il giorno e'
+       aperto, le sue partite sono li' sotto: un piu' li' vuol dire
+       aggiungerne una a questo giorno, e non c'e' altro che possa
+       voler dire. La frase resta nel titolo, per chi legge a voce. */
+    (scelte ? '<p class="cal-quel-piu"><button type="button" class="gru-piu" data-piugiorno="' +
+        esc(state.calGiorno) + '" title="' + esc(TP('cal.segnaQui')) +
+        '" aria-label="' + esc(TP('cal.segnaQui')) + '">' + ICO.piu + '</button></p>' +
       '<ul class="giocate cal-quel-giorno">' +
         scelte.map(function(p){ return rigaGiocata(p, true); }).join('') + '</ul>' : '') +
     '</div>';
