@@ -1165,8 +1165,38 @@ body.sez-partite #partite{display:block}
 .pro-volume{padding-top:16px; border-top:1px dashed var(--line)}
 /* Il wrap nel profilo: una riga sua, col filo sopra come gli altri
    blocchi, perche' non appartiene a nessuno di quelli attorno. */
+/* IL WRAP SI DEVE VEDERE.
+
+   Era una riga di testo in un pulsante come tutti gli altri: nel profilo
+   `#profilo button:not(...)` -- che pesa (1,4,1) e nessun `.par-wrap` da
+   solo batte -- gli toglieva il verde e gli metteva addosso il tratteggio
+   dei comandi minori. Cosi' il riassunto di un anno di partite stava fra
+   il volume e la lingua, con lo stesso peso di un interruttore.
+
+   Le righe oblique sono lo scotch da cantiere: dicono "qui c'e' qualcosa"
+   senza aggiungere una parola, e sono bande piene a stacco netto, non una
+   sfumatura -- il fondo e' sempre lo stesso verde, scurito a fasce.
+   Restano leggibili sotto la scritta proprio perche' lo stacco fra le due
+   bande e' piccolo: e' tessitura, non chiaroscuro. */
 .pro-wrap-riga{margin:0; padding:16px 0 0; border-top:1px dashed var(--line)}
-.pro-wrap-riga .par-wrap{width:100%}
+/* DUE ID. `#profilo button` e' (1,0,1) e si prende carattere, peso,
+   spaziatura e maiuscole di ogni pulsante del profilo: due classi non
+   la battono, e il banner usciva in tondo minuscolo da 500. */
+#profilo #par-wrap{
+  width:100%; display:flex; align-items:center; justify-content:center;
+  padding:26px 18px; border:0;
+  font-family:var(--ff); font-weight:900; font-size:14px;
+  letter-spacing:.2em; text-transform:uppercase;
+  color:var(--su-verde);
+  background-color:var(--verde);
+  background-image:repeating-linear-gradient(-45deg,
+    rgba(0,0,0,0) 0 13px, rgba(0,0,0,.11) 13px 26px);
+}
+#profilo #par-wrap:hover{
+  background-color:var(--verde);
+  background-image:repeating-linear-gradient(-45deg,
+    rgba(0,0,0,0) 0 13px, rgba(0,0,0,.18) 13px 26px);
+}
 .pro-blocco:first-of-type{margin-top:34px}
 .pro-blocco h3{margin:0}
 /* Il titolo E' il pulsante: tutta la riga si preme, non una freccetta
@@ -3004,13 +3034,13 @@ body.elenco #conta b{color:var(--su-accent)}
   font-family:var(--ff); font-weight:500; letter-spacing:0; text-transform:none;
   border:0; border-radius:var(--r-s); cursor:pointer;
 }
-#profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota):not(#par-wrap),
 #partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota):not(#pa-chiudi),
 #gruppilayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
 #recelayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota){
   background:rgba(var(--ink-rgb),.06); color:var(--ink); padding:10px 14px; font-size:14px;
 }
-#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):not(#pa-chiudi):hover,
+#profilo button:not(.primario):not(.ruota):not(#par-wrap):hover, #partitalayer button:not(.primario):not(.ruota):not(#pa-chiudi):hover,
 #gruppilayer button:not(.primario):not(.ruota):hover, #recelayer button:not(.primario):not(.ruota):hover{
   background:rgba(var(--ink-rgb),.11);
 }
@@ -5508,7 +5538,7 @@ input::placeholder, textarea::placeholder{
    toccava -- questa regola le metteva addosso il tratteggio maiuscolo
    dei comandi e le cancellava il colore con `background:none`. */
 #p-segna, #p-pref,
-#profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota):not(#par-wrap),
 #partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota):not(#pa-chiudi),
 #gruppilayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
 #recelayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota){
@@ -5518,7 +5548,7 @@ input::placeholder, textarea::placeholder{
   letter-spacing:.1em; text-transform:uppercase;
 }
 #p-segna:hover, #p-pref:hover,
-#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):not(#pa-chiudi):hover,
+#profilo button:not(.primario):not(.ruota):not(#par-wrap):hover, #partitalayer button:not(.primario):not(.ruota):not(#pa-chiudi):hover,
 #gruppilayer button:not(.primario):not(.ruota):hover, #recelayer button:not(.primario):not(.ruota):hover{
   background:rgba(var(--ink-rgb),.08); border-color:var(--accent); color:var(--accent);
 }

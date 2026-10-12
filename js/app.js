@@ -9681,6 +9681,7 @@ function disegnaGiocatori(){
   }).join('');
 
   quanti('#conta-giocatori', g.length);
+  quanti('#conta-gio-dentro', g.length);
   if (PARTITE.problema()){ proMsg('#gio-msg', esc(PARTITE.problema()), true); return; }
   // gli amici che non sono ancora al tavolo: proporli evita di riscriverli
   const da = PARTITE.amiciDaAggiungere();
@@ -10408,6 +10409,17 @@ function bindCuore(){
 
 function bindPartite(){
   q('#pa-chiudi').addEventListener('click', chiudiPartita);
+
+  /* La tendina dei nomi salvati. E' una cartella come quelle dei gruppi
+     -- stesso titolo, stessa freccia -- ma sta nel profilo, dove il
+     listener delegato dell'elenco della collezione non arriva. */
+  const gioTit = q('.gio-cartella .cartella-tit');
+  if (gioTit) gioTit.addEventListener('click', function(){
+    const box = q('#gio-elenco');
+    const su = gioTit.getAttribute('aria-expanded') === 'true';
+    gioTit.setAttribute('aria-expanded', su ? 'false' : 'true');
+    box.hidden = su;
+  });
   q('#pa-salva').addEventListener('click', salvaPartita);
 
   const tit = q('#pa-titolo');

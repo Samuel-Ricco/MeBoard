@@ -725,7 +725,7 @@
          l'unica cosa che il disegno non dice da se'. -->
     <div id="pro-faccia-lab" hidden>
       <p class="pro-lab-riga"><span data-i18n="pro.labMeeple">meeple</span><span id="lab-corpi" class="pastiglie tinte"></span></p>
-      <p class="pro-lab-riga"><span data-i18n="pro.labFondo">fondo</span><span id="lab-fondi" class="pastiglie tinte"></span></p>
+      <p class="pro-lab-riga"><span data-i18n="pro.labFondo">sfondo</span><span id="lab-fondi" class="pastiglie tinte"></span></p>
       <!-- UN SEGNO PER PARTE. "salva la faccia" e "lascia perdere"
            erano due frasi di peso uguale per due gesti opposti; e qui
            sotto c'e' gia' la faccia che fa vedere il risultato, quindi
@@ -772,9 +772,32 @@
       <h3><button type="button" class="pro-tit" aria-expanded="false" aria-controls="blocco-giocatori">
         <span data-i18n="pro.giocatori">Giocatori</span> <span class="quanti" id="conta-giocatori"></span></button></h3>
       <div class="pro-dentro" id="blocco-giocatori" hidden>
-        <p class="pro-msg" data-i18n="pro.giocatoriNota">I nomi che usi per segnare le partite. Al tavolo c&rsquo;&egrave;
-          quasi sempre qualcuno che sul sito non c&rsquo;&egrave;: qui ci sta lo stesso.</p>
-        <ul id="pro-giocatori" class="pro-gente"></ul>
+        <!-- I NOMI STANNO IN UNA TENDINA.
+
+             Erano una fila aperta, e sono righe tutte uguali: un nome e una
+             croce, senza faccia, senza niente che le distingua. Con dieci
+             persone al tavolo diventavano dieci righe bianche identiche fra
+             l'intestazione e il campo per aggiungerne -- cioe' un muro fra
+             le due cose che in questo riquadro si vengono davvero a fare:
+             vedere quanti sono, e aggiungerne uno.
+
+             Quelle due restano fuori: il conto e' gia' nel titolo della
+             sezione, il campo e' qui sotto. L'elenco si apre quando lo si
+             cerca, che e' quando si vuole togliere o correggere un nome. -->
+        <div class="cartella gio-cartella">
+          <div class="cartella-riga">
+            <!-- L'etichetta in un <b> e non in uno <span>: `.cartella-tit span`
+                 e' la vestaglia del CONTO -- dieci pixel, inchiostro smorzato --
+                 e il titolo in uno span se la sarebbe presa addosso. -->
+            <button type="button" class="cartella-tit" aria-expanded="false" aria-controls="gio-elenco">
+              <b data-i18n="pro.giocatoriElenco">I nomi salvati</b><span id="conta-gio-dentro"></span></button>
+          </div>
+          <div id="gio-elenco" hidden>
+            <p class="pro-msg" data-i18n="pro.giocatoriNota">I nomi che usi per segnare le partite. Al tavolo c&rsquo;&egrave;
+              quasi sempre qualcuno che sul sito non c&rsquo;&egrave;: qui ci sta lo stesso.</p>
+            <ul id="pro-giocatori" class="pro-gente"></ul>
+          </div>
+        </div>
         <p id="gio-msg" class="pro-msg"></p>
         <div class="pro-aggiungi">
           <input id="gio-nuovo" type="text" data-i18n-ph="pro.giocatorePh" placeholder="un nome"
