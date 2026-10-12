@@ -786,6 +786,14 @@ body.dentro .dentro-only{display:inline-flex !important}
 }
 #sezioni button:hover{color:var(--ink)}
 #sezioni button.on{color:var(--ink); border-bottom-color:var(--accent)}
+/* IL FILO FRA LE TUE COSE E IL MONDO DI FUORI.
+
+   Non e' un ornamento: e' la riga che dice dove finisce la tua roba
+   -- libreria, collezione, partite -- e dove comincia il catalogo, da
+   cui si pesca e basta. Senza, "collezione" e "catalogo" erano due
+   voci di pari peso che cominciano con le stesse tre lettere. */
+#sezioni button.fuori{margin-left:10px; padding-left:14px; border-left:1px dashed var(--line)}
+#tabbar button.fuori{border-left:1px dashed var(--line)}
 /* Un ospite non ha nessuna libreria: la voce che porta a una libreria
    vuota sarebbe una promessa che il sito non puo' mantenere.
 
