@@ -8164,15 +8164,38 @@ function compagni(lista){
    nessuno segnato non contano: sarebbero uno zero che abbassa la media
    dicendo una cosa che non e' successa. */
 function tavoli(lista){
-  let somma = 0, quante = 0, max = 0, quandoMax = null;
+  let somma = 0, quante = 0, max = 0, quandoMax = null, soli = 0;
   (lista || []).forEach(function(p){
     const n = (p.chi || []).length;
     if (!n) return;
     somma += n; quante++;
+    if (n === 1) soli++;          // una persona sola al tavolo: in solitario
     if (n > max){ max = n; quandoMax = p; }
   });
   return { media: quante ? Math.round(somma * 10 / quante) / 10 : null,
-           max: max, quante: quante, quandoMax: quandoMax };
+           max: max, quante: quante, quandoMax: quandoMax, soli: soli };
+}
+
+/* QUANTI GIOCHI IN PIU' DALL'ULTIMA VOLTA.
+
+   E' l'unico numero del wrap che racconta un movimento invece di uno
+   stato, e per averlo bisogna ricordarsi quanti ce n'erano l'ultima
+   volta che il wrap si e' guardato. Sta nel browser e non sul database:
+   e' una cosa fra te e questo schermo, non un dato della collezione.
+
+   Il segno si aggiorna qui, cioe' mentre si COSTRUISCE la slide: chi
+   riapre il wrap due volte di fila la seconda vede zero, che e' la
+   verita'. La prima volta in assoluto non c'e' un prima, e si dice. */
+const CHIAVE_CRESCITA = 'meboard-wrap-giochi';
+function crescitaCollezione(ora){
+  let prima = null;
+  try {
+    const v = localStorage.getItem(CHIAVE_CRESCITA);
+    if (v !== null && v !== '') prima = parseInt(v, 10);
+  } catch (e) {}
+  try { localStorage.setItem(CHIAVE_CRESCITA, String(ora)); } catch (e) {}
+  if (prima === null || isNaN(prima)) return null;
+  return Math.max(0, ora - prima);
 }
 
 /* Le partite mese per mese, per la strisciata di barre. Si tengono gli
@@ -8344,9 +8367,18 @@ function slideWrapGrezze(){
             lunghe[0] ? [{ k: TP('wrap.piuLunga'), v: accorcia(lunghe[0].titolo, 22) + ' &middot; ' + minTesto(lunghe[0].minuti) }] : []) }
       : { t: 'wrap.ore', n: null, s: TP('wrap.oreNo'), tono: 1 },
 
-    piu ? { t: 'wrap.piuGiocato', n: accorcia(piu.titolo), testo: true, tono: 2,
+    /* IL PODIO, non un nome scritto grande.
+
+       La slide diceva il titolo in lettere e sotto tre righe di testo:
+       di una scatola pero' ci si ricorda la faccia, e tre copertine
+       affiancate dicono "questi tre" in un colpo d'occhio, con il primo
+       piu' grande e in mezzo. Chi non ha copertina resta col titolo --
+       meglio una casella scritta che un buco. */
+    piu ? { t: 'wrap.piuGiocato', tono: 2, n: null,
             s: TP(piu.n === 1 ? 'wrap.volta' : 'wrap.volte', {n: piu.n}),
-            cop: copertinaDi(piu.titolo, piu.bgg), righe: righeGiochi }
+            podio: classifica.slice(0, 3).map(function(g){
+              return { titolo: g.titolo, n: g.n, cop: copertinaDi(g.titolo, g.bgg) };
+            }) }
         : { t: 'wrap.piuGiocato', n: null, s: TP('wrap.vuoto'), tono: 2 },
 
     /* IL NUMERO GRANDE E' QUANTI NE HAI ESPOSTI, non quanti ne
@@ -8355,17 +8387,37 @@ function slideWrapGrezze(){
        stanno davvero sugli scaffali e' quello che il wrap puo' dirti e
        tu non tieni a mente. Il totale resta, sotto, perche' serve a
        capire il primo. */
-    { t: 'wrap.collezione', n: String(inVetrina), tono: 3,
-      s: TP('wrap.diQuanti', {n: giochi}),
-      righe: [ { k: TP('wrap.mobili'), v: mobili },
-               { k: TP('wrap.votati'), v: miei },
-               { k: TP('wrap.desiderati'), v: desideri } ] },
+    /* IL NUMERO GRANDE E' LA COLLEZIONE, e quanto e' cresciuta.
 
-    /* I TUOI VOTI. Il wrap raccontava quanto hai giocato e con chi, e
-       niente di cosa ti e' piaciuto: la classifica che il sito ha e
-       nessun altro ha. Dieci e' quanto ne sta in una slide senza che
-       diventi un elenco da scorrere -- e le prime tre si leggono
-       comunque per prime. */
+       Era "quanti ne hai esposti", che e' un dato del mobile piu' che
+       della collezione: a chi guarda un riassunto dell'anno interessa
+       quanti giochi ha, e soprattutto QUANTI IN PIU' dall'ultima volta
+       che ha guardato -- l'unica cifra qui dentro che racconta un
+       movimento invece di uno stato. Gli esposti scendono fra le righe,
+       dove stanno gli altri conti del mobile. */
+    (function(){
+      const cresciuto = crescitaCollezione(giochi);
+      return { t: 'wrap.collezione', n: String(giochi), tono: 3,
+        s: cresciuto === null ? TP('wrap.primaVolta')
+           : cresciuto > 0 ? TP('wrap.inPiu', {n: cresciuto})
+           : TP('wrap.nessunoInPiu'),
+        righe: [ { k: TP('wrap.esposti'), v: inVetrina },
+                 { k: TP('wrap.mobili'), v: mobili },
+                 { k: TP('wrap.votati'), v: miei },
+                 { k: TP('wrap.desiderati'), v: desideri } ] };
+    })(),
+
+    /* I TUOI VOTI: TRE SOPRA E TRE SOTTO.
+
+       C'erano i primi dieci. Dieci righe di voti sono una classifica da
+       leggere riga per riga, e tutte dalla stessa parte: mancava la
+       meta' che diverte, cioe' quelli che non ti sono piaciuti. Tre e
+       tre si guardano insieme e dicono gli estremi del tuo gusto, che e'
+       quello che il sito sa e nessun altro ha.
+
+       I peggiori solo se ce ne sono abbastanza da non ripetere i primi:
+       con quattro giochi votati, "i tre peggiori" conterebbe due volte
+       gli stessi titoli. */
     (function(){
       const votati = LIB.all()
         .filter(function(g){ return parseFloat(g.mioVoto) > 0; })
@@ -8373,14 +8425,18 @@ function slideWrapGrezze(){
           String(a.title).localeCompare(String(b.title), 'it'); });
       if (!votati.length)
         return { t: 'wrap.iTuoiVoti', n: null, s: TP('wrap.nessunVoto'), tono: 2 };
-      const somma = votati.reduce(function(m, g){ return m + parseFloat(g.mioVoto); }, 0);
-      const med = (somma / votati.length).toFixed(1).replace('.', ',');
+      const voto = function(g){ return String(g.mioVoto).replace('.', ','); };
+      const riga = function(g){ return { k: accorcia(g.title, 24), v: voto(g) }; };
+      const quanti = Math.min(3, votati.length);
+      const righe = [{ k: TP('wrap.iMigliori'), v: '', capo: true }]
+        .concat(votati.slice(0, quanti).map(riga));
+      if (votati.length >= quanti * 2){
+        righe.push({ k: TP('wrap.iPeggiori'), v: '', capo: true });
+        votati.slice(-quanti).reverse().forEach(function(g){ righe.push(riga(g)); });
+      }
       return { t: 'wrap.iTuoiVoti', n: accorcia(votati[0].title), testo: true, tono: 2,
                cop: (votati[0].img && votati[0].img.naturalWidth) ? votati[0].img : null,
-               s: String(votati[0].mioVoto).replace('.', ',') + ' / 10',
-               righe: votati.slice(1, 10).map(function(g){
-                 return { k: accorcia(g.title), v: String(g.mioVoto).replace('.', ',') };
-               }).concat([{ k: TP('wrap.votoMedio'), v: med }]) };
+               s: voto(votati[0]) + ' / 10', righe: righe };
     })(),
 
     w.perc === null
@@ -8392,10 +8448,29 @@ function slideWrapGrezze(){
             .concat(debole && debole !== forte
               ? [{ k: TP('wrap.peggio'), v: accorcia(debole.titolo, 20) + ' &middot; ' + debole.perc + '%' }] : []) },
 
+    /* CHI C'E' AL TAVOLO, IN UNA SLIDE SOLA.
+
+       Erano due: "con chi giochi" -- il nome con cui hai giocato di piu'
+       -- e "al tavolo", la media dei presenti. Sono la stessa domanda
+       guardata da due lati, e divise facevano due slide magre; insieme
+       fanno il ritratto del tuo tavolo: chi c'e', quanti siete, e quante
+       volte non c'era nessuno.
+
+       Il solitario si conta sulle partite con UNA persona sola segnata:
+       un automa qui dentro nessuno lo registra, e dire "con automa" un
+       dato che non c'e' sarebbe inventarlo. */
     amici.length
       ? { t: 'wrap.conChi', n: amici[0].nome, testo: true, tono: 6,
           s: TP(amici[0].con === 1 ? 'wrap.insiemeUna' : 'wrap.insieme', {n: amici[0].con}),
-          righe: amici.slice(0, 3).map(function(a){ return { k: a.nome, v: a.con }; }) }
+          /* Il titoletto e' una riga a parte e SENZA numero: messo sulla
+             riga della media se lo mangiava -- una riga "capo" e' il
+             nome di quelle che vengono sotto, non un dato. */
+          righe: amici.slice(0, 3).map(function(a){ return { k: a.nome, v: a.con }; })
+            .concat(tav.media !== null
+              ? [{ k: TP('wrap.tavolo'), v: '', capo: true },
+                 { k: TP('wrap.inMediaAlTavolo'), v: String(tav.media).replace('.', ',') },
+                 { k: TP('wrap.piuGrande'), v: tav.max }] : [])
+            .concat(tav.soli ? [{ k: TP('wrap.daSolo'), v: tav.soli }] : []) }
       : { t: 'wrap.conChi', n: null, s: TP('wrap.nessuno'), tono: 6 },
 
     bestia
@@ -8408,12 +8483,6 @@ function slideWrapGrezze(){
           })() }
       : { t: 'wrap.bestia', n: null, s: TP('wrap.nessuno'), tono: 5 },
 
-    tav.media !== null
-      ? { t: 'wrap.tavolo', n: String(tav.media).replace('.', ','), tono: 7,
-          s: TP('wrap.inMediaAlTavolo'),
-          righe: [ { k: TP('wrap.piuGrande'), v: tav.max },
-                   { k: TP('wrap.contate'), v: tav.quante } ] }
-      : { t: 'wrap.tavolo', n: null, s: TP('wrap.vuoto'), tono: 7 }
   ];
   fuori.anno = anno;
   return fuori;
@@ -8428,9 +8497,29 @@ function disegnaWrap(){
        Regrets: Lamentable Tentacles" a centoventi pixel non ci sta in
        nessuna larghezza. */
     let sotto = '';
-    if (x.righe && x.righe.length){
+    if (x.podio && x.podio.length){
+      /* IL PODIO. Il primo in mezzo e piu' alto, il secondo a sinistra e
+         il terzo a destra: e' come si guarda un podio, e l'ordine lo fa
+         il CSS -- qui restano in classifica, che e' come si leggono a
+         voce e come arrivano a chi usa uno screen reader. */
+      sotto = '<ol class="wrap-podio' + (x.podio.length === 1 ? ' uno' : '') + '">' +
+        x.podio.map(function(g, k){
+          return '<li class="p' + (k + 1) + '">' +
+            (g.cop && g.cop.naturalWidth
+              ? '<img src="' + esc(g.cop.src) + '" alt="" decoding="async">'
+              : '<span class="senza">' + esc(accorcia(g.titolo, 22)) + '</span>') +
+            '<b>' + g.n + '</b>' +
+            '<span class="pod-tit">' + esc(accorcia(g.titolo, 22)) + '</span>' +
+          '</li>';
+        }).join('') + '</ol>';
+    } else if (x.righe && x.righe.length){
       sotto = '<ul class="wrap-righe">' + x.righe.map(function(r){
-        return '<li><span>' + esc(r.k) + '</span><b>' + r.v + '</b></li>';
+        /* Una riga "capo" non e' un dato: e' il titoletto che dice di
+           che cosa sono i tre sotto. Senza, "i tre peggiori" si
+           leggevano come la coda dei migliori. */
+        return r.capo
+          ? '<li class="capo"><span>' + esc(r.k) + '</span></li>'
+          : '<li><span>' + esc(r.k) + '</span><b>' + r.v + '</b></li>';
       }).join('') + '</ul>';
     } else if (x.barre && x.barre.length){
       /* Le barre sono in proporzione al mese piu' pieno: non c'e' una
@@ -8469,8 +8558,14 @@ function disegnaWrap(){
         : '') +
       (x.s ? '<p class="wrap-s">' + esc(x.s) + '</p>' : '') +
       sotto +
-      '<p class="wrap-firma">Me<i>Board</i>' +
-        (nick ? ' &middot; ' + esc(nick) : '') + '</p>' +
+      /* "Me" e "Board" si distinguono per FORZA, non per colore: il
+         colore li separava solo sulle slide rosse, dove il forte e' la
+         carta e il tenue l'inchiostro. Su ocra e verde sono tutti e due
+         neri -- devono esserlo, carta su ocra fa 1,5 a 1 -- e il
+         marchio usciva piatto. Stessa tinta per tutti e due ovunque, e
+         "Me" piu' chiaro: la stessa costruzione su ogni slide. */
+      '<p class="wrap-firma"><b><span>Me</span><i>Board</i></b>' +
+        (nick ? '<em>&middot; ' + esc(nick) + '</em>' : '') + '</p>' +
     '</article>';
   }).join('');
   q('#wrap-punti').innerHTML = sl.map(function(x, i){
@@ -8609,9 +8704,60 @@ function salvaSlide(){
 
   /* IL DETTAGLIO VA NELL'IMMAGINE. Senza, la slide che si pubblica
      sarebbe piu' povera di quella che si e' guardata. */
-  if (sl.righe && sl.righe.length){
+  if (sl.podio && sl.podio.length){
+    /* IL PODIO NEL PNG. Il primo in mezzo e piu' grande, come a schermo:
+       quello che si guarda e quello che si pubblica devono essere la
+       stessa slide. Le scatole non sono tutte uguali, quindi ognuna sta
+       dentro il suo riquadro con le proporzioni sue. */
+    y += 40;
+    const ORD = [1, 0, 2];                 // secondo, primo, terzo
+    const COL = (W - M * 2) / 3;
+    ORD.forEach(function(k, posto){
+      const g = sl.podio[k];
+      if (!g) return;
+      const grande = k === 0;
+      const lato = grande ? 300 : 230;
+      const cx = M + COL * posto + COL / 2;
+      const base = y + 330;
+      let alto = base;
+      if (g.cop && g.cop.naturalWidth){
+        try {
+          const r = Math.min(lato / g.cop.naturalWidth, lato / g.cop.naturalHeight);
+          const cw = Math.round(g.cop.naturalWidth * r);
+          const ch = Math.round(g.cop.naturalHeight * r);
+          alto = base - ch;
+          x.drawImage(g.cop, Math.round(cx - cw / 2), alto, cw, ch);
+        } catch (e) {}
+      } else {
+        x.fillStyle = 'rgba(0,0,0,.20)';
+        alto = base - lato;
+        x.fillRect(Math.round(cx - lato / 2), alto, lato, lato);
+      }
+      x.textAlign = 'center';
+      x.fillStyle = forte;
+      x.font = '900 ' + (grande ? 64 : 48) + 'px ' + FONT_SLIDE;
+      x.fillText(String(g.n), cx, base + 70);
+      x.fillStyle = tenue;
+      x.font = '900 ' + (grande ? 28 : 24) + 'px ' + FONT_SLIDE;
+      x.fillText(spaziato(togliEntita(accorcia(g.titolo, 16)).toUpperCase()), cx, base + 112);
+      x.textAlign = 'left';
+    });
+    y += 460;
+  } else if (sl.righe && sl.righe.length){
     y += 60;
-    sl.righe.slice(0, 3).forEach(function(r){
+    /* Sette righe e non tre: da quando i voti sono tre migliori e tre
+       peggiori, tagliare a tre vorrebbe dire pubblicare meta' slide. */
+    sl.righe.slice(0, 7).forEach(function(r){
+      if (r.capo){
+        x.fillStyle = tenue;
+        x.textAlign = 'left';
+        x.font = '900 30px ' + FONT_SLIDE;
+        x.globalAlpha = .75;
+        x.fillText(spaziato(togliEntita(r.k).toUpperCase()), M, y - 6);
+        x.globalAlpha = 1;
+        y += 52;
+        return;
+      }
       x.fillStyle = 'rgba(0,0,0,.20)';
       x.fillRect(M, y - 44, W - M * 2, 76);
       x.fillStyle = forte;
@@ -8653,13 +8799,15 @@ function salvaSlide(){
   const nick = PARTITE.mioNome();
   x.font = '900 30px ' + FONT_SLIDE;
   x.textAlign = 'left';
-  x.globalAlpha = .72;
-  x.fillStyle = tenue;
+  /* Tutti e due nel FORTE, "ME" piu' chiaro: come a schermo, e per lo
+     stesso motivo -- col tenue il marchio cambiava faccia da una slide
+     all'altra. */
+  x.fillStyle = forte;
+  x.globalAlpha = .5;
   const me = spaziato('ME');
   x.fillText(me, M, H - M);
   const wMe = x.measureText(me).width;
   x.globalAlpha = 1;
-  x.fillStyle = forte;
   const board = spaziato('BOARD');
   x.fillText(board, M + wMe, H - M);
   if (nick){

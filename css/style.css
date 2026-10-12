@@ -5193,6 +5193,55 @@ body.wrap-su #wrap{display:flex}
   font-family:var(--ff); font-weight:900; font-size:13px;
   letter-spacing:.02em; text-transform:uppercase; color:var(--sl-forte);
 }
+/* Il titoletto di un gruppo di righe: senza fondo e piu' piccolo, cosi'
+   si vede che non e' un dato ma il nome di quelli che vengono sotto. */
+.wrap-righe li.capo{
+  background:none; padding:10px 0 2px;
+}
+.wrap-righe li.capo span{
+  font-size:11px; letter-spacing:.14em; color:var(--sl-tenue); opacity:.78;
+}
+.wrap-righe li.capo + li{margin-top:0}
+
+/* IL PODIO: il primo in mezzo e piu' alto, come un podio vero. In
+   classifica restano primo, secondo, terzo -- si leggono cosi' a voce
+   e cosi' arrivano a chi usa uno screen reader -- e a spostarli e'
+   l'ordine del flex, che non tocca il documento. */
+.wrap-podio{
+  list-style:none; margin:18px 0 0; padding:0;
+  width:100%; display:flex; align-items:flex-end; justify-content:center; gap:10px;
+}
+.wrap-podio li{
+  flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.wrap-podio li.p1{order:2; flex-grow:1.35}
+.wrap-podio li.p2{order:1}
+.wrap-podio li.p3{order:3}
+.wrap-podio.uno li.p1{flex-grow:1; max-width:62%}
+.wrap-podio img{
+  width:100%; height:auto; display:block;
+  border:2px solid var(--sl-forte);
+}
+.wrap-podio li.p1 img{border-width:3px}
+/* Senza copertina resta il titolo in un riquadro della stessa misura:
+   un buco in mezzo a due scatole si legge come un errore. */
+.wrap-podio .senza{
+  width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  padding:8px; text-align:center;
+  background:rgba(0,0,0,.20); border:2px solid var(--sl-forte);
+  font-family:var(--ff); font-weight:900; font-size:11px;
+  letter-spacing:.02em; text-transform:uppercase; color:var(--sl-forte);
+}
+.wrap-podio b{
+  font-family:var(--ff); font-weight:900; font-size:24px; line-height:1;
+  color:var(--sl-forte);
+}
+.wrap-podio li.p1 b{font-size:34px}
+.wrap-podio .pod-tit{
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--ff); font-weight:900; font-size:10px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--sl-tenue); opacity:.8;
+}
 .wrap-righe li b{
   flex:none; font-family:var(--ff-mono); font-weight:600; font-size:12px;
   letter-spacing:.02em; text-transform:none; color:var(--sl-forte);
@@ -5236,13 +5285,27 @@ body.wrap-su #wrap{display:flex}
 
    Il marchio si stampa con i due colori come in testata: `Me` nel
    tenue, `Board` nel forte. */
+/* IL MARCHIO SI LEGGE UGUALE SU OGNI SLIDE.
+
+   Era `Me` nel tenue e `Board` nel forte: sulle rosse il forte e' la
+   carta e il tenue l'inchiostro, quindi due colori; su ocra e verde
+   sono tutti e due neri -- e devono esserlo, carta su ocra fa 1,5 a 1
+   -- quindi uno solo. Risultato: il marchio era bicolore su un terzo
+   delle slide e piatto sulle altre due terzi.
+
+   Adesso la differenza e' la FORZA, che si puo' fare con qualunque
+   inchiostro: stessa tinta per tutti e due, "Me" al mezzo. Il nick
+   resta nel tenue, perche' non e' il marchio. */
 .wrap-firma{
   margin:auto 0 0; padding:14px 0 0;
+  display:flex; align-items:baseline; gap:9px;
   font-family:var(--ff); font-weight:900; font-size:11px;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--sl-tenue);
-  opacity:.72;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--sl-forte);
 }
-.wrap-firma i{font-style:normal; color:var(--sl-forte); opacity:1}
+.wrap-firma b{font-weight:900}
+.wrap-firma b span{opacity:.5}
+.wrap-firma i{font-style:normal; opacity:1}
+.wrap-firma em{font-style:normal; color:var(--sl-tenue); opacity:.72}
 
 .wrap-piede{
   flex:none; display:flex; align-items:center; gap:10px;
