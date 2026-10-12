@@ -1159,6 +1159,14 @@
 <div id="partitalayer" aria-hidden="true">
   <div class="add-card" role="dialog" aria-labelledby="pa-h">
 
+    <!-- LA <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg> AL POSTO DI "ANNULLA". Il piede aveva tre tasti -- annulla,
+         salva, elimina -- e due di quei tre non salvano niente: con "elimina"
+         accanto, "annulla" si leggeva come la sua versione mite, e correggendo
+         una partita gia' segnata veniva da chiedersi che cosa annullasse. La
+         croce dice "chiudo questo", che e' l'unica cosa che faceva. Sta dove
+         sta nelle altre schede. -->
+    <button id="pa-chiudi" type="button" data-i18n-aria="pa.chiudi" aria-label="chiudi"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg></button>
+
     <p class="eyebrow" data-i18n="pa.occhiello">una partita</p>
     <h2 id="pa-h" data-i18n="pa.h">Segna una partita</h2>
 
@@ -1264,9 +1272,8 @@
     <p id="pa-msg" class="add-msg"></p>
 
     <p class="add-foot pa-foot">
-      <button id="pa-x" type="button" class="secondario" data-i18n="pa.annulla">annulla</button>
-      <button id="pa-salva" type="button" class="primario" data-i18n="pa.salva">salva la partita</button>
       <button id="pa-togli" type="button" class="distruttivo">elimina</button>
+      <button id="pa-salva" type="button" class="primario" data-i18n="pa.salva">salva la partita</button>
     </p>
   </div>
 </div>

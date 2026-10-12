@@ -1266,8 +1266,18 @@ body.sez-partite #partite{display:block}
 .cal-quel-piu button:hover{border-color:var(--accent); color:var(--accent)}
 .cal-quel-piu .ico{width:15px; height:15px}
 
-.gio-chi{margin:5px 0 0; font-size:13px; color:var(--ink-soft); line-height:1.7}
+/* Chi ha vinto e quanti erano, su una riga sola: non e' piu' un elenco
+   di nomi che va a capo, quindi non serve il respiro fra le righe. */
+.gio-chi{
+  margin:5px 0 0; font-size:13px; color:var(--ink-soft); line-height:1.4;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
 .gio-chi i{font-style:normal}
+/* L'omino col numero: il conto dei presenti. Sta accanto al vincitore
+   ma non compete con lui -- inchiostro smorzato e icona piccola. */
+.gio-quanti{display:inline-flex; align-items:center; gap:4px; color:var(--ink-soft)}
+.gio-quanti .ico{width:14px; height:14px}
+.gio-quanti b{font-weight:600}
 .gio-chi .vince{
   color:var(--ink); font-weight:500;
   border-bottom:2px solid var(--accent); padding-bottom:1px;
@@ -1332,7 +1342,25 @@ body.sez-partite #partite{display:block}
 }
 #partitalayer.on{opacity:1; visibility:visible; transition:opacity .3s ease, visibility 0s}
 .pa-form{margin-top:4px}
-.pa-eye{margin:18px 0 8px}
+/* "GIOCATORI" NON E' UN'ETICHETTA DI CAMPO.
+
+   Era un occhiello come gli altri -- dieci pixel, maiuscoletto, stessa
+   taglia di "gioco", "data" e "durata" -- e quindi si leggeva come la
+   quarta casella del modulo, non come il capo della parte di sotto. E
+   stava anche attaccato al riquadro della data, che fa da bordo e da
+   fine: due cose che si toccano si leggono come una.
+
+   Qui diventa un capo di sezione: la mano dei titoli, la riga tratteggiata
+   che attraversa -- lo stesso segno con cui finiscono i pannelli -- e
+   l'aria sopra che dice che qui comincia un'altra cosa. */
+p.pa-eye{
+  margin:30px 0 10px; display:flex; align-items:center; gap:12px;
+  font-family:var(--ff-display); font-weight:900; font-size:15px;
+  letter-spacing:.02em; text-transform:uppercase; color:var(--ink);
+}
+p.pa-eye::after{
+  content:''; flex:1; height:0; border-top:1px dashed var(--line);
+}
 .pa-chi{list-style:none; margin:0; padding:0}
 .pa-chi:empty{display:none}
 .pa-chi li{
@@ -1366,6 +1394,17 @@ body.sez-partite #partite{display:block}
 }
 .pa-foot #pa-togli:hover{background:var(--wood); color:var(--card); border-color:var(--wood)}
 .pa-foot #pa-togli[hidden]{display:none}
+/* I DUE TASTI DEVONO ESSERE ALTI UGUALE.
+
+   Erano sfalsati, e non per l'allineamento: "salva" ha 11px di imbottitura
+   sopra e sotto e "elimina" 10, piu' un bordo da 1px che conta come
+   altezza solo su uno dei due. Tre pixel di differenza su due pulsanti
+   affiancati si vedono tutti. Le imbottiture le decido qui una volta per
+   entrambi, e `stretch` li tira alla stessa altezza comunque. */
+.pa-foot #pa-salva, .pa-foot #pa-togli{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:10px 16px; line-height:1.2;
+}
 
 #p-segna{
   font-family:var(--ff-text); font-size:13px; font-weight:700;
@@ -2007,11 +2046,12 @@ body.visita #p-fuori{display:none !important}
 }
 /* un titolo lungo senza spazi non deve allargare la scheda */
 .add-card, .add-msg, #add-res button{overflow-wrap:anywhere}
-#add-x{
+#add-x, #pa-chiudi{
   position:absolute; top:-1px; right:-1px; background:var(--accent); color:var(--card);
   border:0; cursor:pointer; font-family:var(--ff-text); font-weight:700;
   font-size:13px; letter-spacing:0; text-transform:none; padding:9px 13px; border-radius:var(--r-s);
 }
+#add-x:hover, #pa-chiudi:hover{background:var(--ink)}
 .add-card h2{margin:0 0 18px; font-family:var(--ff-display); font-weight:900; text-transform:uppercase;
   font-size:28.8px; line-height:.95; letter-spacing:-.03em}
 .add-search{display:flex; gap:8px}
@@ -2964,12 +3004,12 @@ body.elenco #conta b{color:var(--su-accent)}
   border:0; border-radius:var(--r-s); cursor:pointer;
 }
 #profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
-#partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota):not(#pa-chiudi),
 #gruppilayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
 #recelayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota){
   background:rgba(var(--ink-rgb),.06); color:var(--ink); padding:10px 14px; font-size:14px;
 }
-#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):hover,
+#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):not(#pa-chiudi):hover,
 #gruppilayer button:not(.primario):not(.ruota):hover, #recelayer button:not(.primario):not(.ruota):hover{
   background:rgba(var(--ink-rgb),.11);
 }
@@ -3006,7 +3046,11 @@ button.distruttivo.armed{background:var(--rosso); color:var(--su-rosso); border-
    e' l'ordine che si legge su qualunque finestra di sistema. */
 .add-foot button.primario{margin-left:auto}
 .add-foot button.distruttivo{margin-left:0; order:-1}
-.pa-foot{flex-wrap:wrap}
+/* Due tasti, una riga: andavano a capo quando erano in tre -- con
+   "annulla" in mezzo -- e adesso ci stanno sempre. `stretch` perche'
+   l'altezza la decide il piu' alto dei due, non l'imbottitura di
+   ciascuno. */
+.pa-foot{flex-wrap:nowrap; align-items:stretch}
 
 /* Su schermo stretto i due comandi finivano SOTTO al titolo, perche'
    una regola li faceva spanciare su tutta la riga (`grid-column:1/-1`).
@@ -4155,7 +4199,10 @@ body.browse:not(.elenco):not(.ferma):not(.sez-catalogo):not(.sez-profilo) .rail-
 .par-tutte > li{padding:12px 0; border-bottom:1px solid rgba(var(--ink-rgb),.07); cursor:pointer}
 .par-tutte > li:last-child{border-bottom:0}
 .par-tutte > li:hover .gio-testa b{color:var(--accent)}
-.par-tutte .gio-testa b{font-size:14px; font-weight:600}
+/* IL TITOLO E' LA COSA PIU' IMPORTANTE DELLA RIGA, e pesava come la
+   data che gli sta accanto: due scritte dello stesso peso non dicono
+   quale si legge prima, e in un elenco di partite si cerca il gioco. */
+.par-tutte .gio-testa b{font-size:15px; font-weight:900; letter-spacing:.01em}
 .par-tutte .gio-testa span{font-size:11px; letter-spacing:.04em; text-transform:none}
 .par-tutte .gio-chi{font-size:12.5px; margin-top:3px}
 
@@ -5436,7 +5483,7 @@ input::placeholder, textarea::placeholder{
    dei comandi e le cancellava il colore con `background:none`. */
 #p-segna, #p-pref,
 #profilo button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
-#partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
+#partitalayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota):not(#pa-chiudi),
 #gruppilayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota),
 #recelayer button:not(.primario):not(.secondario):not(.distruttivo):not(.ruota){
   background:none; color:var(--ink);
@@ -5445,7 +5492,7 @@ input::placeholder, textarea::placeholder{
   letter-spacing:.1em; text-transform:uppercase;
 }
 #p-segna:hover, #p-pref:hover,
-#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):hover,
+#profilo button:not(.primario):not(.ruota):hover, #partitalayer button:not(.primario):not(.ruota):not(#pa-chiudi):hover,
 #gruppilayer button:not(.primario):not(.ruota):hover, #recelayer button:not(.primario):not(.ruota):hover{
   background:rgba(var(--ink-rgb),.08); border-color:var(--accent); color:var(--accent);
 }

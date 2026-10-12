@@ -244,6 +244,7 @@ const ICO = {
   chiudi:   '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg>',
   ospite:   '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="10" r="2.6"/><path d="M7.2 18.4a5.1 5.1 0 0 1 9.6 0"/></g></svg>',
   corona:   '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 8l3.5 3L12 5l4.5 6L20 8l-1.6 9H5.6zM5.6 20h12.8"/></svg>',
+  gente:    '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8zM5.4 19.4c0-3 3-4.6 6.6-4.6s6.6 1.6 6.6 4.6"/></svg>',
   maniglia: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9h12M6 15h12"/></svg>',
   /* I quattro dell'arredo di una cella. Stesso tratto e stesso
      riquadro di tutte le altre: una fila di icone che non si somigliano
@@ -9124,21 +9125,72 @@ function dataIt(iso){
   return parseInt(p[2], 10) + ' ' + mesi()[parseInt(p[1], 10) - 1] + ' ' + p[0];
 }
 
+/* LA DATA IN CIFRE, per le righe dell'elenco.
+
+   Il mese per esteso -- "12 ottobre 2026" -- e' tre parole dove serve un
+   dato: su una riga che deve dire gioco, data, vincitore e quanti erano,
+   era la cosa piu' larga di tutte e vinceva sulle altre tre. Per esteso
+   resta dove la data e' il titolo di qualcosa, cioe' nel calendario.
+
+   L'ordine dei numeri lo decide la LINGUA, non noi: 10/12 e 12/10 sono
+   la stessa data in due paesi diversi, e indovinarlo male e' peggio che
+   scrivere il mese. */
+function dataNum(iso){
+  const p = String(iso || '').split('-');
+  if (p.length !== 3) return '';
+  const d = new Date(+p[0], +p[1] - 1, +p[2]);
+  if (isNaN(d)) return '';
+  try {
+    return d.toLocaleDateString(document.documentElement.lang || 'it', {
+      day: '2-digit', month: '2-digit', year: '2-digit'
+    });
+  } catch (e) {
+    return p[2] + '/' + p[1] + '/' + p[0].slice(2);
+  }
+}
+
 function oggiIso(){
   const d = new Date();
   const due = function(n){ return (n < 10 ? '0' : '') + n; };
   return d.getFullYear() + '-' + due(d.getMonth() + 1) + '-' + due(d.getDate());
 }
 
-/* Una partita: il gioco e il quando in alto, chi c'era sotto. Il
-   vincitore in ocra, che nel resto del sito e' gia' il colore di cio'
-   che conta. */
+/* Una partita: il gioco e il quando in alto, chi ha vinto e quanti
+   erano sotto. Il vincitore in ocra, che nel resto del sito e' gia' il
+   colore di cio' che conta.
+
+   SOTTO NON C'E' PIU' L'ELENCO DEI PRESENTI.
+
+   C'era la fila dei nomi per intero, col vincitore colorato in mezzo.
+   Con quattro o cinque giocatori andava a capo e ogni partita diventava
+   alta tre righe: scorrendo l'elenco si leggevano gli stessi nomi
+   ripetuti venti volte, e la cosa che si cerca in un elenco di partite
+   -- chi ha vinto -- stava nascosta dentro una fila di gente.
+
+   Qui restano le due cose che distinguono una partita: chi ha vinto, e
+   quanti erano. Il numero porta l'omino accanto, perche' un "4" da solo
+   su una riga che ha anche una data non si sa cos'e'. I nomi di tutti si
+   leggono aprendo la partita, che e' il posto dove si va quando quella
+   partita la si vuole davvero guardare. */
 function rigaGiocata(p, conTitolo){
-  const quando = p.giocata_il ? dataIt(p.giocata_il) : '';
+  const quando = p.giocata_il ? dataNum(p.giocata_il) : '';
   const ora = p.ora ? String(p.ora).slice(0, 5) : '';
-  const chi = (p.chi || []).map(function(x){
-    return '<i class="' + (x.vincitore ? 'vince' : '') + '">' + esc(x.nome) + '</i>';
-  }).join(', ');
+  const seduti = (p.chi || []);
+  const vinti = seduti.filter(function(x){ return x.vincitore; });
+  /* Vinta in due si nominano in due: scegliere uno dei due a caso
+     sarebbe scrivere una cosa falsa. In tre o piu' il nome non ci sta e
+     si dice quanti. */
+  const vince = !vinti.length ? ''
+    : (vinti.length <= 2
+        ? '<i class="vince">' + vinti.map(function(x){ return esc(x.nome); }).join(' + ') + '</i>'
+        : '<i class="vince">' + T('par.vintoInTanti', {n: vinti.length}) + '</i>');
+  const chi = (vince || seduti.length)
+    ? vince +
+      (seduti.length
+        ? '<span class="gio-quanti" title="' + esc(TP(seduti.length === 1 ? 'par.unGiocatore' : 'par.nGiocatori', {n: seduti.length})) + '">' +
+          ICO.gente + '<b>' + seduti.length + '</b></span>'
+        : '')
+    : '';
   /* DUE SEGNI SU OGNI PARTITA. Prima si apriva toccando la riga, e
      cancellarla si poteva solo da dentro il modulo: un gesto nascosto
      dietro un altro. La penna dice che si puo' correggere -- cosa che
@@ -10334,7 +10386,7 @@ function bindCuore(){
 }
 
 function bindPartite(){
-  q('#pa-x').addEventListener('click', chiudiPartita);
+  q('#pa-chiudi').addEventListener('click', chiudiPartita);
   q('#pa-salva').addEventListener('click', salvaPartita);
 
   const tit = q('#pa-titolo');
