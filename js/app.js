@@ -6123,6 +6123,27 @@ function percLuce(v){
    spunta. A scrivere e' `tieniStanza`, che e' un gesto. */
 let stanzaDaTenere = false;
 let stanzaComEra = null;         // com'era aprendo il pannello
+/* Il legno non sta nella stanza ma sul MOBILE, quindi `stanzaComEra`
+   non lo riporta indietro: quello che si e' provato e com'era prima si
+   tengono qui, e viaggiano con la spunta e con la freccia come il
+   resto. */
+let scaffaliProvati = null;      // {id, patch, prima}
+
+function provaScaffali(id, patch){
+  const prima = LIB.stileQui(id, patch);
+  if (!prima) return;
+  /* Il "com'era" e' quello della PRIMA prova: provando tre legni di
+     fila, tornare indietro deve riportare al legno di partenza, non al
+     secondo dei tre. */
+  if (!scaffaliProvati || scaffaliProvati.id !== id)
+    scaffaliProvati = { id: id, patch: {}, prima: prima };
+  Object.keys(patch).forEach(function(k){ scaffaliProvati.patch[k] = patch[k]; });
+}
+
+function scordaScaffaliProvati(){
+  if (scaffaliProvati) LIB.stileQui(scaffaliProvati.id, scaffaliProvati.prima);
+  scaffaliProvati = null;
+}
 
 function segnaDaTenere(){
   stanzaDaTenere = true;
@@ -6139,7 +6160,14 @@ function salvaStanzaTraPoco(){
 function tieniStanza(){
   clearTimeout(salvaStanzaT);
   q('#st-msg').textContent = TP('stanza.salvando');
-  return STANZA.salva()
+  /* Il legno prima della stanza: sono due scritture diverse su due
+     tavole diverse, e se la seconda fallisce si deve vedere l'errore
+     della sua. */
+  const legno = scaffaliProvati
+    ? LIB.stileLibreria(scaffaliProvati.id, scaffaliProvati.patch)
+    : Promise.resolve();
+  return legno
+    .then(function(){ scaffaliProvati = null; return STANZA.salva(); })
     .then(function(){
       stanzaDaTenere = false;
       stanzaComEra = STANZA.corrente();
@@ -6162,8 +6190,10 @@ function tieniStanza(){
    detto che la prova non gli e' piaciuta. */
 function lasciaStanza(){
   clearTimeout(salvaStanzaT);
-  if (stanzaDaTenere && stanzaComEra){
-    STANZA.cambia(stanzaComEra);
+  const c_era = scaffaliProvati;
+  scordaScaffaliProvati();
+  if ((stanzaDaTenere && stanzaComEra) || c_era){
+    if (stanzaComEra) STANZA.cambia(stanzaComEra);
     disegnaStanza();
     applicaStanza();
     applicaLuce();
@@ -6831,6 +6861,7 @@ function apriArreda(){
      sarebbe gia' persa quando serve. */
   stanzaComEra = STANZA.corrente();
   stanzaDaTenere = false;
+  scaffaliProvati = null;        // le prove di prima sono gia' state decise
   const bT = q('#st-salva');
   if (bT) bT.classList.remove('vivo');
   document.body.classList.add('arreda');
@@ -6849,8 +6880,13 @@ function chiudiArreda(){
 
 function bindStanza(){
   /* Toggle, come l'imbuto: lo stesso gesto che apre richiude. */
+  /* Chiudere dal pulsante e' come premere la freccia: una sola regola --
+     si tiene con la spunta, tutto il resto lascia perdere -- invece di
+     due porte che fanno cose diverse. Chiudendo con `chiudiArreda` la
+     prova restava applicata e mai scritta: la scena mostrava un legno
+     che sul database non c'era. */
   q('#stanza-apri').addEventListener('click', function(){
-    if (document.body.classList.contains('arreda')) chiudiArreda();
+    if (document.body.classList.contains('arreda')) lasciaStanza();
     else apriArreda();
   });
   q('#stanza-x').addEventListener('click', lasciaStanza);
@@ -6971,38 +7007,37 @@ function bindStanza(){
      a ogni pixel di trascinamento vorrebbe dire una scrittura al
      secondo sul database, ed e' la stessa ragione per cui il cursore
      della luce salva dopo una pausa. */
+  /* IL LEGNO SI PROVA, COME TUTTO IL RESTO DEL PANNELLO.
+
+     Era l'unico colore che partiva per il database appena toccato --
+     "salvando", "salvata", a ogni bollino. Il muro, il pavimento, la
+     tinta del nome e quella dei faretti si vedono e basta, e si tengono
+     con la spunta: il legno faceva eccezione senza che niente, nel
+     pannello, lo dicesse. Provarne tre voleva dire tre scritture, e
+     l'ultima vinceva per caso.
+
+     Adesso cambia in memoria, la scena si ridisegna, e la spunta si
+     accende come per ogni altra modifica. */
   q('#st-scaffali').addEventListener('change', function(e){
     const r = e.target.closest('input.ruota');
     if (!r) return;
     const L = libCorrente();
     if (!L){ flash(TP('stanza.nienteArredo')); return; }
-    q('#st-msg').textContent = TP('stanza.salvando');
-    LIB.stileLibreria(L.id, { scaffali: r.value }).then(function(){
-      q('#st-msg').textContent = TP('stanza.salvata');
-    }).catch(function(err){
-      q('#st-msg').textContent = TP('stanza.nonSalvata', {e: err.message});
-    });
+    provaScaffali(L.id, { scaffali: r.value });
     disegnaStanza();
     applicaStanza();
+    segnaDaTenere();
   });
 
-  [['#st-scaffali','scaffali']].forEach(function(par){
-    q(par[0]).addEventListener('click', function(e){
-      const b = e.target.closest('button[data-v]');
-      if (!b) return;
-      const L = libCorrente();
-      if (!L){ flash(TP('stanza.nienteArredo')); return; }
-      const patch = {};
-      patch[par[1]] = b.getAttribute('data-v');
-      q('#st-msg').textContent = TP('stanza.salvando');
-      LIB.stileLibreria(L.id, patch).then(function(){
-        q('#st-msg').textContent = TP('stanza.salvata');
-      }).catch(function(err){
-        q('#st-msg').textContent = TP('stanza.nonSalvata', {e: err.message});
-      });
-      disegnaStanza();
-      applicaStanza();          // il cambio si vede subito, il salvataggio segue
-    });
+  q('#st-scaffali').addEventListener('click', function(e){
+    const b = e.target.closest('button[data-v]');
+    if (!b) return;
+    const L = libCorrente();
+    if (!L){ flash(TP('stanza.nienteArredo')); return; }
+    provaScaffali(L.id, { scaffali: b.getAttribute('data-v') });
+    disegnaStanza();
+    applicaStanza();
+    segnaDaTenere();
   });
 
   const bTieni = q('#st-salva');

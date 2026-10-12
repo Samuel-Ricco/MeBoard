@@ -804,6 +804,23 @@ async function creaLibreria(nome){
 /* Lo stile di UN mobile: il legno e gli oggetti nei cubi vuoti. Nulli
    vuol dire "come dice la stanza", ed e' il caso di chi non ha mai
    toccato niente. */
+/* LO STILE SOLO IN MEMORIA.
+
+   Il legno di un mobile si prova guardandolo, e `stileLibreria` manda
+   al database: provarne tre voleva dire tre scritture, e la terza
+   vinceva per caso -- quella rimasta sotto il dito. Questa cambia e
+   basta, cosi' la scena si ridisegna e non si e' deciso niente; a
+   scrivere e' la spunta del pannello, che e' un gesto.
+
+   Torna com'era prima, per chi deve poter rimettere a posto. */
+function stileQui(id, patch){
+  const L = librerie.find(function(x){ return x.id === id; });
+  if (!L) return null;
+  const prima = {};
+  Object.keys(patch).forEach(function(k){ prima[k] = L[k]; L[k] = patch[k]; });
+  return prima;
+}
+
 async function stileLibreria(id, patch){
   const c = AUTH.attivo() ? AUTH.client() : null;
   if (!c || visitata) throw new Error(TP('err.nonSiPuo'));
@@ -1252,6 +1269,7 @@ return {
   scollega: scollega, reset: reset, esporta: esporta, touched: touched,
   preferito: preferito, segnaPreferito: segnaPreferito,
   stileLibreria: stileLibreria,
+  stileQui: stileQui,
   visita: visita, torna: torna, ospitePresso: ospitePresso,
   spostaInCondivisa: spostaInCondivisa, togliCondivisa: togliCondivisa,
   oggettoDi: oggettoDi,
