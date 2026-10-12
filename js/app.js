@@ -6139,21 +6139,84 @@ function bindLibrerie(){
 
 let salvaStanzaT = 0;
 
+/* LA LUCE SI LEGGE DA ZERO A CENTO.
+
+   Il valore vero va da 0,08 a 1,60 -- sotto si spegne tutto e sopra
+   brucia -- e la percentuale era quel numero moltiplicato per cento:
+   il cursore partiva da "8%" e arrivava a "160%", due estremi che non
+   vogliono dire niente per chi li legge. Non c'e' niente di sbagliato
+   nella scala, c'e' di sbagliato nel mostrarla: quello che interessa e'
+   quanto si e' spostato il cursore dentro la sua corsa, e quella va da
+   zero a cento.
+
+   Il minimo resta 0,08 e non zero: zero sarebbe il buio, e una stanza
+   nera non e' una scelta che si offre, e' un guasto. */
+function percLuce(v){
+  const a = STANZA.LUCE_MIN, b = STANZA.LUCE_MAX;
+  const x = Math.max(a, Math.min(b, parseFloat(v) || a));
+  return Math.round((x - a) / (b - a) * 100);
+}
+
+/* QUELLO CHE SI TOCCA SI VEDE; QUELLO CHE SI TIENE SI DICE.
+
+   Questa funzione mandava al database da sola dopo settecento
+   millisecondi. Provare tre legni voleva dire tre scritture, e la
+   terza vinceva per caso -- quella che era rimasta sotto il dito.
+
+   Adesso non scrive: segna che c'e' qualcosa da tenere, e accende la
+   spunta. A scrivere e' `tieniStanza`, che e' un gesto. */
+let stanzaDaTenere = false;
+let stanzaComEra = null;         // com'era aprendo il pannello
+
+function segnaDaTenere(){
+  stanzaDaTenere = true;
+  const b = q('#st-salva');
+  if (b) b.classList.add('vivo');
+}
+
 function salvaStanzaTraPoco(){
   clearTimeout(salvaStanzaT);
+  segnaDaTenere();
+}
+
+/* La spunta: scrive, e lo dice se non ci riesce. */
+function tieniStanza(){
+  clearTimeout(salvaStanzaT);
   q('#st-msg').textContent = TP('stanza.salvando');
-  salvaStanzaT = setTimeout(function(){
-    STANZA.salva()
-      .then(function(){ q('#st-msg').textContent = TP('stanza.salvata'); })
-      .catch(function(e){
-        q('#st-msg').textContent = TP('stanza.nonSalvata', {e: e.message});
-        /* Il pannello puo' essere chiuso -- l'arredo di una cella si
-           sceglie senza aprirlo -- e un salvataggio fallito dentro un
-           riquadro che nessuno guarda e' un salvataggio fallito in
-           silenzio. */
-        flash(TP('stanza.nonSalvata', {e: e.message}));
-      });
-  }, 700);
+  return STANZA.salva()
+    .then(function(){
+      stanzaDaTenere = false;
+      stanzaComEra = STANZA.corrente();
+      const b = q('#st-salva');
+      if (b) b.classList.remove('vivo');
+      q('#st-msg').textContent = '';
+      chiudiArreda();
+    })
+    .catch(function(e){
+      /* Il pannello puo' essere chiuso, e un salvataggio fallito dentro
+         un riquadro che nessuno guarda e' un salvataggio fallito in
+         silenzio. */
+      q('#st-msg').textContent = TP('stanza.nonSalvata', {e: e.message});
+      flash(TP('stanza.nonSalvata', {e: e.message}));
+    });
+}
+
+/* La freccia: rimette com'era e chiude. Non chiede conferma, perche'
+   quello che si perde e' una prova -- e chi ha premuto indietro ha gia'
+   detto che la prova non gli e' piaciuta. */
+function lasciaStanza(){
+  clearTimeout(salvaStanzaT);
+  if (stanzaDaTenere && stanzaComEra){
+    STANZA.cambia(stanzaComEra);
+    disegnaStanza();
+    applicaStanza();
+    applicaLuce();
+  }
+  stanzaDaTenere = false;
+  const b = q('#st-salva');
+  if (b) b.classList.remove('vivo');
+  q('#st-msg').textContent = '';
+  chiudiArreda();
 }
 
 /* Quale mobile si sta guardando: e' quello di cui si cambiano nome,
@@ -6227,7 +6290,7 @@ function disegnaStanza(){
   };
 
   q('#st-luce').value = cur.luce;
-  q('#st-luce-n').textContent = Math.round(cur.luce * 100) + '%';
+  q('#st-luce-n').textContent = percLuce(cur.luce) + '%';
   q('#st-faretti').value = cur.faretti;
   q('#st-faretti-n').textContent = Math.round(cur.faretti * 100) + '%';
   /* Il volume non viene da `STANZA`: e' di chi ascolta, non della
@@ -6807,6 +6870,13 @@ function apriArreda(){
   chiudiPannelli('arreda');
   disegnaLibrerie();
   sincronizzaPannello();
+  /* Si fotografa com'e' ADESSO: e' quello a cui la freccia riporta.
+     Preso all'apertura e non alla prima modifica, se no la prima
+     sarebbe gia' persa quando serve. */
+  stanzaComEra = STANZA.corrente();
+  stanzaDaTenere = false;
+  const bT = q('#st-salva');
+  if (bT) bT.classList.remove('vivo');
   document.body.classList.add('arreda');
   q('#stanza').setAttribute('aria-hidden', 'false');
   /* Vuoto: "si salva da solo" lo fa ogni pannello del sito, e dirlo in
@@ -6827,14 +6897,14 @@ function bindStanza(){
     if (document.body.classList.contains('arreda')) chiudiArreda();
     else apriArreda();
   });
-  q('#stanza-x').addEventListener('click', chiudiArreda);
+  q('#stanza-x').addEventListener('click', lasciaStanza);
 
   /* Il cursore della luce chiama solo applicaLuce(): e' un cambio di
      intensita', non di materiali, e ricostruire il mobile a ogni
      pixel di trascinamento lo farebbe singhiozzare. */
   q('#st-luce').addEventListener('input', function(){
     STANZA.cambia({ luce: parseFloat(q('#st-luce').value) });
-    q('#st-luce-n').textContent = Math.round(STANZA.corrente().luce * 100) + '%';
+    q('#st-luce-n').textContent = percLuce(STANZA.corrente().luce) + '%';
     applicaLuce();
     salvaStanzaTraPoco();
   });
@@ -6979,12 +7049,8 @@ function bindStanza(){
     });
   });
 
-  armaBottone(q('#st-reset'), 'stanza.comEra', 'stanza.comEraOk', function(){
-    STANZA.cambia(STANZA.DEFAULT);
-    disegnaStanza();
-    applicaStanza();
-    salvaStanzaTraPoco();
-  });
+  const bTieni = q('#st-salva');
+  if (bTieni) bTieni.addEventListener('click', tieniStanza);
 }
 
 /* ===============================================================

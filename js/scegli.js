@@ -153,11 +153,35 @@ function chiudi(annulla){
   if (typeof SUONI !== 'undefined') SUONI.gioca('serra');
 }
 
+/* CHIUDERE CLICCANDO FUORI NON DEVE FARE ANCHE DELL'ALTRO.
+
+   Si ascolta il `pointerdown` in cattura e si chiudeva la finestrella
+   lasciando correre l'evento: quello proseguiva fino a sotto, e sotto
+   c'e' la scena in tre dimensioni. Chi chiudeva la tavolozza toccando
+   lo sfondo si ritrovava aperta la scheda di una scatola.
+
+   Il tocco che congeda vale SOLO per congedare. Si ferma qui, e si
+   ferma anche il `click` che gli viene dietro -- una volta sola, perche'
+   quello e' il suo -- se no il gesto arriverebbe comunque a chi
+   ascolta il clic invece della pressione.
+
+   Costa un tocco in piu' per agire su qualcos'altro, ed e' il patto di
+   qualunque finestrella che si chiude cliccando via: meglio di un
+   gesto che fa una cosa che nessuno ha chiesto. */
 function fuori(e){
   if (!aperto) return;
   if (pop.contains(e.target)) return;
   if (aperto.ancora && aperto.ancora.contains(e.target)) return;
+  e.stopPropagation();
+  e.preventDefault();
+  document.addEventListener('click', ingoia, true);
   chiudi();
+}
+
+function ingoia(e){
+  document.removeEventListener('click', ingoia, true);
+  e.stopPropagation();
+  e.preventDefault();
 }
 
 function tasto(e){

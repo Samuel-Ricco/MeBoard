@@ -1592,6 +1592,22 @@ body.arreda #stanza{opacity:1; visibility:visible; transform:none; transition-de
   color:var(--ink-soft); line-height:1.2;
 }
 .pastiglie.testo button.on{color:var(--ink)}
+/* LA SPUNTA DEL PANNELLO LIBRERIA. Quieta finche' non c'e' niente da
+   tenere, accesa quando c'e': e' l'unica cosa che dice "hai cambiato
+   qualcosa e non l'hai ancora scritto". */
+#st-salva{
+  width:38px; height:38px; padding:0; border-radius:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:1px dashed var(--line); color:var(--ink-soft);
+  transition:background-color .18s var(--ease), color .18s var(--ease),
+             border-color .18s var(--ease), transform .1s var(--ease);
+}
+#st-salva .ico{width:18px; height:18px}
+#st-salva:active{transform:translate(2px,2px)}
+#st-salva.vivo{
+  background:var(--accent); color:var(--su-accent); border-color:transparent;
+}
+
 .st-fondo{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   margin:16px 0 0; padding-top:12px; border-top:1px dashed var(--line);
