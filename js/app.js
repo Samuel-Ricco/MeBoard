@@ -7165,12 +7165,23 @@ function contenutoInfo(g){
     .map(function(x){ return '<li><b>' + esc(x[0]) + '</b>' + x[1] + '</li>'; }).join('');
   const testo = (g.review || []).map(function(t){ return '<p>' + esc(t) + '</p>'; }).join('');
 
-  const tutti = LIB.gruppi();
-  const suoi = LIB.gruppiDi(g.id);
-  const chip = (LIB.ospitePresso() || !tutti.length) ? '' :
-    '<div class="gruppi riga-gruppi">' + tutti.map(function(G){
-      return '<button type="button" data-g="' + esc(G.id) + '"' +
-             (suoi.indexOf(G.id) >= 0 ? ' class="on"' : '') + '>' + esc(G.nome) + '</button>';
+  /* I GRUPPI DEL GIOCO SONO SCRITTE, NON INTERRUTTORI.
+
+     Erano pastiglie premibili che accendevano e spegnevano l'appartenenza.
+     Sembravano etichette e invece erano comandi: aprendo un gioco da dentro
+     una cartella e premendo per curiosita' il gruppo acceso, il gioco ne
+     usciva e la riga spariva sotto le mani -- senza aver chiesto niente.
+
+     Qui si dice soltanto DOVE sta, e si nominano solo i suoi gruppi: un
+     elenco di tutti i gruppi non si capisce comunque a vista. Metterlo e
+     toglierlo si fa dal menu della riga, dove si sa di stare dando un
+     comando. */
+  const suoi = LIB.gruppiDi(g.id)
+    .map(function(id){ return LIB.gruppi().find(function(G){ return G.id === id; }); })
+    .filter(Boolean);
+  const chip = (LIB.ospitePresso() || !suoi.length) ? '' :
+    '<div class="riga-gruppi sue">' + suoi.map(function(G){
+      return '<span>' + esc(G.nome) + '</span>';
     }).join('') + '</div>';
 
   return (chi  ? '<p class="cat-chi">' + chi + '</p>' : '') +
@@ -7382,8 +7393,8 @@ function disegnaMia(){
        esisteva da nessuna parte, e l'unico modo di metterci dentro un
        gioco era passare dal pannello. Una cartella vuota invece e'
        proprio l'invito a riempirla, e il piu' ce l'ha accanto. */
-    const cartella = function(id, nome, dentro, vero){
-      const su = false;          // chiuse, sempre: vedi sotto
+    const cartella = function(id, nome, dentro, vero, aperta){
+      const su = !!aperta;       // chiuse, tranne quelle trovate cercandone il nome
       const comandi = vero
         ? '<span class="cartella-fa">' +
             '<button type="button" class="c-fa" data-gpiu="' + esc(id) + '" ' +
@@ -7410,15 +7421,36 @@ function disegnaMia(){
         '</ol></div>';
     };
 
-    let html = gruppi.map(function(G){
-      return cartella(G.id, G.nome, l.filter(function(g){
+    /* LA LENTE CERCA ANCHE I GRUPPI.
+
+       Qui le cartelle sono la cosa in vista, e cercare "party" dava un
+       elenco vuoto: la ricerca guardava solo i titoli dei giochi, e un
+       gruppo chiamato proprio cosi' non contava. Chi scrive il nome di un
+       gruppo vuole quel gruppo, non i giochi che per caso si chiamano
+       come lui.
+
+       Quando il nome del gruppo risponde alla ricerca la sua cartella si
+       mostra INTERA e aperta -- filtrarne dentro i giochi col testo che
+       ha trovato la cartella stessa lascerebbe quasi sempre niente. Gli
+       altri gruppi restano filtrati sui giochi, come prima. */
+    const cerca = state.q ? piattoNome(state.q) : '';
+    const gNome = function(G){ return cerca && piattoNome(G.nome).indexOf(cerca) >= 0; };
+    const perNome = cerca && gruppi.some(gNome);
+
+    let html = gruppi.filter(function(G){
+      if (!cerca) return true;
+      return gNome(G) || l.some(function(g){ return LIB.gruppiDi(g.id).indexOf(G.id) >= 0; });
+    }).map(function(G){
+      const suo = gNome(G);
+      const dentro = (suo ? LIB.list(state.sort, '', G.id) : l.filter(function(g){
         return LIB.gruppiDi(g.id).indexOf(G.id) >= 0;
-      }), true);
+      }));
+      return cartella(G.id, G.nome, dentro, true, suo);
     }).join('');
     /* "senza gruppo" non e' un gruppo: non si rinomina, non si butta
        via, e vuoto non si mostra -- vuoto vuol dire che ogni gioco sta
        da qualche parte, che e' una buona notizia e non una cartella. */
-    const orfani = l.filter(function(g){ return !LIB.gruppiDi(g.id).length; });
+    const orfani = perNome ? [] : l.filter(function(g){ return !LIB.gruppiDi(g.id).length; });
     if (orfani.length) html += cartella('__senza', TP('mia.senzaGruppo'), orfani, false);
     q('#mia-list').innerHTML = html;
   }
@@ -7507,6 +7539,17 @@ function disegnaViste(){
 function segnaVista(){
   const b = document.body;
   VISTE.forEach(function(v){ b.classList.toggle('vista-' + v, state.vista === v); });
+  /* Fra i gruppi la lente cerca anche i gruppi, e lo dice: un campo che
+     promette "un gioco" non invita a scriverci il nome di una cartella. */
+  const q = document.getElementById('mia-q');
+  if (q){
+    /* Si cambia la CHIAVE, non solo il testo: cambiando lingua il giro
+       dell'i18n riscrive ogni data-i18n-ph, e un placeholder messo a mano
+       sarebbe tornato a "cerca un gioco" di sotto le mani. */
+    const k = state.vista === 'gruppi' ? 'vista.cercaGruPh' : 'vista.cercaPh';
+    q.setAttribute('data-i18n-ph', k);
+    q.placeholder = TP(k);
+  }
 }
 
 function setVista(v){
@@ -8892,19 +8935,6 @@ function bindProfilo(){
     const dentro = e.target.closest('[data-fa="dentro"]');
     if (dentro){ scegliLibreria(dentro, id); return; }
     if (e.target.closest('[data-fa="fuori"]')){ togliDaScaffale(id); return; }
-    // le pastiglie dei gruppi dentro la riga aperta
-    const chip = e.target.closest('.riga-gruppi button[data-g]');
-    if (chip){
-      const gid = chip.getAttribute('data-g');
-      const dentro = !chip.classList.contains('on');
-      chip.classList.toggle('on', dentro);
-      LIB.segnaGruppo(id, gid, dentro).then(function(){
-            }).catch(function(err){
-        chip.classList.toggle('on', !dentro);
-        flash(TP('msg.nonRiuscito', {e: err.message}));
-      });
-      return;
-    }
     const scelto = e.target.closest('.scegli-lib button[data-l]');
     if (scelto){
       const v = scelto.getAttribute('data-l');

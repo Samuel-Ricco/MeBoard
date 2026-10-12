@@ -689,6 +689,15 @@ body.cella-su #cella{display:flex}
   background:var(--accent); color:var(--su-accent); border-color:transparent; cursor:default;
 }
 
+/* I gruppi del gioco nella riga aperta: scritte, non comandi. Tratteggio
+   e inchiostro smorzato per dire "questo e' un dato", non "premimi". */
+.riga-gruppi.sue{gap:6px}
+.riga-gruppi.sue span{
+  padding:5px 9px; border:1px dashed var(--line); color:var(--ink-soft);
+  font-family:var(--ff); font-weight:900; font-size:10px; letter-spacing:.06em;
+  text-transform:uppercase;
+}
+
 .cartella-tit{
   width:100%; display:flex; align-items:baseline; gap:10px; cursor:pointer;
   font-family:var(--ff-display); font-weight:900; text-transform:uppercase; font-size:15.8px; letter-spacing:.02em;
