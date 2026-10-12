@@ -141,14 +141,12 @@
   <!-- Via l'occhiello "la vista": il pannello si apre da un imbuto, e
        un imbuto dice gia' che si sta filtrando. -->
 
-  <div class="cercawrap">
-    <input id="cerca" type="text" data-i18n-ph="vista.cercaPh" maxlength="60" placeholder="cerca un gioco&hellip;"
-           autocomplete="off" spellcheck="false"
-           data-i18n-aria="vista.cercaAria" aria-label="cerca nella collezione">
-    <button id="cerca-x" type="button" data-i18n-title="vista.pulisciTitolo" title="pulisci la ricerca"
-            data-i18n-aria="vista.pulisciAria" aria-label="pulisci">&times;</button>
-  </div>
-
+  <!-- QUI NON SI CERCA PIU'. Il campo c'era anche qui e anche sotto il
+       titolo della collezione, ed era lo STESSO campo -- stesso stato,
+       stesse parole -- scritto due volte a due dita di distanza. Due
+       caselle che fanno la stessa cosa non raddoppiano niente: fanno
+       chiedere quale delle due conta. Resta quella sotto il titolo,
+       che e' dove si guarda prima. -->
   <!-- CERCARE RESTA IN CHIARO, ORDINARE VA IN UNA TENDINA.
 
        Sono due cose di peso diverso che stavano una sotto l'altra con
@@ -536,13 +534,24 @@
            e stavano a due altezze diverse con la ricerca in mezzo. Una
            riga sola: le due viste, e in fondo l'interruttore.
            Si svuota da sola quando non ci sono preferiti. -->
+      <!-- I PREFERITI SONO UNA VISTA, NON UN FILTRO.
+
+           Erano una stella accesa accanto alle due viste: toccandola
+           l'elenco si accorciava, e tornando su "tutti i giochi" restava
+           corto, perche' il filtro era un'altra cosa ancora e nessuno
+           l'aveva spento. Il nome della vista diceva "tutti" e sotto
+           c'erano otto giochi.
+
+           Da linguetta il problema non esiste: scegliere una vista
+           sostituisce quella di prima, che e' quello che fanno le
+           linguette dappertutto. "Tutti i giochi" vuol dire tutti. -->
       <div class="viste-riga">
-        <div class="viste" id="viste" role="tablist">
+        <div class="viste tre" id="viste" role="tablist">
           <button type="button" data-vista="tutti" role="tab" data-i18n="mia.tutti">tutti i giochi</button>
+          <button type="button" data-vista="pref" role="tab" data-i18n="mia.preferiti">preferiti</button>
           <button type="button" data-vista="gruppi" role="tab" data-i18n="mia.gruppi">gruppi</button>
           <i class="ind" aria-hidden="true"></i>
         </div>
-        <div id="mia-gruppi" class="pref-slot"></div>
       </div>
       <!-- Cercare stava SOLO nell'imbuto, che e' un pannello da aprire.
            Sopra un elenco la ricerca e' la prima cosa che si cerca, e

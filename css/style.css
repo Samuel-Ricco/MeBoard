@@ -409,34 +409,11 @@ body.visita .visita-only{display:inline-flex !important}
    suo 50% e' ancora mezza vista e non mezzo schermo. */
 .viste-riga{display:flex; align-items:stretch; gap:6px; margin:14px 0 0; border-bottom:1px dashed var(--line)}
 .viste-riga .viste{flex:1; min-width:0; margin:0; border-bottom:0}
-.pref-slot{flex:none; display:flex; align-items:stretch}
-/* senza preferiti non c'e' niente da filtrare: il posto sparisce */
-.pref-slot:empty{display:none}
-
-/* UN'ICONA, NON UNA PASTIGLIA. Accanto a due viste larghe una pastiglia
-   con la scritta sarebbe un terzo pulsante che si legge: questo invece
-   e' un interruttore, e si riconosce dal segno -- la stessa stella che
-   si tocca sulle righe. Il numero resta, piccolo e in alto: un filtro
-   che non dice quanto taglia e' un filtro che si prova e basta. */
-.pref-slot .filtro-pref{
-  position:relative; width:42px; padding:0; gap:0; border:0; border-radius:var(--r-s);
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(var(--ink-rgb),.06); color:var(--ink-soft); cursor:pointer;
-  transition:color .18s var(--ease), background-color .18s var(--ease);
-}
-.pref-slot .filtro-pref:hover{color:var(--ink)}
-.pref-slot .filtro-pref .ico{width:17px; height:17px}
-.pref-slot .filtro-pref span{
-  position:absolute; top:4px; right:5px;
-  font-family:var(--ff-display); font-weight:900; font-size:9px; letter-spacing:0;
-  line-height:1; color:var(--ink-soft);
-}
-.pref-slot .filtro-pref.on{color:var(--accent); background:rgba(var(--ink-rgb),.12)}
-.pref-slot .filtro-pref.on span{color:var(--accent)}
-.pref-slot .filtro-pref.on .ico path{fill:currentColor}
-/* il contenuto accompagna lo scorrimento, appena appena */
-#mia-list{transition:transform .3s cubic-bezier(.22,.9,.26,1), opacity .3s ease}
-#mia.trascina #mia-list{transition:none}
+/* LA RIGA DOVE: il segno dello scaffale e, accanto, il nome del
+   mobile. L'icona sta sulla linea di base del testo, se no la seconda
+   riga di ogni gioco sembra due cose impilate invece di una. */
+.riga-dove .ico{width:13px; height:13px; vertical-align:-2px; margin-right:5px}
+.riga-dove i{font-style:normal}
 
 /* NELLA WISHLIST NON SI SFOGLIA IL CATALOGO.
 
@@ -3260,13 +3237,16 @@ body.sez-collezione:not(.elenco) header{
    che `disegnaGruppiFiltro` disegna **soltanto** in "tutti i giochi".
    La regola nascondeva quindi l'unica cosa che ci finisce dentro, e il
    filtro non si e' mai visto -- codice vivo dietro una regola morta. */
-body.vista-tutti #mia-gestisci,
-body.vista-tutti #gru-apri{display:none !important}
+/* I due tasti dei gruppi appartengono alla vista a gruppi: si fanno
+   vedere SOLO li', invece di nascondersi da una vista sola -- che con
+   tre viste vuol dire comparire nelle altre due. */
+body:not(.vista-gruppi) #mia-gestisci,
+body:not(.vista-gruppi) #gru-apri{display:none !important}
 /* ...e allora la barra non ha piu' niente dentro: i due tasti dei
    gruppi sono nascosti e la stella e' salita con le viste. Un
    contenitore vuoto non si vede ma il suo margine si', e qui erano
    quattordici pixel di niente fra la ricerca e il primo gioco. */
-body.vista-tutti #mia .mia-barra{display:none}
+body:not(.vista-gruppi) #mia .mia-barra{display:none}
 
 /* --- la finestrella delle azioni non deve finire sotto le righe -----
    Non era trasparente: era COPERTA. Ogni riga ha il suo involucro

@@ -47,6 +47,11 @@ const COLS = 3;                            // colonne di cubi
 const RIGHE = 4;                           // file di cubi
 const PER_LIB = COLS * RIGHE;              // dodici giochi per libreria
 
+/* LE VISTE DELLA COLLEZIONE, IN ORDINE. Le leggono l'indicatore e il
+   trascinamento laterale: scritte due volte, al primo che ne aggiunge
+   una diventerebbero due ordini diversi. */
+const VISTE = ['tutti', 'pref', 'gruppi'];
+
 /* Lo stacco fra un mobile e il successivo. Attaccate sembrerebbero un
    unico mobile lungo e lo scorrimento non si leggerebbe: e' l'aria in
    mezzo a dire "questa e' un'altra libreria". */
@@ -118,9 +123,11 @@ const state = {
   q: '',                       // il testo cercato, '' se non si sta cercando
   qpar: '',                    // il testo cercato FRA LE PARTITE: un'altra domanda
   gruppo: '',                  // l'etichetta con cui si sta filtrando, '' se nessuna
-  soloPreferiti: false,        // mostra solo i giochi segnati
   vista: 'gruppi',             // come si guarda l'elenco: 'gruppi' o 'tutti'
   vcat: 'catalogo',            // nel catalogo: 'catalogo' o 'wishlist'
+  /* L'ordine delle viste della collezione, in un posto solo: lo usano
+     l'indicatore e il trascinamento, e tenerlo scritto due volte vuol
+     dire due ordini diversi al primo che ne aggiunge una. */
   vpar: 'data',                // come si guardano le partite: 'data', 'calendario' o 'gioco'
   cal: null,                   // il mese aperto nel calendario, {a, m}
   calGiorno: '',               // il giorno aperto sotto la griglia
@@ -2345,7 +2352,7 @@ function buildProps(used){
    posizione sullo scaffale e quella nell'elenco non coincidono piu'. */
 function lista(){
   const l = LIB.list(state.sort, state.q, state.gruppo);
-  return state.soloPreferiti ? l.filter(function(g){ return g.preferito; }) : l;
+  return l;
 }
 
 /* Quello che sta SUGLI SCAFFALI, che non e' tutta la collezione.
@@ -4278,9 +4285,8 @@ function bindTools(){
     });
   });
 
-  /* Le due caselle della collezione: quella dell'imbuto e quella sopra
-     l'elenco. Stesso comportamento perche' sono la stessa ricerca. */
-  legaCerca(q('#cerca'), q('#cerca-x'));
+  /* Una casella sola, sopra l'elenco: quella dell'imbuto diceva la
+     stessa cosa due dita piu' in la'. */
   legaCerca(q('#mia-q'), q('#mia-q-x'));
   legaCercaPartite();
 
@@ -4350,7 +4356,7 @@ function setSort(mode){
    dentro il valore gia' ripulito le sposta il cursore e le mangia lo
    spazio che si sta ancora battendo. */
 function sincronizzaCerca(chi){
-  [q('#cerca'), q('#mia-q')].forEach(function(el){
+  [q('#mia-q')].forEach(function(el){
     if (el && el !== chi && el.value !== state.q) el.value = state.q;
   });
 }
@@ -4664,17 +4670,19 @@ document.addEventListener('keydown', function(e){
   if (document.querySelector('.riga-azioni:not([hidden])')) chiudiAzioni(null);
 });
 
-/* Chiudendo l'elenco i filtri se ne vanno con lui.
+/* Chiudendo l'elenco il filtro per gruppo se ne va con lui: restava
+   acceso, si tornava alla libreria, e sugli scaffali c'erano tre
+   scatole invece di trenta senza che niente dicesse perche'. Un filtro
+   che sopravvive alla schermata in cui lo si e' messo e' un filtro che
+   non si trova piu'.
 
-   Restavano accesi: si sceglieva "solo i preferiti", si tornava alla
-   libreria, e sugli scaffali c'erano tre scatole invece di trenta senza
-   che niente a schermo dicesse perche'. Un filtro che sopravvive alla
-   schermata in cui lo si e' messo e' un filtro che non si trova piu'. */
+   I preferiti non sono piu' qui: da quando sono una VISTA e non un
+   filtro, non toccano piu' lo scaffale e non c'e' niente da scordare --
+   cambiare vista e' gia' tornare indietro. */
 function scordaFiltri(){
-  const c1 = state.gruppo, c2 = state.soloPreferiti;
+  const c1 = state.gruppo;
   state.gruppo = '';
-  state.soloPreferiti = false;
-  if (c1 || c2){ ridisponi(); }
+  if (c1){ ridisponi(); }
   updateConta();
 }
 
@@ -5622,48 +5630,13 @@ function nuovoGruppoInLinea(btn, game){
       return LIB.segnaGruppo(game.id, G.id, true);
     }).then(function(){
       disegnaGruppiScheda(game);
-      disegnaGruppiFiltro();
-      flash(TP('msg.gruppoCreato', {n: nome}));
+          flash(TP('msg.gruppoCreato', {n: nome}));
     }).catch(function(err){
       flash(TP('msg.nonCreato', {e: err.message}));
       chiudi();
     });
   });
   li.addEventListener('blur', function(){ setTimeout(chiudi, 120); });
-}
-
-/* La barra dei filtri porta UNA cosa sola: i preferiti, in TUTTE E DUE
-   le viste.
-
-   Le pastiglie per gruppo non ci sono piu'. Nella vista a gruppi le
-   cartelle SONO gia' i gruppi: filtrare per gruppo dentro un elenco
-   diviso per gruppi vuol dire dire la stessa cosa due volte, e da li'
-   nasceva il difetto -- il filtro restava acceso passando a "tutti i
-   giochi", dove contraddice il nome della vista.
-
-   I PREFERITI NON SONO UN GRUPPO, e quel difetto non ce l'hanno: "solo
-   i preferiti" vuol dire la stessa identica cosa nelle due viste, e
-   sparendo al cambio vista spariva un interruttore ACCESO senza dirlo
-   -- il filtro restava nello stato ma il modo di spegnerlo non c'era
-   piu'. Le cartelle vuote non si disegnano, quindi a filtro acceso la
-   vista a gruppi mostra i gruppi che hanno un preferito e basta. */
-function disegnaGruppiFiltro(){
-  const el = q('#mia-gruppi');
-  if (!el) return;
-  const quanti = LIB.all().filter(function(g){ return g.preferito; }).length;
-  /* UNA STELLA, NON UNA FRASE. "solo i preferiti" e' una riga di testo
-     accanto a un elenco che si scorre, e dice con quattro parole quello
-     che il segno dice da solo -- e' anche esattamente la stessa stella
-     che si tocca sulle righe, quindi chi la vede sa gia' cosa filtra.
-     Il numero accanto dice quanti sono: un filtro che non dice quanto
-     taglia e' un filtro che si prova e basta. */
-  el.innerHTML = quanti
-    ? '<button type="button" class="filtro-pref' + (state.soloPreferiti ? ' on' : '') +
-      '" data-pref="1" aria-pressed="' + (state.soloPreferiti ? 'true' : 'false') +
-      '" title="' + esc(TP('mia.soloPreferiti')) + '" ' +
-      'aria-label="' + esc(TP('mia.soloPreferiti')) + '">' +
-      ICO.stella + '<span>' + quanti + '</span></button>'
-    : '';
 }
 
 let gruppoAperto = null;        // di quale gruppo si stanno scegliendo i giochi
@@ -5748,7 +5721,6 @@ function disegnaGruppiElenco(){
 function setGruppo(id){
   if (state.gruppo === id) return;
   state.gruppo = id || '';
-  disegnaGruppiFiltro();
   state.scrollTo = state.scroll = 0;
   ridisponi();
 }
@@ -5780,19 +5752,6 @@ function bindGruppi(){
   });
   if (pg) pg.addEventListener('pointerup', function(e){ e.stopPropagation(); });
 
-  q('#mia-gruppi').addEventListener('click', function(e){
-    const p = e.target.closest('button[data-pref]');
-    if (p){
-      state.soloPreferiti = !state.soloPreferiti;
-      state.scrollTo = state.scroll = 0;
-      ridisponi();
-      disegnaMia();
-      return;
-    }
-    const b = e.target.closest('button[data-g]');
-    if (b) setGruppo(b.getAttribute('data-g'));
-  });
-
   bindViste();
   q('#mia-gestisci').addEventListener('click', apriGestioneGruppi);
   /* Lo stesso pannello, ma aperto sul campo del nome: chi tocca
@@ -5813,8 +5772,7 @@ function bindGruppi(){
       proMsg('#gru-msg', '');
       gruppoAperto = G.id;            // appena creato, si sceglie chi ci va
       disegnaGruppiElenco();
-      disegnaGruppiFiltro();
-      disegnaMia();
+          disegnaMia();
     }).catch(function(e){ proMsg('#gru-msg', esc(e.message), true); });
   });
   q('#gru-nuovo').addEventListener('keydown', function(e){
@@ -5839,8 +5797,7 @@ function bindGruppi(){
       if (state.gruppo === id) setGruppo('');
       if (gruppoAperto === id) gruppoAperto = null;
       disegnaGruppiElenco();
-      disegnaGruppiFiltro();
-      disegnaMia();
+          disegnaMia();
       flash(TP('msg.gruppoTolto'));
     }).catch(function(err){ b.disabled = false; flash(TP('msg.nonTolto', {e: err.message})); });
   });
@@ -5868,8 +5825,7 @@ function bindGruppi(){
         li.querySelector('.chi span').textContent =
           TP(n === 1 ? 'gru.unGioco' : 'gru.nGiochi', {n: n});
       }
-      disegnaGruppiFiltro();
-      disegnaMia();
+          disegnaMia();
     }).catch(function(err){
       b.classList.toggle('on', !dentro);
       b.textContent = TP(dentro ? 'gru.aggiungi' : 'gru.dentro');
@@ -7126,9 +7082,24 @@ function scaffaleRiga(g){
      sempre nello stesso punto: e' la seconda riga di ogni riga. Il
      posto fisso ce l'ha ancora, e adesso ci sta scritto anche il nome
      del mobile. */
+  /* L'ICONA AL POSTO DELLA PAROLA, ma il NOME del mobile resta.
+
+     "Esposto" era una parola che diceva una cosa sola -- si' o no -- e
+     la ripeteva su ogni riga di un elenco dove quasi tutti lo sono: a
+     scorrere diventava rumore. Il segno dello scaffale la dice senza
+     farsi leggere, ed e' lo stesso che apre la libreria dalla barra in
+     basso, quindi non va imparato.
+
+     DOVE, invece, resta scritto: e' l'unica cosa che quella riga puo'
+     dire e che non si sa gia'. Con una libreria sola non aggiunge
+     niente, ma con tre e' la differenza fra "ce l'ho" e "ce l'ho li'".
+
+     Senza scaffale non c'e' nessun segno: il vuoto accanto a chi ce
+     l'ha e' gia' la differenza, e un'icona barrata sarebbe un secondo
+     stato da imparare per dire un'assenza. */
   return '<span class="riga-dove' + (L ? ' su' : '') + '"' +
          ' title="' + esc(che) + '">' +
-         (L ? T('riga.dove', {n: esc(L.nome)}) : T('riga.soloColl')) +
+         (L ? ICO.scaffale + '<i>' + esc(L.nome) + '</i>' : T('riga.soloColl')) +
          '</span>';
 }
 
@@ -7325,7 +7296,14 @@ function inizialeDi(g){
 }
 
 function conLettere(l){
-  if (state.sort !== 'nome') return l.map(rigaMia).join('');
+  /* `map(rigaMia)` NO: `map` passa tre argomenti -- elemento, indice,
+     array -- e il secondo di `rigaMia` e' il gruppo da cui la croce
+     toglie. Ogni riga tranne la prima si ritrovava un indice al posto
+     di un gruppo, e con l'indice diverso da zero compariva una croce
+     che toglie da un gruppo che non esiste. Dodici croci su tredici
+     righe, e la prima no: il conto diceva gia' da solo che il colpevole
+     era un indice. */
+  if (state.sort !== 'nome') return l.map(function(g){ return rigaMia(g); }).join('');
   let ultima = null;
   return l.map(function(g){
     const c = inizialeDi(g);
@@ -7338,14 +7316,23 @@ function conLettere(l){
 
 function disegnaMia(){
   segnaVista();
-  disegnaGruppiFiltro();
-  const l = lista();
+  /* I PREFERITI SI TAGLIANO QUI E NON IN `lista()`.
+
+     `lista()` e' la fonte anche dello SCAFFALE: filtrarla avrebbe
+     svuotato i mobili di tre quarti delle scatole ogni volta che si
+     guardava la vista dei preferiti, che e' una vista dell'elenco e
+     non della stanza. Il taglio appartiene a chi disegna l'elenco. */
+  let l = lista();
+  if (state.vista === 'pref') l = l.filter(function(g){ return g.preferito; });
   const dove = LIB.ospitePresso();
   q('#mia-eyebrow').textContent = dove && dove.nick
     ? TP('mia.occhielloDi', {chi: dove.nick}) : TP('mia.occhiello');
 
   const gruppi = LIB.gruppi();
   const aCartelle = state.vista === 'gruppi' && !state.gruppo && gruppi.length > 0;
+  /* La vista dei preferiti, vuota, va detta: un elenco che non c'e' e
+     nessuna spiegazione si legge come un guasto. */
+  const prefVuoti = state.vista === 'pref' && !l.length;
   disegnaViste();
 
   if (!aCartelle){
@@ -7422,7 +7409,18 @@ function disegnaMia(){
   const inVetrina = l.filter(function(g){ return !!g.libreria; }).length;
   const perche = [];
   if (state.q) perche.push(T('mia.per', {q: esc(state.q)}));
-  if (state.soloPreferiti) perche.push(T('mia.fraPreferiti'));
+
+  /* Preferiti vuoti: si dice come se ne fa uno, invece di lasciare la
+     vista bianca. La stella e' sulle righe dell'elenco, cioe' nella
+     vista accanto: senza dirlo si cerca un comando che li' non c'e'. */
+  if (prefVuoti){
+    q('#mia-msg').innerHTML = T('mia.nessunPreferito');
+    q('#mia-n').innerHTML = T('mia.totale', {
+      n: 0, parola: T('mia.giochi'), v: 0
+    });
+    return;
+  }
+
   if (state.vista === 'gruppi' && !gruppi.length){
     q('#mia-msg').innerHTML = T('mia.nessunGruppo');
     /* Anche qui il contatore va scritto: uscendo prima restava quello
@@ -7466,23 +7464,36 @@ function disegnaViste(){
     b.classList.toggle('on', b.getAttribute('data-vista') === state.vista);
     b.setAttribute('aria-selected', b.getAttribute('data-vista') === state.vista ? 'true' : 'false');
   });
-  /* L'indicatore segue l'ORDINE delle voci, che si e' invertito: prima
-     "tutti i giochi", poi "gruppi". Era rimasto indietro e restava
-     sotto la prima voce mentre l'accesa era la seconda. */
+  /* L'indicatore segue l'ORDINE, letto da un elenco invece che da un
+     confronto: con due viste bastava chiedere "e' la seconda?", con tre
+     quella domanda non ha piu' una risposta sola. L'indicatore e' largo
+     un terzo, quindi ogni posto vale cento per cento della sua
+     larghezza -- la stessa aritmetica delle partite. */
   const ind = q('#viste .ind');
-  if (ind) ind.style.transform = 'translateX(' + (state.vista === 'gruppi' ? 100 : 0) + '%)';
+  if (ind) ind.style.transform =
+    'translateX(' + (Math.max(0, VISTE.indexOf(state.vista)) * 100) + '%)';
 }
 
 /* I filtri per gruppo appartengono alla vista a cartelle. Nell'elenco
    intero restavano accesi e filtravano una lista che i gruppi non li
    mostra nemmeno: due comandi che dicono cose diverse sulla stessa
    schermata. */
+/* LA CLASSE DICE QUAL E' LA VISTA, non quale non e'.
+
+   Diceva solo "sono su tutti i giochi", e il foglio di stile nascondeva
+   i tasti dei gruppi quando c'era. Con una terza vista quella frase non
+   bastava piu': nei preferiti la classe non c'era, quindi i tasti dei
+   gruppi ricomparivano in una schermata che coi gruppi non c'entra.
+
+   Adesso si scrive la vista corrente e basta, e chi deve farsi vedere
+   solo in una dice in quale. Aggiungerne una quarta non rompe niente. */
 function segnaVista(){
-  document.body.classList.toggle('vista-tutti', state.vista === 'tutti');
+  const b = document.body;
+  VISTE.forEach(function(v){ b.classList.toggle('vista-' + v, state.vista === v); });
 }
 
 function setVista(v){
-  if (v !== 'gruppi' && v !== 'tutti') return;
+  if (v !== 'gruppi' && v !== 'tutti' && v !== 'pref') return;
   if (v === state.vista){ disegnaViste(); return; }
   state.vista = v;
   /* Il filtro per gruppo si azzera passando di vista -- e' un taglio
@@ -7552,13 +7563,16 @@ function bindViste(){
     /* Non si scorre oltre il bordo: dalla prima vista si va solo verso
        destra, dall'ultima solo verso sinistra. Lasciar trascinare dove
        non c'e' niente promette una terza schermata che non esiste. */
-    /* L'ordine delle due viste si e' invertito: prima "tutti i giochi",
-       poi "gruppi". Da qui dipendono il verso in cui si puo' trascinare
-       e da che parte parte l'indicatore -- lasciarli com'erano vorrebbe
-       dire un indicatore che va dalla parte sbagliata. */
-    const utile = state.vista === 'tutti' ? Math.min(0, dx) : Math.max(0, dx);
+    /* Da ogni vista ci si puo' spostare solo dove c'e' qualcosa: dalla
+       prima non si va a sinistra, dall'ultima non si va a destra.
+       Lasciar trascinare nel vuoto promette una schermata che non
+       esiste -- e adesso che le viste sono tre, la vista di mezzo si
+       trascina da tutte e due le parti. */
+    const i = Math.max(0, VISTE.indexOf(state.vista));
+    const utile = (i === 0) ? Math.min(0, dx)
+                : (i === VISTE.length - 1) ? Math.max(0, dx) : dx;
     const frazione = Math.max(-1, Math.min(1, utile / largo));
-    const base = state.vista === 'gruppi' ? 100 : 0;
+    const base = i * 100;
 
     q('#viste .ind').style.transform = 'translateX(' + (base - frazione * 100) + '%)';
     lista.style.transform = 'translateX(' + (frazione * largo * .25) + 'px)';
@@ -8867,8 +8881,7 @@ function bindProfilo(){
       const dentro = !chip.classList.contains('on');
       chip.classList.toggle('on', dentro);
       LIB.segnaGruppo(id, gid, dentro).then(function(){
-        disegnaGruppiFiltro();
-      }).catch(function(err){
+            }).catch(function(err){
         chip.classList.toggle('on', !dentro);
         flash(TP('msg.nonRiuscito', {e: err.message}));
       });
@@ -8957,8 +8970,7 @@ function bindProfilo(){
       st.setAttribute('aria-label', che);
       /* La pastiglia "solo i preferiti" compare solo se ce n'e'
          almeno uno, e sta fuori dall'elenco: quella si puo' rifare. */
-      disegnaGruppiFiltro();
-      return;
+          return;
     }
     // dentro un blocco gia' aperto non si apre e chiude a ogni clic
     if (e.target.closest('.riga-info') || e.target.closest('.riga-azioni')) return;
@@ -10251,7 +10263,6 @@ async function tornaACasa(){
   STANZA.daProfilo();
   applicaStanza();
   disegnaLibrerie();
-  disegnaGruppiFiltro();
   state.scrollTo = state.scroll = 0;
   svuotaScatole();                 // le sue non c'entrano piu' niente
   await loadCovers(true);
