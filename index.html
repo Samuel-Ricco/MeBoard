@@ -573,8 +573,20 @@
              si fa ogni tanto. Portano allo stesso pannello -- il posto
              dove stanno i gruppi e' uno solo -- ma il primo apre gia'
              sul campo del nome. -->
-        <button id="gru-apri" type="button" class="dentro-only" data-i18n="mia.gruppoNuovo">aggiungi gruppo</button>
-        <button id="mia-gestisci" type="button" class="dentro-only" data-i18n="mia.gestisci">modifica gruppi</button>
+        <!-- UN PIU', NON DUE FRASI.
+
+             C'erano "aggiungi gruppo" e "modifica gruppi": due
+             pulsanti a parole sopra un elenco che e' gia' fatto di
+             parole, e il secondo apriva un pannello che adesso non
+             serve piu' -- da quando ogni cartella ha i suoi comandi
+             addosso, modificare un gruppo si fa sul gruppo.
+
+             Resta il gesto che quelle cartelle non possono fare da
+             sole: farne una nuova. Un piu' basta a dirlo, e la lente
+             per cercare e' gia' sotto il titolo. -->
+        <button id="gru-apri" type="button" class="gru-piu"
+                data-i18n-title="mia.gruppoNuovo" title="aggiungi un gruppo"
+                data-i18n-aria="mia.gruppoNuovo" aria-label="aggiungi un gruppo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg></button>
       </div>
       <p id="mia-msg"></p>
     </div>

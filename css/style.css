@@ -661,16 +661,20 @@ body.cella-su #cella{display:flex}
   color:var(--ink-soft); grid-template-columns:none !important; display:block !important;
 }
 
-/* La croce che toglie da QUESTO gruppo, in fondo alla riga accanto ai
-   tre punti: tenue finche' non la cerchi, rossa quando la sfiori. */
-.riga-fuorigruppo{
-  flex:none; width:32px; padding:0; border:0; background:none; cursor:pointer;
-  color:var(--ink-soft); line-height:0; border-radius:0;
+/* IL PIU' DEI GRUPPI: un segno quadrato come gli altri comandi
+   dell'elenco, non una pastiglia con una frase dentro. */
+/* Scritto anche con l'ID: `#gru-apri` compare in cinque regole di
+   questo foglio che lo vestono da pastiglia, e un id batte una classe
+   comunque la si scriva. */
+#gru-apri.gru-piu, .gru-piu{
+  width:38px; height:38px; padding:0; border-radius:0; cursor:pointer;
   display:inline-flex; align-items:center; justify-content:center;
-  transition:color .18s var(--ease), background-color .18s var(--ease);
+  background:none; border:1px dashed var(--line); color:var(--ink);
+  transition:border-color .18s var(--ease), color .18s var(--ease);
 }
-.riga-fuorigruppo .ico{width:15px; height:15px}
-.riga-fuorigruppo:hover{color:var(--rosso); background:rgba(var(--rosso-rgb),.12)}
+#gru-apri.gru-piu .ico, .gru-piu .ico{width:18px; height:18px}
+#gru-apri.gru-piu:hover, .gru-piu:hover{border-color:var(--accent); color:var(--accent); background:none}
+.gru-piu:active{transform:translate(2px,2px)}
 
 /* La scatola dei gruppi dentro il menu di una riga: etichette, e
    quelle in cui il gioco gia' sta sono accese e spente al tocco. */
@@ -3937,13 +3941,25 @@ body.browse:not(.elenco):not(.ferma):not(.sez-catalogo):not(.sez-profilo) .rail-
 }
 .cartella-tit:hover{background:rgba(var(--ink-rgb),.10); color:var(--accent)}
 .cartella-tit span{font-size:12px}
+/* LA FRECCIA: IL VERSO DELLO SPOSTAMENTO VIENE PRIMA DELLA ROTAZIONE.
+
+   Era `rotate(45deg) translate(-2px,-2px)`: scritto cosi' lo
+   spostamento avviene nel sistema GIA' RUOTATO, quindi chiusa andava
+   in su a sinistra e aperta -- ruotata di centottanta gradi rispetto a
+   prima -- andava dalla parte opposta. La freccia cadeva fuori asse
+   proprio aprendo la tendina, che e' quando la si guarda.
+
+   Con il `translate` davanti lo spostamento e' nel sistema di partenza
+   e vuol dire sempre la stessa cosa: due pixel in su quando punta in
+   giu', due in giu' quando punta in su -- cioe' il centro ottico, che
+   per un segno a V non e' il centro geometrico. */
 .cartella-tit::after{
   content:''; margin-left:auto; width:7px; height:7px; flex:none;
   border-right:1.6px solid var(--ink-soft); border-bottom:1.6px solid var(--ink-soft);
-  transform:rotate(45deg) translate(-2px,-2px);
+  transform:translateY(-2px) rotate(45deg);
   transition:transform .2s var(--ease);
 }
-.cartella-tit[aria-expanded="true"]::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.cartella-tit[aria-expanded="true"]::after{transform:translateY(2px) rotate(-135deg)}
 .cartella .righe{
   margin:6px 0 0 10px; padding-left:14px;
   border-left:2px solid rgba(var(--ink-rgb),.08);

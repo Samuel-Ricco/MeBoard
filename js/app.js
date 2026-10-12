@@ -5753,7 +5753,6 @@ function bindGruppi(){
   if (pg) pg.addEventListener('pointerup', function(e){ e.stopPropagation(); });
 
   bindViste();
-  q('#mia-gestisci').addEventListener('click', apriGestioneGruppi);
   /* Lo stesso pannello, ma aperto sul campo del nome: chi tocca
      "aggiungi gruppo" ha gia' in mente come si chiama. */
   const bGru = q('#gru-apri');
@@ -7108,7 +7107,8 @@ function rigaMia(g, gruppoId){
     ? '<img src="' + esc(g.cover) + '" alt="" loading="lazy" decoding="async">'
     : '<span class="senza">' + esc(String(g.title || '?').slice(0, 1).toUpperCase()) + '</span>';
 
-  return '<li data-id="' + esc(g.id) + '">' +
+  return '<li data-id="' + esc(g.id) + '"' +
+    (gruppoId && gruppoId !== '__senza' ? ' data-ing="' + esc(gruppoId) + '"' : '') + '>' +
     '<div class="cat-cop">' + cop + '</div>' +
     /* La stella sta ACCANTO AL NOME e non in fondo alla riga: e' del
        gioco, e a fondo riga si leggeva come un terzo comando in fila
@@ -7119,22 +7119,32 @@ function rigaMia(g, gruppoId){
         /* Dov'e' il gioco: seconda riga, sempre la' */
         scaffaleRiga(g) +
       '</span>' +
-      stellaRiga(g) +
+      /* LA STELLA NO, DENTRO UNA CARTELLA. La riga li' e' piu' stretta
+         -- la cartella rientra di quattordici pixel e ne mangia due di
+         filo -- e la stella e' un comando che riguarda la collezione,
+         non il gruppo: chi guarda un gruppo sta rispondendo a "cosa c'e'
+         dentro", non a "quale mi piace". Sta nella vista dove serve, che
+         e' l'elenco di tutti i giochi. */
+      (gruppoId ? '' : stellaRiga(g)) +
     '</span>' +
     /* Il tasto e le sue azioni stanno nello stesso involucro: la
        finestrella si ancora al PULSANTE, non alla riga -- se no, con le
        informazioni aperte sotto, uscirebbe mezzo schermo piu' in giu'
        di dove si e' premuto. */
-    /* DENTRO UNA CARTELLA C'E' ANCHE LA CROCE. Toglie il gioco da
-       QUEL gruppo e da nessun altro -- un gioco sta in piu' gruppi, e
-       una croce che li togliesse tutti sarebbe la stessa icona per due
-       gesti diversi. Fuori dalle cartelle non c'e': li' non esiste un
-       "questo gruppo" da cui togliere. */
-    (gruppoId && gruppoId !== '__senza'
-      ? '<button type="button" class="riga-fuorigruppo" data-fuorig="' + esc(gruppoId) + '" ' +
-        'title="' + esc(TP('gru.togliDa')) + '" aria-label="' + esc(TP('gru.togliDa')) + '">' +
-        ICO.chiudi + '</button>'
-      : '') +
+    /* NIENTE CROCE IN PIU' SULLA RIGA.
+
+       C'era una croce che toglieva il gioco da quel gruppo, in fondo
+       alla riga accanto ai tre punti. Tre cose storte insieme: la riga
+       dentro una cartella e' piu' stretta -- la cartella rientra -- e
+       con un comando in piu' i tre punti finivano a capo, col menu
+       illeggibile; due segni diversi per due rimozioni (il cestino per
+       il gruppo, la croce per il gioco) facevano chiedere quale fosse
+       quale; e il comando piu' raro della riga era l'unico sempre a
+       vista.
+
+       Adesso "togli da questo gruppo" sta DENTRO il menu, dove stanno
+       gli altri comandi della riga. La riga torna della stessa forma
+       che ha in tutto il resto del sito, e il menu ci sta. */
     '<div class="riga-menuwrap">' +
       '<button type="button" class="riga-menu" data-fa="menu" aria-expanded="false" ' +
         'aria-label="cosa posso farci">' + ICO.menu + '</button>' +
@@ -7178,9 +7188,16 @@ function contenutoInfo(g){
          chip;
 }
 
-function contenutoAzioni(g){
+function contenutoAzioni(g, gruppoId){
   if (LIB.ospitePresso()) return '<p class="vuoto">' + T('riga.ospite') + '</p>';
-  return (g.libreria
+  /* DENTRO UNA CARTELLA, il primo comando e' quello di quella cartella:
+     si e' aperto il menu di una riga che sta li' dentro, e "toglila da
+     qui" e' la cosa che si viene a fare piu' spesso. */
+  return (gruppoId
+           ? '<button type="button" data-fa="fuorigruppo" data-g="' + esc(gruppoId) + '">' +
+             ICO.chiudi + '<span>' + T('gru.togliDa') + '</span></button>'
+           : '') +
+         (g.libreria
            ? '<button type="button" data-fa="scaffale">' + ICO.scaffale + '<span>' + T('riga.vaiScaffale') + '</span></button>' +
              '<button type="button" data-fa="fuori" class="fuori">' + ICO.fuori + '<span>' + T('riga.togliLib') + '</span></button>'
            : '<button type="button" data-fa="dentro" class="dentro">' + ICO.dentro + '<span>' + T('riga.mettiLib') + '</span></button>') +
@@ -7676,7 +7693,7 @@ function apriAzioni(li){
   const btn = li.querySelector('.riga-menu');
   const su = box.hidden;
   chiudiAzioni(su ? box : null);
-  if (su) box.innerHTML = contenutoAzioni(g);
+  if (su) box.innerHTML = contenutoAzioni(g, li.getAttribute('data-ing') || '');
   box.hidden = !su;
   btn.setAttribute('aria-expanded', su ? 'true' : 'false');
   /* La riga aperta sale sopra tutte. Ogni riga ha il suo involucro
@@ -8834,11 +8851,12 @@ function bindProfilo(){
       return;
     }
 
-    /* LA CROCE SU UNA RIGA: toglie da QUESTO gruppo e basta. */
-    const fuoriG = e.target.closest('[data-fuorig]');
+    /* TOGLIERE DA QUESTO GRUPPO, dal menu della riga: toglie da QUEL
+       gruppo e da nessun altro -- un gioco sta in piu' gruppi. */
+    const fuoriG = e.target.closest('[data-fa="fuorigruppo"]');
     if (fuoriG){
       const li = fuoriG.closest('li[data-id]');
-      const gid = fuoriG.getAttribute('data-fuorig');
+      const gid = fuoriG.getAttribute('data-g');
       if (!li) return;
       try { await LIB.segnaGruppo(li.getAttribute('data-id'), gid, false); }
       catch(err){ flash(TP('msg.nonRiuscito', {e: err.message})); return; }
