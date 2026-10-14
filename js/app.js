@@ -1346,9 +1346,54 @@ async function riparaCopertine(){
    =============================================================== */
 const NITIDE_PER_GIRO = 4;
 
+/* LE FIGURE CHE SONO GIA' AL LORO MASSIMO.
+
+   La soglia e' 1100, ma non tutte le figure di BGG ci arrivano: misurato
+   sul bucket vero, `Dune: Imperium` e' 600x600 su BGG e `Deep Regrets:
+   Lamentable Tentacles` e' 618x842 -- quelle sono, e piu' grandi non
+   esistono. Senza memoria, ogni avvio da admin le ripescava: scaricava
+   settecento kilobyte da BGG, cancellava la figura condivisa, ricaricava
+   lo stesso identico file e riapriva per niente la finestra in cui
+   quella copertina non c'e'. Per sempre, e sempre le stesse quattro.
+
+   Qui si tiene il conto di quelle che hanno gia' dato tutto. Sta nel
+   browser e non nella tabella condivisa perche' e' un appunto di
+   manutenzione di chi fa il giro, non un fatto sul gioco -- e perche'
+   una colonna nuova si paga con una migrazione. */
+const CHIAVE_AL_MASSIMO = 'meboard-figure-al-massimo';
+
+function figureAlMassimo(){
+  try {
+    const v = JSON.parse(localStorage.getItem(CHIAVE_AL_MASSIMO) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+
+function segnaAlMassimo(marchio){
+  try {
+    const l = figureAlMassimo();
+    if (l.indexOf(marchio) >= 0) return;
+    l.push(marchio);
+    localStorage.setItem(CHIAVE_AL_MASSIMO, JSON.stringify(l.slice(-400)));
+  } catch (e) {}
+}
+
+/* Quanto e' grande un'immagine che si ha in mano come data URL. Serve
+   PRIMA di toccare qualunque cosa: e' la differenza fra "ne vale la
+   pena" e "ho appena rifatto lo stesso file". */
+function misuraDataUrl(dataUrl){
+  return new Promise(function(ok){
+    const im = new Image();
+    im.onload = function(){ ok(Math.max(im.naturalWidth, im.naturalHeight)); };
+    im.onerror = function(){ ok(0); };
+    im.src = dataUrl;
+  });
+}
+
 async function piuNitide(){
   if (state.mode !== 'admin') return [];        // gli altri non possono, e va bene cosi'
   if (!LIB.eRemota() || LIB.ospitePresso()) return [];
+  const gia = figureAlMassimo();
 
   /* Quanto e' grande DAVVERO il file che c'e': lo dice l'immagine gia'
      caricata, senza chiedere niente a nessuno. Si guardano solo quelle
@@ -1358,6 +1403,7 @@ async function piuNitide(){
     if (!g.bgg || !g.img || !g.img.naturalWidth) return false;
     const ogg = LIB.oggettoDi(g.cover);
     if (!ogg || ogg.indexOf('bgg/') !== 0) return false;
+    if (gia.indexOf(marchioDi(g.cover)) >= 0) return false;   // gia' provata, non cresce
     return Math.max(g.img.naturalWidth, g.img.naturalHeight) < ART.COP_SALVA - 8;
   }).slice(0, NITIDE_PER_GIRO);
   if (!piccole.length) return [];
@@ -1373,9 +1419,21 @@ async function piuNitide(){
     try { dataUrl = await BGG.copertina(g.bgg); } catch(e){ continue; }
     if (!dataUrl) continue;
 
+    /* SI MISURA PRIMA DI CANCELLARE. Quello che arriva da BGG non e'
+       per forza piu' grande di quello che c'e': quando non lo e',
+       cancellare e ricaricare rifa' lo stesso file identico, e l'unica
+       cosa che si ottiene e' il mezzo secondo in cui la copertina
+       condivisa non esiste. Si segna e non ci si torna piu'. */
+    const nuova = await misuraDataUrl(dataUrl);
+    const ora = Math.max(g.img.naturalWidth, g.img.naturalHeight);
+    if (nuova <= ora){ segnaAlMassimo(marchio); continue; }
+
     // il vecchio se ne va solo QUANDO il nuovo e' gia' in mano
     try { if (!(await LIB.togliCondivisa(ogg))) continue; } catch(e){ continue; }
     LIB.update(g.id, { cover: dataUrl }, marchio);
+    /* Piu' grande ma ancora sotto la soglia: e' il massimo che BGG ha,
+       e al prossimo avvio sarebbe di nuovo fra le "piccole". */
+    if (nuova < ART.COP_SALVA - 8) segnaAlMassimo(marchio);
     fatti.push(g.id);
   }
   return fatti;
