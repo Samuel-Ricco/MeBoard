@@ -165,6 +165,13 @@ let luceFari = 0;
 let hemiLight, ambLight, fillLight;
 let floorMesh, wallMesh;
 let boxes = [];
+/* Il giro di costruzione in corso. `applyLibrary` puo' ripartire mentre
+   il contagocce sta ancora scendendo -- basta un riordino, o una
+   scatola spostata -- e due code che lavorano sulla stessa fila
+   costruiscono due volte lo stesso gioco: ognuna guarda il proprio
+   indice e nessuna delle due vede l'altra. Il gettone chiude la vecchia
+   al primo fotogramma utile. */
+let giroScatole = 0;
 let MATS = null;
 
 /* --- animazioni ------------------------------------------------ */
@@ -2566,21 +2573,35 @@ function applyLibrary(opts){
      costruisce solo l'indice per cercarci dentro. */
   const perId = new Map();
   boxes.forEach(function(x){ perId.set(x.userData.id, x); });
+  const mioGiro = ++giroScatole;      // chiude il contagocce di prima
 
-  const used = new Set();
-  list.forEach(function(game, i){
-    let b = perId.get(game.id);
-    const fresh = !b;
-    if (fresh){
-      b = makeGameBox(game);
-      scene.add(b);
-      boxes.push(b);
-      perId.set(game.id, b);          // l'indice resta in pari con la fila
-    } else {
-      b.userData.game = game;
-    }
+  /* LE SCATOLE NUOVE SI COSTRUISCONO A SCAGLIONI.
+
+     `makeGameBox` non e' gratis: disegna la copertina su canvas, ne fa
+     una texture e monta sei materiali. Con tredici giochi e' un lampo,
+     con duecento sono duecento volte quel lavoro **tutto in un frame**
+     -- misurato: 4,4 secondi in cui la pagina sta ferma, all'apertura,
+     cioe' nel momento peggiore.
+
+     Quello che NON si fa qui e' il taglio per visibilita'. Costruire
+     solo i mobili in vista vorrebbe dire che `boxes` non contiene piu'
+     tutti i giochi, e `boxes` lo leggono il raycast, la ricerca del
+     primo cubo libero e il "vai allo scaffale": tre posti che
+     risponderebbero male a una domanda giusta. Qui la scena finisce
+     identica a prima, cambia solo QUANDO.
+
+     Il primo scaglione e' quello che si vede -- le scatole si ordinano
+     per distanza dal mobile inquadrato -- e va subito, cosi' il mobile
+     davanti e' pieno al primo frame. Il resto scende quattro per
+     fotogramma, mentre si guarda. */
+  const SUBITO = 24;            // due mobili pieni: quello davanti e il prossimo
+  const PER_FRAME = 4;
+
+  /* Il corpo del giro, estratto: lo chiamano tutti e due i tempi, e
+     deve fare la stessa cosa in tutti e due -- se no la scatola che
+     arriva tardi arriva anche storta. */
+  const sistema = function(b, game, i, fresh, diretta){
     const cubo = posti[i];
-    used.add(cubo);
     b.userData.cubo = cubo;
 
     const home = homeOf(cubo, b.userData.h);
@@ -2590,6 +2611,16 @@ function applyLibrary(opts){
     // quella che si ha in mano sta dove sta il dito: la casa cambia,
     // ma non si riporta a casa una scatola mentre la si sta spostando
     if (state.presa && state.presa.box === b) return;
+
+    /* `diretta` e' la scatola arrivata col contagocce, fuori campo: si
+       posa dove va e basta. Senza questo cadrebbe nel ramo di sotto e
+       partirebbe dall'origine della scena, cioe' volerebbe da sinistra. */
+    if (diretta){
+      b.position.copy(home);
+      b.rotation.copy(b.userData.homeRot);
+      b.scale.setScalar(1);
+      return;
+    }
 
     if (fresh){
       // entra dall'alto, come se la stessero posando adesso
@@ -2646,7 +2677,65 @@ function applyLibrary(opts){
       b.rotation.copy(b.userData.homeRot);
       b.scale.setScalar(1);
     }
+  };
+
+  /* I CUBI OCCUPATI SI SANNO SUBITO, e non dipendono dalle scatole:
+     escono da `posti`. Gli arredi li leggono per sapere quali vani
+     riempire, e aspettare che le scatole esistano vorrebbe dire un
+     mobile che si arreda a pezzi mentre le scatole scendono. */
+  const used = new Set();
+  posti.forEach(function(c){ used.add(c); });
+
+  /* Chi c'e' gia' si sistema subito: non costa niente, ed e' il caso
+     di ogni riordino, di ogni filtro e di ogni cambio di vista --
+     cioe' di quasi tutte le chiamate che arrivano qui. */
+  const daFare = [];
+  list.forEach(function(game, i){
+    const b = perId.get(game.id);
+    if (b){ b.userData.game = game; sistema(b, game, i, false, false); return; }
+    daFare.push({ game: game, i: i });
   });
+
+  if (daFare.length){
+    /* Prima quelle che si vedono. `state.scroll` e' il mobile
+       inquadrato, e `posti[i] / PER_LIB` il mobile di quella scatola:
+       la distanza fra i due dice chi serve adesso e chi puo' aspettare. */
+    const mobileOra = Math.round(state.scroll || 0);
+    daFare.sort(function(a, b){
+      return Math.abs(Math.floor(posti[a.i] / PER_LIB) - mobileOra) -
+             Math.abs(Math.floor(posti[b.i] / PER_LIB) - mobileOra);
+    });
+
+    const costruisci = function(x, animata){
+      const b = makeGameBox(x.game);
+      scene.add(b);
+      boxes.push(b);
+      perId.set(x.game.id, b);
+      sistema(b, x.game, x.i, animata, !animata);
+    };
+
+    const subito = daFare.splice(0, SUBITO);
+    subito.forEach(function(x){ costruisci(x, true); });
+
+    /* Le rimanenti scendono mentre si guarda, e senza l'entrata
+       dall'alto: quella racconta "l'hanno appena posata", e di una
+       scatola che compare dietro, fuori campo, non e' vero. */
+    if (daFare.length){
+      const resto = daFare.slice();
+      const giu = function(){
+        if (!cabGroup) return;                 // la scena e' stata rifatta sotto
+        if (mioGiro !== giroScatole) return;   // ne e' partito un altro: comanda lui
+        for (let k = 0; k < PER_FRAME && resto.length; k++){
+          const x = resto.shift();
+          if (perId.has(x.game.id)) continue;  // arrivata per un'altra strada
+          costruisci(x, false);
+        }
+        sporca(300);
+        if (resto.length) requestAnimationFrame(giu);
+      };
+      requestAnimationFrame(giu);
+    }
+  }
 
   buildProps(state.q ? null : used);
   state.scrollTo = clamp(state.scrollTo, 0, maxScroll());
@@ -11845,8 +11934,30 @@ async function boot(){
      `riparaCopertine`, che fa la stessa cosa e lo ha sempre fatto dopo:
      il sito e' gia' in piedi, e quando finisce rifa' le scatole
      toccate. */
+  /* E DOPO AVERLE BUTTATE VIA, SI RIMETTONO.
+
+     Qui c'era solo `rifaiScatole(ids)`: le scatole delle copertine
+     appena rifatte venivano tolte dalla scena e nessuno le rimetteva,
+     perche' a ricostruirle e' `applyLibrary` e nessuno la chiamava. Il
+     risultato, misurato su un avvio da admin: quattro giochi spariti
+     dallo scaffale fino al primo riordino. Sempre quattro, perche'
+     quattro ne rifa' `piuNitide` per sessione.
+
+     E non basta rifare i mesh: la copertina nuova e' un'altra immagine,
+     quindi va ricaricata (`loadCovers`) e rimisurata, se no la scatola
+     si ricostruisce con quella vecchia che ha gia' in mano. E' la
+     stessa catena che `riparaCopertine` fa qui sotto da sempre -- era
+     questa a non averla. */
   piuNitide()
-    .then(function(ids){ if (ids.length) rifaiScatole(ids); })
+    .then(function(ids){
+      if (!ids.length) return null;
+      return loadCovers(true)
+        .then(caricaMisure)
+        .then(function(){
+          rifaiScatole(ids);
+          applyLibrary({ animate: true });
+        });
+    })
     .catch(function(e){ if (window.console) console.error('piuNitide:', e); });
 
   riparaCopertine().then(function(ids){
