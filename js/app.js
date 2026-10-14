@@ -2556,14 +2556,26 @@ function applyLibrary(opts){
     }
   }
 
+  /* Le scatole si cercano per id da una mappa, non scorrendo la fila.
+
+     Era `boxes.find(...)` dentro il giro su tutti i giochi: una ricerca
+     lineare per ogni gioco, cioe' il quadrato. Con tredici scatole non
+     si misura, a duecento sono quarantamila confronti e un'allocazione
+     di chiusura a testa -- tutto per rispondere a una domanda che una
+     mappa risponde subito. La fila `boxes` resta quella che era: qui si
+     costruisce solo l'indice per cercarci dentro. */
+  const perId = new Map();
+  boxes.forEach(function(x){ perId.set(x.userData.id, x); });
+
   const used = new Set();
   list.forEach(function(game, i){
-    let b = boxes.find(function(x){ return x.userData.id === game.id; });
+    let b = perId.get(game.id);
     const fresh = !b;
     if (fresh){
       b = makeGameBox(game);
       scene.add(b);
       boxes.push(b);
+      perId.set(game.id, b);          // l'indice resta in pari con la fila
     } else {
       b.userData.game = game;
     }
