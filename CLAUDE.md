@@ -1324,6 +1324,24 @@ vicino, e nemmeno `#profilo .lingua button.on`: la pastiglia scelta restava
 grigia. È la lezione di `.primario` un piano più su — un id batte una classe — con
 l'aggiunta che **ogni `:not()` conta come la cosa che contiene**.
 
+**Quella catena si corregge DOVE È SCRITTA.** È tornata altre tre volte — le
+medaglie, `#p-cuore`, la croce del modulo partita — e ogni volta la tentazione è
+stata alzare il peso dall'altra parte, con due id o un `!important`. Non
+funziona e sporca: la regola giusta è aggiungere un `:not(#quello-li)` **nella
+catena stessa**, cioè dire a quella regola di chi non si deve occupare.
+
+Il segnale per riconoscerla: **se una parte della tua regola arriva e una parte
+no, è sempre un'altra regola che vince su quelle proprietà.** La croce del
+modulo partita prendeva `position` e `top/right` (nessuno gliele contendeva) e
+perdeva `background` e `padding`: bastava quello per sapere dove guardare,
+invece di rileggere la propria regola per la terza volta.
+
+**`#profilo button` da solo pesa (1,0,1)** e detta carattere, peso, spaziatura e
+maiuscole a *ogni* pulsante del profilo. Due classi non lo battono: il banner
+del wrap, scritto come `.pro-wrap-riga .par-wrap`, usciva in tondo minuscolo da
+500 nonostante la regola dicesse 900 maiuscolo. Lì dentro servono due id
+(`#profilo #par-wrap`).
+
 ## Lo stile appartiene al mobile, la stanza alla stanza
 
 Legno e arredi stanno su `librerie.scaffali` e `librerie.arredo`; luce, muro e
@@ -7215,6 +7233,23 @@ Cosa manca, in ordine di fastidio. **Riscritta il 2026-09-02.**
    quel momento vede la copertina disegnata per quella sessione. E' il prezzo
    di non avere il permesso di sovrascrivere, ed e' piu' basso del prezzo di
    darlo a tutti.
+
+   **E si misura PRIMA di cancellare (2026-10-14).** La soglia e' 1.100, ma non
+   tutte le figure di BGG ci arrivano: misurato sul bucket vero, `Dune:
+   Imperium` e' 600x600 su BGG e `Deep Regrets: Lamentable Tentacles` 618x842 —
+   quelle sono, piu' grandi non esistono. Siccome il filtro guarda la misura e
+   la misura non cambiava mai, **ogni avvio da admin le ripescava**: 706 KB da
+   BGG, cancellazione della figura condivisa, ricaricamento dello stesso file
+   identico e la finestra riaperta per niente. Per sempre, e sempre le stesse
+   quattro.
+
+   Adesso la nuova si misura appena arrivata (`misuraDataUrl`): se non e' piu'
+   grande non si tocca niente e la figura finisce fra quelle «al massimo»
+   (`meboard-figure-al-massimo` in `localStorage`); se e' piu' grande ma ancora
+   sotto soglia si carica **e** si segna, perche' al prossimo avvio sarebbe di
+   nuovo fra le piccole. L'appunto sta nel browser e non in tabella: e' una nota
+   di manutenzione di chi fa il giro, non un fatto sul gioco, e una colonna
+   nuova si paga con una migrazione.
 7. **La cache locale delle copertine: FATTA il 2026-09-25**, `js/scorta.js`.
    Sta **davanti** al bucket e non al posto suo, che era la conclusione della
    valutazione: la stessa copertina pesa 107 KB dal bucket e 706 KB chiesta
